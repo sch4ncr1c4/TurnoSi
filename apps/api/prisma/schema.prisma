@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  owner
+  admin
+  member
+}
+
+enum BookingChannel {
+  web
+  whatsapp
+  phone
+  in_person
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  completed
+  canceled
+  no_show
+}
+
+enum SubscriptionPlan {
+  trial
+  initial
+  professional
+  operation
+}
+
+enum SubscriptionStatus {
+  pending
+  authorized
+  paused
+  canceled
+}
+
+model User {
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  passwordHash           String
+  firstName              String?
+  lastName               String?
+  phone                  String?
+  emailVerifiedAt        DateTime?
+  onboardingGuideSeenAt  DateTime?
+  memberships            Membership[]
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  createdAppointments    Appointment[]           @relation("AppointmentCreatedBy")
+  assignedAppointments   Appointment[]           @relation("AppointmentAssignedTo")
+  services               Service[]
+  auditLogs              AuditLog[]
+  authSessions           AuthSession[]
+  passwordResets         PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  userId       String
+  familyId     String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  ipAddress    String?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  @@index([expiresAt])
+}
+
+model Organization {
+  id                     String                  @id @default(cuid())
+  name                   String
+  slug                   String                  @unique
+  timezone               String                  @default("America/Argentina/Buenos_Aires")
+  bookingIntervalMinutes Int                     @default(30)
+  category               String?
+  phone                  String?
+  whatsapp               String?
+  publicEmail            String?
+  address                String?
+  city                   String?
+  province               String?
+  countryCode            String                  @default("AR")
+  instagram              String?
+  description            String?
+  onboardingCompletedAt  DateTime?
+  memberships            Membership[]
+  customers              Customer[]
+  services               Service[]
+  resources              Resource[]
+  appointments           Appointment[]
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  auditLogs              AuditLog[]
+  logo                   OrganizationLogo?
+  subscription           OrganizationSubscription?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+}
+
+model OrganizationSubscription {
+  id                       String             @id @default(cuid())
+  organizationId           String             @unique
+  plan                     SubscriptionPlan
+  status                   SubscriptionStatus @default(pending)
+  mercadoPagoPreapprovalId String?            @unique
+  payerEmail               String?
+  nextPaymentAt            DateTime?
+  trialStartedAt           DateTime?
+  trialEndsAt              DateTime?
+  lastWebhookAt            DateTime?
+  organization             Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+}
+
+model OrganizationLogo {
+  organizationId String       @id
+  contentType    String
+  data           Bytes
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  userId         String
+  organizationId String
+  role           MembershipRole
+  bookingsEnabled       Boolean  @default(true)
+  visibleInPublicBooking Boolean @default(true)
+  hourlyCapacity        Int      @default(2)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model Customer {
+  id             String        @id @default(cuid())
+  organizationId String
+  firstName      String
+  lastName       String?
+  fullName       String
+  email          String?
+  phone          String?
+  notes          String?
+  blockedAt      DateTime?
+  blockedReason  String?
+  noShowCount    Int           @default(0)
+  deletedAt      DateTime?
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, fullName])
+  @@index([organizationId, phone])
+  @@index([organizationId, email])
+  @@index([organizationId, blockedAt])
+}
+
+model Service {
+  id                  String        @id @default(cuid())
+  organizationId      String
+  createdByUserId     String?
+  name                String
+  slug                String
+  description         String?
+  durationMinutes     Int
+  capacity            Int           @default(1)
+  bufferBeforeMinutes Int           @default(0)
+  bufferAfterMinutes  Int           @default(0)
+  priceCents          Int?
+  isActive            Boolean       @default(true)
+  isOnlineBookable    Boolean       @default(true)
+  organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByUser       User?         @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  appointments        Appointment[]
+  resourceLinks       ServiceResource[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, isActive])
+}
+
+model Resource {
+  id                     String                  @id @default(cuid())
+  organizationId         String
+  name                   String
+  slug                   String
+  description            String?
+  capacity               Int                     @default(1)
+  isActive               Boolean                 @default(true)
+  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appointments           Appointment[]
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  serviceLinks           ServiceResource[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, isActive])
+}
+
+model ServiceResource {
+  serviceId  String
+  resourceId String
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([serviceId, resourceId])
+  @@index([resourceId])
+}
+
+model Appointment {
+  id             String            @id @default(cuid())
+  organizationId String
+  customerId     String
+  serviceId      String
+  resourceId     String?
+  createdById    String?
+  assignedUserId String?
+  channel        BookingChannel
+  title          String
+  notes          String?
+  startsAt       DateTime
+  endsAt         DateTime
+  status         AppointmentStatus @default(pending)
+  deletedAt      DateTime?
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer       Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  service        Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  resource       Resource?         @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  createdBy      User?             @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignedUser   User?             @relation("AppointmentAssignedTo", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([organizationId, startsAt])
+  @@index([organizationId, customerId, startsAt])
+  @@index([organizationId, serviceId, startsAt])
+  @@index([organizationId, resourceId, startsAt])
+  @@index([organizationId, assignedUserId, startsAt])
+}
+
+model AvailabilityRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  resourceId     String?
+  weekday        Int
+  startMinute    Int
+  endMinute      Int
+  timezone       String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  resource       Resource?    @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, userId, weekday])
+  @@index([organizationId, resourceId, weekday])
+}
+
+model AvailabilityException {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  resourceId     String?
+  startsAt       DateTime
+  endsAt         DateTime
+  isAvailable    Boolean      @default(false)
+  label          String
+  notes          String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  resource       Resource?    @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, startsAt, endsAt])
+  @@index([organizationId, userId, startsAt])
+  @@index([organizationId, resourceId, startsAt])
+}
+
+model AuditLog {
+  id             String        @id @default(cuid())
+  organizationId String?
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int
+  resetsAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resetsAt])
+}

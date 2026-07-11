@@ -1,0 +1,4 @@
+ALTER TABLE "Membership"
+ADD COLUMN "bookingsEnabled" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "visibleInPublicBooking" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "dailyCapacity" INTEGER NOT NULL DEFAULT 12;

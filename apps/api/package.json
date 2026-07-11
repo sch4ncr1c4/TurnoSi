@@ -1,0 +1,40 @@
+{
+  "name": "@sistema-turnos/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "db:start": "powershell -ExecutionPolicy Bypass -File scripts/postgres-start.ps1",
+    "db:stop": "powershell -ExecutionPolicy Bypass -File scripts/postgres-stop.ps1",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx src/scripts/seed.ts",
+    "jobs:cleanup": "tsx src/jobs/cleanup-expired.ts"
+  },
+  "prisma": {
+    "seed": "tsx src/scripts/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.8.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mercadopago": "^3.2.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.15.21",
+    "@types/supertest": "^7.2.0",
+    "prisma": "^6.8.2",
+    "supertest": "^7.2.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.9"
+  }
+}

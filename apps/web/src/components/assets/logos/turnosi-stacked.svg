@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1707" height="398" viewBox="40 112 1510 398" preserveAspectRatio="xMidYMid meet">
+  <path fill="#201836" d="M40 112h1510v398H40z"/>
+  <path fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="36" d="M122 274h305M224 174v34M346 174v34M176 488h197c36 0 54 0 68-7 12-6 22-16 28-28 7-14 7-32 7-68V260c0-36 0-54-7-68-6-12-16-22-28-28-14-7-32-7-68-7H176c-36 0-54 0-68 7-12 6-22 16-28 28-7 14-7 32-7 68v125c0 36 0 54 7 68 6 12 16 22 28 28 14 7 32 7 68 7z"/>
+  <path fill="none" stroke="#fd8606" stroke-linecap="round" stroke-linejoin="round" stroke-width="42" d="M194 348l51 51 118-118"/>
+  <text x="535" y="392" fill="#ffffff" font-family="Poppins, Arial, sans-serif" font-size="190" font-weight="700">Turno</text>
+  <text x="1215" y="392" fill="#fd8606" font-family="Poppins, Arial, sans-serif" font-size="190" font-weight="700">Si</text>
+</svg>

@@ -1,0 +1,4 @@
+ALTER TABLE "Organization"
+ADD COLUMN "city" TEXT,
+ADD COLUMN "province" TEXT,
+ADD COLUMN "countryCode" TEXT NOT NULL DEFAULT 'AR';
