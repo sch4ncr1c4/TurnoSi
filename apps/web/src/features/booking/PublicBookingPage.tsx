@@ -8,6 +8,7 @@ import { queryKeys } from "../../lib/query-keys";
 import { parseFormData } from "../../utils/validation";
 import {
   createPublicAppointment,
+  getPublicGalleryImageUrl,
   getPublicBooking,
   getPublicLogoUrl,
   getPublicSlots,
@@ -30,6 +31,19 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   month: "short",
   timeZone: "UTC"
 });
+
+const longDateFormatter = new Intl.DateTimeFormat("es-AR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC"
+});
+
+function formatPrice(priceCents: number | null) {
+  if (priceCents == null) return "Consultar";
+  return `$${(priceCents / 100).toLocaleString("es-AR")}`;
+}
 
 function isResourceOnlyBooking(category: string | null) {
   return category?.toLowerCase().includes("cancha") ?? false;
@@ -70,30 +84,59 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
   });
   const data: PublicBookingData | undefined = bookingQuery.data;
   const days = slotsQuery.data?.days ?? [];
+  const galleryImageSlots =
+    data?.organization.galleryImageSlots.filter(
+      (slot): slot is 0 | 1 => slot === 0 || slot === 1
+    ) ?? [];
 
   if (bookingQuery.isPending) {
     return (
       <PageLayout>
-        <header className="border-b border-white/10 bg-[var(--color-ink)] px-5 py-4">
-          <div className="mx-auto flex max-w-6xl items-center [&_img]:h-12 sm:[&_img]:h-16">
-            {brand}
-          </div>
-        </header>
-        <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-5">
-            <section className="rounded-xl border border-[var(--color-border)] bg-white/55 p-6">
-              <p className="text-sm text-[var(--color-muted-strong)]">
-                Cargando negocio...
-              </p>
-            </section>
-          </div>
-          <aside className="lg:sticky lg:top-5 lg:self-start">
-            <div className="rounded-xl border border-[var(--color-border)] bg-white/55 p-5">
-              <p className="text-sm text-[var(--color-muted-strong)]">
-                Cargando disponibilidad...
-              </p>
+        <main className="booking-page mx-auto w-full max-w-7xl px-3 py-4 sm:px-5 sm:py-8">
+          <section className="booking-hero mb-6 grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(390px,1fr)]">
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="booking-skeleton h-20 w-20 rounded-xl" />
+                <div className="flex-1 space-y-3">
+                  <div className="booking-skeleton h-3 w-28 rounded-full" />
+                  <div className="booking-skeleton h-10 w-64 max-w-full rounded-lg" />
+                  <div className="booking-skeleton h-4 w-full max-w-md rounded-full" />
+                  <div className="booking-skeleton h-4 w-3/4 max-w-sm rounded-full" />
+                </div>
+              </div>
+              <div className="border-t border-[var(--color-border)] pt-5">
+                <div className="booking-skeleton h-3 w-20 rounded-full" />
+                <div className="mt-3 booking-skeleton h-5 w-56 max-w-full rounded-full" />
+                <div className="mt-5 grid gap-3">
+                  <div className="booking-skeleton h-4 w-full rounded-full" />
+                  <div className="booking-skeleton h-4 w-5/6 rounded-full" />
+                  <div className="booking-skeleton h-4 w-2/3 rounded-full" />
+                </div>
+              </div>
             </div>
-          </aside>
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+              <div className="booking-skeleton min-h-[300px] rounded-2xl" />
+              <div className="booking-skeleton min-h-[300px] rounded-2xl" />
+            </div>
+          </section>
+          <div className="booking-stepper mb-5 p-3">
+            <div className="grid grid-cols-4 gap-3">
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item} className="booking-skeleton h-9 rounded-lg" />
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="booking-step-card p-5">
+              <div className="booking-skeleton h-4 w-20 rounded-full" />
+              <div className="mt-3 booking-skeleton h-7 w-64 max-w-full rounded-lg" />
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="booking-skeleton h-28 rounded-xl" />
+                <div className="booking-skeleton h-28 rounded-xl" />
+              </div>
+            </div>
+            <aside className="booking-summary h-72 p-6" />
+          </div>
         </main>
       </PageLayout>
     );
@@ -160,6 +203,19 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
   const selectedResourceName = service?.resourceName || service?.name || "";
   const selectedDay = days.find((day) => day.date === date);
   const selectedSlot = selectedDay?.slots.find((slot) => slot.startsAt === startsAt);
+  const galleryFocusBySlot = new Map(
+    data.organization.galleryFocus.map((item) => [item.slot, item])
+  );
+  const galleryVersionBySlot = new Map(
+    data.organization.galleryVersions.map((item) => [item.slot, item.version])
+  );
+  const publicLocation = [
+    data.organization.address,
+    data.organization.city,
+    data.organization.province
+  ]
+    .filter(Boolean)
+    .join(", ");
   const steps = [
     { id: "service" as const, label: resourceOnlyBooking ? "Cancha" : "Servicio" },
     ...(!resourceOnlyBooking && data.team.length > 0
@@ -230,36 +286,112 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
 
   return (
     <PageLayout>
-      <header className="border-b border-white/10 bg-[var(--color-ink)] px-5 py-4">
-        <div className="mx-auto flex max-w-6xl items-center [&_img]:h-12 sm:[&_img]:h-16">
-          {brand}
-        </div>
-      </header>
+      <main className="booking-page mx-auto w-full max-w-7xl px-3 py-4 sm:px-5 sm:py-8">
+        <section className="booking-hero mb-6 grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(390px,1fr)] lg:items-stretch">
+          <div className="booking-hero-copy flex min-w-0 flex-col justify-between">
+            <div>
+            <div className="flex items-start gap-4">
+              {data.organization.hasLogo ? (
+                <img
+                  src={getPublicLogoUrl(
+                    organizationSlug,
+                    data.organization.logoVersion
+                  )}
+                  alt={data.organization.name}
+                  className="h-20 w-20 rounded-xl border border-[var(--color-border)] bg-white object-cover shadow-[0_16px_36px_rgba(32,24,54,0.12)]"
+                />
+              ) : null}
+              <div className="min-w-0">
+                <p className="booking-kicker text-xs font-semibold uppercase text-[var(--color-accent)]">
+                  Reserva online
+                </p>
+                <h1 className="mt-2 text-4xl font-semibold leading-tight text-[var(--color-ink)] sm:text-5xl">
+                  {data.organization.name}
+                </h1>
+                <p className="mt-3 max-w-xl text-base leading-7 text-[var(--color-muted-strong)]">
+                  Elegí servicio, profesional y horario disponible en pocos pasos.
+                </p>
+              </div>
+            </div>
+            </div>
 
-      <main className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-8">
-        <section className="mb-4 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-white/55 p-3 sm:mb-5 sm:gap-4 sm:p-5">
-          {data.organization.hasLogo && (
-            <img
-              src={getPublicLogoUrl(organizationSlug)}
-              alt=""
-              className="h-12 w-12 shrink-0 rounded-xl object-cover sm:h-14 sm:w-14"
-            />
-          )}
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
-              Reserva online
-            </p>
-            <h1 className="mt-1 truncate text-xl font-semibold sm:text-2xl">{data.organization.name}</h1>
-            <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
-              {[data.organization.category, data.organization.city]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
+            <div className="booking-venue-panel mt-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                  Local
+                </p>
+                <p className="mt-1 text-base font-semibold text-[var(--color-ink)]">
+                  {[data.organization.category, data.organization.city]
+                    .filter(Boolean)
+                    .join(" · ") || "Turnos online"}
+                </p>
+              </div>
+              <div className="booking-venue-details mt-4">
+                {data.organization.description && (
+                  <p className="booking-venue-description">{data.organization.description}</p>
+                )}
+                {publicLocation && (
+                  <p className="booking-venue-row">
+                    <span>Dirección</span>
+                    {publicLocation}
+                  </p>
+                )}
+                {data.organization.phone && (
+                  <p className="booking-venue-row">
+                    <span>Teléfono</span>
+                    {data.organization.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className={`booking-gallery grid gap-3 ${galleryImageSlots.length > 1 ? "sm:grid-cols-[minmax(0,1fr)_220px]" : ""}`}>
+            {galleryImageSlots.length > 0 ? (
+              galleryImageSlots.map((slot, index) => (
+                <div
+                  key={slot}
+                  className={`booking-gallery-frame overflow-hidden border border-[rgba(255,255,255,0.46)] bg-[rgba(32,24,54,0.08)] ${
+                    index === 0 ? "min-h-[300px]" : "min-h-[300px]"
+                  }`}
+                >
+                  <img
+                    src={getPublicGalleryImageUrl(
+                      organizationSlug,
+                      slot,
+                      galleryVersionBySlot.get(slot) ?? null
+                    )}
+                    alt={`${data.organization.name} ${slot + 1}`}
+                    className="h-full w-full object-cover"
+                    style={{
+                      objectPosition: `${galleryFocusBySlot.get(slot)?.focusX ?? 50}% ${
+                        galleryFocusBySlot.get(slot)?.focusY ?? 50
+                      }%`,
+                      transform: `scale(${(galleryFocusBySlot.get(slot)?.zoom ?? 100) / 100})`,
+                      transformOrigin: `${galleryFocusBySlot.get(slot)?.focusX ?? 50}% ${
+                        galleryFocusBySlot.get(slot)?.focusY ?? 50
+                      }%`
+                    }}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="booking-gallery-empty grid min-h-[300px] place-items-center p-8 text-center text-white">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.18em] text-white/62">
+                    {data.organization.name}
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold">
+                    Tu próxima visita empieza acá
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
         {step !== "success" && (
-          <nav className="mb-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.72)] p-2 sm:mb-5 sm:p-3">
+          <nav className="booking-stepper mb-4 p-2 sm:mb-5 sm:p-3">
             <ol
               className={`grid ${
                 steps.length === 4 ? "grid-cols-4" : "grid-cols-3"
@@ -274,7 +406,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                       type="button"
                       disabled={!completed}
                       onClick={() => setStep(item.id)}
-                      className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-1 py-1.5 text-center text-[10px] sm:flex-row sm:gap-2 sm:px-2 sm:text-sm ${
+                      className={`booking-step-button flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-1 py-1.5 text-center text-[10px] sm:flex-row sm:gap-2 sm:px-2 sm:text-sm ${
                         active
                           ? "font-semibold text-[var(--color-ink)]"
                           : completed
@@ -294,7 +426,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                       <span className="truncate">{item.label}</span>
                     </button>
                     {index < steps.length - 1 && (
-                      <span className="hidden h-px flex-1 bg-[var(--color-border-strong)] sm:block" />
+                      <span className="hidden h-px flex-1 bg-[linear-gradient(90deg,rgba(32,24,54,0.18),rgba(253,134,6,0.26),rgba(32,24,54,0.12))] sm:block" />
                     )}
                   </li>
                 );
@@ -304,7 +436,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         )}
 
         {step === "success" ? (
-          <section className="mx-auto max-w-2xl rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-6 text-center shadow-[0_18px_50px_rgba(32,24,54,0.08)] sm:p-10">
+          <section className="booking-success mx-auto max-w-2xl p-6 text-center sm:p-10">
             <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[rgba(64,145,91,0.14)] text-2xl text-[#347548]">✓</span>
             <h2 className="mt-5 text-2xl font-semibold">Turno confirmado</h2>
             <p className="mt-2 text-sm text-[var(--color-muted-strong)]">
@@ -339,8 +471,8 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
             </p>
           </section>
         ) : (
-          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div>
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="booking-panel-enter">
               {step === "service" && (
                 <StepCard
                   eyebrow="Paso 1"
@@ -366,20 +498,18 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                           setSelectedDate("");
                           setStartsAt("");
                         }}
-                        className={`rounded-xl border p-4 text-left transition-colors ${
+                        className={`booking-choice rounded-xl border p-4 text-left ${
                           item.id === serviceId
-                            ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.06)] ring-1 ring-[var(--color-ink)]"
-                            : "border-[var(--color-border)] bg-white/45 hover:border-[var(--color-border-strong)]"
+                            ? "booking-choice-selected border-[var(--color-ink)]"
+                            : "border-[var(--color-border)] bg-white/55 hover:border-[var(--color-border-strong)]"
                         }`}
                       >
                         <span className="flex items-start justify-between gap-3">
-                          <strong>
+                          <strong className="text-lg">
                             {resourceOnlyBooking ? item.resourceName || item.name : item.name}
                           </strong>
                           <span className="shrink-0 text-sm font-semibold">
-                            {item.priceCents != null
-                              ? `$${(item.priceCents / 100).toLocaleString("es-AR")}`
-                              : ""}
+                            {formatPrice(item.priceCents)}
                           </span>
                         </span>
                         <span className="mt-2 block text-sm text-[var(--color-muted-strong)]">
@@ -474,10 +604,10 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                             setSelectedDate(day.date);
                             setStartsAt("");
                           }}
-                          className={`rounded-lg border p-3 text-left ${
+                          className={`booking-date-card rounded-lg border p-3 text-left ${
                             day.date === date
-                              ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-white"
-                              : "border-[var(--color-border)] bg-white/45"
+                              ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-white shadow-[0_12px_26px_rgba(32,24,54,0.18)]"
+                              : "border-[var(--color-border)] bg-white/55"
                           }`}
                         >
                           <span className="block text-sm font-semibold">
@@ -510,10 +640,10 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                               key={slot.startsAt}
                               type="button"
                               onClick={() => setStartsAt(slot.startsAt)}
-                              className={`rounded-md border px-3 py-2.5 text-sm font-medium ${
+                              className={`booking-time-chip rounded-md border px-3 py-2.5 text-sm font-medium ${
                                 slot.startsAt === startsAt
-                                  ? "border-[var(--color-accent)] bg-[rgba(253,134,6,0.18)]"
-                                  : "border-[var(--color-border)] bg-white/45"
+                                  ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white shadow-[0_10px_22px_rgba(253,134,6,0.22)]"
+                                  : "border-[var(--color-border)] bg-white/55"
                               }`}
                             >
                               {slot.time}
@@ -561,10 +691,10 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
               )}
             </div>
 
-            <aside className="lg:sticky lg:top-5 lg:self-start">
-              <div className="rounded-xl bg-[var(--color-ink)] p-5 text-white shadow-[0_18px_44px_rgba(32,24,54,0.18)]">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/55">
-                  Resumen de tu turno
+            <aside className="space-y-4 lg:sticky lg:top-5 lg:self-start">
+              <div className="booking-summary p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                  Resumen de tu reserva
                 </p>
                 <SummaryRow
                   label={resourceOnlyBooking ? "Cancha" : "Servicio"}
@@ -584,15 +714,42 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                   label="Fecha"
                   value={
                     date
-                      ? dateFormatter.format(new Date(`${date}T00:00:00Z`))
+                      ? longDateFormatter.format(new Date(`${date}T00:00:00Z`))
                       : "Sin elegir"
                   }
                 />
                 <SummaryRow label="Horario" value={selectedSlot?.time ?? "Sin elegir"} />
+                <div className="mt-5 border-t border-[var(--color-border)] pt-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-[var(--color-muted-strong)]">Total</span>
+                    <strong className="text-3xl font-semibold text-[var(--color-ink)]">
+                      {formatPrice(service?.priceCents ?? null)}
+                    </strong>
+                  </div>
+                </div>
                 {status && (
-                  <p className="mt-4 rounded-md bg-white/10 p-3 text-sm">{status}</p>
+                  <p className="mt-4 rounded-xl border border-[var(--color-border)] bg-[rgba(32,24,54,0.04)] p-3 text-sm text-[var(--color-muted-strong)]">
+                    {status}
+                  </p>
                 )}
               </div>
+
+              <InfoCard
+                title="Recordatorio"
+                description="Te recordaremos tu turno y dejaremos todo listo para tu visita."
+              />
+              <InfoCard
+                title="Cancelaciones"
+                description="Podés cancelar o reprogramar con anticipación coordinando con el local."
+              />
+              <InfoCard
+                title="¿Necesitás ayuda?"
+                description={
+                  data.organization.whatsapp
+                    ? `Escribinos por WhatsApp ${data.organization.whatsapp}.`
+                    : data.organization.phone || "Contactanos directamente con el negocio."
+                }
+              />
             </aside>
           </div>
         )}
@@ -607,9 +764,6 @@ function BookingFooter({
 }: {
   organization: PublicBookingData["organization"];
 }) {
-  const location = [organization.address, organization.city, organization.province]
-    .filter(Boolean)
-    .join(", ");
   const storedWhatsapp = organization.whatsapp?.replace(/\D/g, "") ?? "";
   const whatsappNumber = storedWhatsapp.startsWith("54")
     ? storedWhatsapp
@@ -623,17 +777,15 @@ function BookingFooter({
     : "";
 
   return (
-    <footer className="mt-auto border-t border-[var(--color-border)] bg-[rgba(255,251,244,0.72)] px-4 py-6 sm:px-5">
+    <footer className="mt-auto border-t border-[var(--color-border)] bg-[rgba(255,251,244,0.82)] px-4 py-6 backdrop-blur-sm sm:px-5">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-[var(--color-ink)]">
             {organization.name}
           </p>
-          {location && (
-            <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
-              {location}
-            </p>
-          )}
+          <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
+            Reservas online
+          </p>
         </div>
         <div className="flex flex-col gap-3 text-xs text-[var(--color-muted-strong)] sm:items-end">
           <div className="flex flex-wrap gap-2">
@@ -658,7 +810,6 @@ function BookingFooter({
               </a>
             )}
           </div>
-          {organization.phone && <span>{organization.phone}</span>}
           <span>
             Reservas gestionadas por{" "}
             <strong className="font-semibold text-[var(--color-ink)]">Turnosi</strong>
@@ -681,8 +832,8 @@ function StepCard({
   title: string;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.82)] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
-      <div className="border-b border-[var(--color-border)] p-4 sm:p-5">
+    <section className="booking-step-card overflow-hidden">
+      <div className="border-b border-[var(--color-border)] bg-white/35 p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
           {eyebrow}
         </p>
@@ -709,7 +860,7 @@ function StepActions({
         <button
           type="button"
           onClick={onBack}
-          className="w-full rounded-md px-4 py-2.5 text-sm font-semibold text-[var(--color-muted-strong)] sm:w-auto"
+          className="w-full rounded-md px-4 py-2.5 text-sm font-semibold text-[var(--color-muted-strong)] transition hover:bg-white/60 sm:w-auto"
         >
           ← Atrás
         </button>
@@ -720,7 +871,7 @@ function StepActions({
         type="button"
         disabled={nextDisabled}
         onClick={onNext}
-        className="w-full rounded-md bg-[var(--color-ink)] px-5 py-2.5 text-sm font-semibold text-[var(--color-button-text)] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+        className="w-full rounded-md bg-[var(--color-ink)] px-5 py-2.5 text-sm font-semibold text-[var(--color-button-text)] shadow-[0_12px_28px_rgba(32,24,54,0.18)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 sm:w-auto"
       >
         Continuar
       </button>
@@ -745,10 +896,10 @@ function ProfessionalOption({
     <button
       type="button"
       onClick={onClick}
-      className={`relative rounded-xl border p-4 text-left transition-colors ${
+      className={`booking-choice relative rounded-xl border p-4 text-left ${
         selected
-          ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.06)] ring-1 ring-[var(--color-ink)]"
-          : "border-[var(--color-border)] bg-white/45 hover:border-[var(--color-border-strong)]"
+          ? "booking-choice-selected border-[var(--color-ink)]"
+          : "border-[var(--color-border)] bg-white/55 hover:border-[var(--color-border-strong)]"
       }`}
     >
       <span className="flex items-center justify-between gap-3">
@@ -777,9 +928,18 @@ function ProfessionalOption({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="mt-4 border-t border-white/10 pt-4">
-      <span className="block text-xs text-white/55">{label}</span>
-      <strong className="mt-1 block text-sm font-medium">{value}</strong>
+    <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+      <span className="block text-xs text-[var(--color-muted)]">{label}</span>
+      <strong className="mt-1 block text-sm font-medium text-[var(--color-ink)]">{value}</strong>
+    </div>
+  );
+}
+
+function InfoCard({ description, title }: { description: string; title: string }) {
+  return (
+    <div className="booking-info-card p-5">
+      <p className="text-base font-semibold text-[var(--color-ink)]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">{description}</p>
     </div>
   );
 }
@@ -821,7 +981,7 @@ function BookingConfirmForm({
           <input
             name={name}
             type={type}
-            className="mt-1.5 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-ink)] focus:ring-2 focus:ring-[rgba(32,24,54,0.08)]"
+            className="mt-1.5 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/76 px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
           />
           {errors[name] && (
             <span className="mt-1 block text-[#a33b32]">{errors[name]}</span>
@@ -831,7 +991,7 @@ function BookingConfirmForm({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="mt-1 rounded-md bg-[var(--color-accent)] px-4 py-3 font-semibold text-[var(--color-button-text)] disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
+        className="mt-1 rounded-md bg-[var(--color-accent)] px-4 py-3 font-semibold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(253,134,6,0.26)] transition hover:-translate-y-0.5 hover:bg-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:col-span-2"
       >
         {isSubmitting ? "Confirmando..." : "Confirmar turno"}
       </button>

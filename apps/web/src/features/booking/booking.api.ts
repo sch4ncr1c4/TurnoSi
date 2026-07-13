@@ -14,6 +14,18 @@ export type PublicBookingData = {
     whatsapp: string | null;
     instagram: string | null;
     hasLogo: boolean;
+    logoVersion: number | null;
+    galleryImageSlots: number[];
+    galleryVersions: {
+      slot: number;
+      version: number;
+    }[];
+    galleryFocus: {
+      slot: number;
+      focusX: number;
+      focusY: number;
+      zoom: number;
+    }[];
   };
   team: {
     id: string;
@@ -78,6 +90,16 @@ export function createPublicAppointment(
   );
 }
 
-export function getPublicLogoUrl(slug: string) {
-  return getApiUrl(`/api/v1/public/booking/${slug}/logo`);
+export function getPublicLogoUrl(slug: string, version?: number | null) {
+  const suffix = version ? `?v=${version}` : "";
+  return getApiUrl(`/api/v1/public/booking/${slug}/logo${suffix}`);
+}
+
+export function getPublicGalleryImageUrl(
+  slug: string,
+  slot: 0 | 1,
+  version?: number | null
+) {
+  const suffix = version ? `?v=${version}` : "";
+  return getApiUrl(`/api/v1/public/booking/${slug}/gallery/${slot}${suffix}`);
 }

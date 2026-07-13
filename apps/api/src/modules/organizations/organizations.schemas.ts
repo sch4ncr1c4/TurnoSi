@@ -10,5 +10,15 @@ export const updateOrganizationSettingsSchema = z.object({
   city: z.string().trim().max(120),
   province: z.string().trim().max(120),
   instagram: z.string().trim().max(80),
-  description: z.string().trim().max(600)
+  description: z.string().trim().max(600),
+  galleryFocus: z
+    .array(
+      z.object({
+        slot: z.union([z.literal(0), z.literal(1)]),
+        focusX: z.number().int().min(0).max(100),
+        focusY: z.number().int().min(0).max(100),
+        zoom: z.number().int().min(100).max(220)
+      })
+    )
+    .max(2)
 }).partial();

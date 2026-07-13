@@ -29,6 +29,24 @@ export function uploadOrganizationLogo(file: File) {
   );
 }
 
+export function uploadOrganizationGalleryImage(slot: 0 | 1, file: File) {
+  return apiRequest<{ success: true; data: { uploaded: true } }>(
+    `/api/v1/organizations/current/gallery/${slot}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file
+    }
+  );
+}
+
+export function deleteOrganizationGalleryImage(slot: 0 | 1) {
+  return apiRequest<{ success: true; data: { deleted: true } }>(
+    `/api/v1/organizations/current/gallery/${slot}`,
+    { method: "DELETE" }
+  );
+}
+
 export function completeOnboarding() {
   return apiRequest<{ success: true; data: { onboardingCompleted: true } }>(
     "/api/v1/organizations/current/complete-onboarding",

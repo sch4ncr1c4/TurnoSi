@@ -86,47 +86,10 @@ export function DashboardSidebar({
   }
 
   return (
-    <aside className="dot-pattern-corner dot-pattern-bottom-left border-b border-[var(--color-border)] bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] lg:border-r lg:border-b-0 lg:px-4 lg:py-4">
+    <aside className="dashboard-sidebar dot-pattern-corner dot-pattern-bottom-left z-40 flex flex-col border-b border-[var(--color-border)] bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] md:border-r md:border-b-0 md:px-4 md:py-4">
       <div className="flex justify-center [&_*]:text-[var(--color-button-text)]">{brand}</div>
 
-      <div className="mt-5 border-t border-white/12 pt-4 lg:mt-4 lg:pt-4">
-        <div className="flex items-center justify-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-white/10">
-            {hasLogo ? (
-              <img
-                src={`${getApiUrl("/api/v1/organizations/current/logo")}?v=${logoVersion}`}
-                alt="Logo de la organización"
-                onError={() => setLogoAvailable(false)}
-                className="h-full w-full rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-sm font-semibold text-white/72">
-                {(account.organizationName || account.userName || "U")
-                  .charAt(0)
-                  .toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-3 text-center">
-          <p className="text-xs uppercase text-white/55">Organización</p>
-          <p className="mt-1 text-sm font-medium">
-            {account.organizationName || "Cargando..."}
-          </p>
-          <p className="mt-1 text-xs text-white/55">
-            {account.userName}
-            {account.role ? ` · ${account.role}` : ""}
-          </p>
-          {currentPlan && (
-            <p className="mt-1 text-xs font-semibold text-[var(--color-accent)]">
-              Plan {currentPlan}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <nav className="mt-6 space-y-1 lg:mt-5">
+      <nav className="mt-8 space-y-1 md:mt-7 md:shrink-0">
         {dashboardSections.map((section, index) => {
           const view =
             section.label === "Agenda"
@@ -165,44 +128,71 @@ export function DashboardSidebar({
       <button
         type="button"
         disabled={navigationLocked}
-        className={`mt-6 w-full rounded-md bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-button-text)] lg:mt-5 ${buttonMotionClass}`}
+        className={`mt-6 w-full shrink-0 rounded-md bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-button-text)] md:mt-5 ${buttonMotionClass}`}
       >
         + Nuevo turno
       </button>
 
-      {membership?.role === "owner" && (
+      <div className="mt-6 border-t border-white/12 pt-5 md:mt-auto md:shrink-0 md:pt-5">
+        <div className="mb-5 rounded-xl border border-white/12 bg-white/[0.04] p-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-white/10">
+              {hasLogo ? (
+                <img
+                  src={`${getApiUrl("/api/v1/organizations/current/logo")}?v=${logoVersion}`}
+                  alt="Logo de la organización"
+                  onError={() => setLogoAvailable(false)}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-semibold text-white/72">
+                  {(account.organizationName || account.userName || "U")
+                    .charAt(0)
+                    .toUpperCase()}
+                </span>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
+                Organización
+              </p>
+              <p className="mt-1 truncate text-sm font-semibold">
+                {account.organizationName || "Cargando..."}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-white/55">
+                {account.userName}
+                {account.role ? ` · ${account.role}` : ""}
+              </p>
+              {currentPlan && (
+                <p className="mt-1 text-xs font-semibold text-[var(--color-accent)]">
+                  Plan {currentPlan}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {membership?.role === "owner" && (
+          <button
+            type="button"
+            disabled={navigationLocked}
+            onClick={onOpenBillingPlans}
+            className="w-full rounded-md border border-[var(--color-accent)] bg-[rgba(253,134,6,0.1)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent)] hover:bg-[rgba(253,134,6,0.18)] disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            Mejorar plan
+          </button>
+        )}
+
         <button
           type="button"
-          disabled={navigationLocked}
-          onClick={onOpenBillingPlans}
-          className="mt-6 w-full rounded-md border border-[var(--color-accent)] bg-[rgba(253,134,6,0.1)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent)] hover:bg-[rgba(253,134,6,0.18)] disabled:cursor-not-allowed disabled:opacity-35 lg:mt-5"
+          disabled={isLoggingOut}
+          onClick={() => void handleLogout()}
+          className="mt-5 w-full rounded-md border border-white/20 px-4 py-2.5 text-sm font-medium text-white/72 hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
         >
-          Mejorar plan
+          {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
         </button>
-      )}
-
-      <div className="mt-4 border-t border-white/12 pt-4">
-        <p className="text-xs uppercase text-white/55">Ocupación diaria</p>
-        <div className="mt-3 flex items-center justify-between text-sm">
-          <span>Agenda cubierta</span>
-          <span className="font-medium">78%</span>
-        </div>
-        <div className="mt-3 h-2 rounded-full bg-white/12">
-          <div className="h-2 w-[78%] rounded-full bg-[var(--color-accent)]" />
-        </div>
-        <p className="mt-2 text-xs leading-5 text-white/58">
-          Mayor demanda entre las 16:00 y las 19:00.
-        </p>
       </div>
-
-      <button
-        type="button"
-        disabled={isLoggingOut}
-        onClick={() => void handleLogout()}
-        className="mt-6 w-full rounded-md border border-white/20 px-4 py-2.5 text-sm font-medium text-white/72 hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
-      >
-        {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
-      </button>
     </aside>
   );
 }

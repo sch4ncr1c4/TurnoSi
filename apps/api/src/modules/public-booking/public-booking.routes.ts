@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { Router } from "express";
 
-import { serveLogo } from "../../lib/logo.js";
+import { serveGalleryImage, serveLogo } from "../../lib/logo.js";
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { ok } from "../../lib/http.js";
@@ -373,7 +373,8 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
         include: { resourceLinks: { include: { resource: true }, take: 1 } },
         orderBy: { name: "asc" }
       },
-      logo: { select: { organizationId: true } }
+      logo: { select: { organizationId: true, updatedAt: true } },
+      galleryImages: { select: { slot: true, focusX: true, focusY: true, zoom: true, updatedAt: true } }
     }
   });
   if (!organization) throw new AppError(404, "NOT_FOUND", "Business not found");
@@ -396,7 +397,24 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
       phone: organization.phone,
       whatsapp: organization.whatsapp,
       instagram: organization.instagram,
-      hasLogo: Boolean(organization.logo)
+      hasLogo: Boolean(organization.logo),
+      logoVersion: organization.logo?.updatedAt.getTime() ?? null,
+      galleryImageSlots: organization.galleryImages.map((image) => image.slot).sort()
+      ,
+      galleryVersions: organization.galleryImages
+        .map((image) => ({
+          slot: image.slot,
+          version: image.updatedAt.getTime()
+        }))
+        .sort((first, second) => first.slot - second.slot),
+      galleryFocus: organization.galleryImages
+        .map((image) => ({
+          slot: image.slot,
+          focusX: image.focusX,
+          focusY: image.focusY,
+          zoom: image.zoom
+        }))
+        .sort((first, second) => first.slot - second.slot)
     },
     team: await getPublicTeam(organization),
     services: organization.services.map(publicServicePayload)
@@ -411,6 +429,20 @@ publicBookingRouter.get("/:organizationSlug/logo", async (request, response) => 
   });
   if (!organization) return response.sendStatus(404);
   await serveLogo(organization.id, response, { cacheControl: "public, max-age=300" });
+});
+
+publicBookingRouter.get("/:organizationSlug/gallery/:slot", async (request, response) => {
+  const { organizationSlug } = publicBookingParamsSchema.parse(request.params);
+  const slot = Number(request.params.slot);
+  if (Number.isNaN(slot) || slot < 0 || slot > 1) return response.sendStatus(404);
+  const organization = await prisma.organization.findUnique({
+    where: { slug: organizationSlug },
+    select: { id: true }
+  });
+  if (!organization) return response.sendStatus(404);
+  await serveGalleryImage(organization.id, slot, response, {
+    cacheControl: "public, max-age=300"
+  });
 });
 
 publicBookingRouter.get("/:organizationSlug/slots", publicSlotsRateLimit, async (request, response) => {

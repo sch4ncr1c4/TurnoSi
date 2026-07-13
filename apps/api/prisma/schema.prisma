@@ -110,6 +110,7 @@ model Organization {
   availabilityExceptions AvailabilityException[]
   auditLogs              AuditLog[]
   logo                   OrganizationLogo?
+  galleryImages          OrganizationGalleryImage[]
   subscription           OrganizationSubscription?
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
@@ -138,6 +139,22 @@ model OrganizationLogo {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+model OrganizationGalleryImage {
+  id             String       @id @default(cuid())
+  organizationId String
+  slot           Int
+  focusX         Int          @default(50)
+  focusY         Int          @default(50)
+  zoom           Int          @default(100)
+  contentType    String
+  data           Bytes
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, slot])
 }
 
 model Membership {

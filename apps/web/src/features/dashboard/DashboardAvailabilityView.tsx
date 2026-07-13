@@ -27,6 +27,9 @@ import {
   updateWeeklyAvailability
 } from "./availability.api";
 
+const defaultMorningSlot = { start: "09:00", end: "12:00" };
+const defaultAfternoonSlot = { start: "17:00", end: "20:00" };
+
 function minuteToTime(minutes: number) {
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
@@ -183,7 +186,10 @@ export function DashboardAvailabilityView() {
               ...day,
               enabled: true,
               status: "Activo",
-              slots: [...day.slots, { start: "16:00", end: "17:00" }]
+              slots: [
+                ...day.slots,
+                day.slots.length === 0 ? defaultMorningSlot : defaultAfternoonSlot
+              ]
             }
           : day
       )
@@ -271,7 +277,7 @@ export function DashboardAvailabilityView() {
               status: day.enabled ? "Inactivo" : "Activo",
               slots:
                 !day.enabled && day.slots.length === 0
-                  ? [{ start: "09:00", end: "18:00" }]
+                  ? [defaultMorningSlot, defaultAfternoonSlot]
                   : day.slots
             }
           : day

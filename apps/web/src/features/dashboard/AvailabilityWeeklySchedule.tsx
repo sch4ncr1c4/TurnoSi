@@ -75,7 +75,7 @@ export function AvailabilityWeeklySchedule({
               <div className="space-y-3">
                 {day.slots.map((slot, index) => (
                   <div
-                    key={`${day.day}-mobile-${slot.start}`}
+                    key={`${day.day}-mobile-slot-${index}`}
                     className="rounded-md border border-[var(--color-border)] bg-white/42 p-3 min-[900px]:max-w-[590px]"
                   >
                     <div className="mb-2 flex items-center justify-between">
@@ -174,7 +174,7 @@ export function AvailabilityWeeklySchedule({
                   <div className="grid min-w-[420px] gap-2">
                     {day.slots.map((slot, index) => (
                       <span
-                        key={`${day.day}-${slot.start}`}
+                        key={`${day.day}-slot-${index}`}
                         className="grid grid-cols-[56px_104px_12px_104px_72px] items-center gap-x-1 whitespace-nowrap"
                       >
                         <span className="text-right text-xs font-semibold text-[var(--color-muted)]">

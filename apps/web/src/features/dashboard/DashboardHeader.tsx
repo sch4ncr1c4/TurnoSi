@@ -43,14 +43,14 @@ export function DashboardHeader({
           </p>
         </div>
 
-        {activeView === "agenda" || activeView === "customers" || activeView === "team" || activeView === "summary" ? null : (
+        {activeView === "availability" ? (
           <button
             type="button"
             className={`w-fit rounded-md bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold text-[var(--color-button-text)] ${buttonMotionClass}`}
           >
             + Agregar horario
           </button>
-        )}
+        ) : null}
       </div>
     </header>
   );

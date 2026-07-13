@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +12,9 @@ import type { AuthResult } from "../auth/auth.types";
 import {
   updateOrganizationSettings,
   completeOnboarding,
+  deleteOrganizationGalleryImage,
   deleteCurrentOrganization,
+  uploadOrganizationGalleryImage,
   uploadOrganizationLogo
 } from "./settings.api";
 import { useOrganizationSettingsQuery } from "./settings.queries";
@@ -63,6 +65,7 @@ const businessCategories = [
   "Entrenamiento personal",
   "Academia y clases"
 ];
+const customBusinessCategory = "__custom__";
 
 const argentinaProvinces = [
   "Buenos Aires",
@@ -110,6 +113,15 @@ export function DashboardSettingsView({
   const [message, setMessage] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState("");
+  const [galleryFiles, setGalleryFiles] = useState<(File | null)[]>([null, null]);
+  const [galleryPreviews, setGalleryPreviews] = useState(["", ""]);
+  const [showGallerySettings, setShowGallerySettings] = useState(false);
+  const [galleryDeleteSlots, setGalleryDeleteSlots] = useState([false, false]);
+  const [galleryFocus, setGalleryFocus] = useState([
+    { slot: 0 as 0 | 1, focusX: 50, focusY: 50, zoom: 100 },
+    { slot: 1 as 0 | 1, focusX: 50, focusY: 50, zoom: 100 }
+  ]);
+  const [cropEditorSlot, setCropEditorSlot] = useState<0 | 1 | null>(null);
   const [toast, setToast] = useState("");
   const [activeTab, setActiveTab] = useState<SettingsTab>("business");
   const [isEditing, setIsEditing] = useState(isOnboarding);
@@ -120,8 +132,25 @@ export function DashboardSettingsView({
   const settingsQuery = useOrganizationSettingsQuery();
   const sessionQuery = useSessionQuery();
   const queryClient = useQueryClient();
+  const hasGalleryFocusChanges =
+    JSON.stringify(galleryFocus) !==
+    JSON.stringify(
+      [0, 1].map((slot) => {
+        const saved = settingsQuery.data?.galleryFocus.find((item) => item.slot === slot);
+        return {
+          slot: slot as 0 | 1,
+          focusX: saved?.focusX ?? 50,
+          focusY: saved?.focusY ?? 50,
+          zoom: saved?.zoom ?? 100
+        };
+      })
+    );
   const hasUnsavedChanges =
-    JSON.stringify(settings) !== JSON.stringify(savedSettings) || Boolean(logoFile);
+    JSON.stringify(settings) !== JSON.stringify(savedSettings) ||
+    Boolean(logoFile) ||
+    galleryFiles.some(Boolean) ||
+    galleryDeleteSlots.some(Boolean) ||
+    hasGalleryFocusChanges;
   const hasPendingChanges = hasUnsavedChanges || accountHasUnsavedChanges;
 
   useEffect(() => {
@@ -149,6 +178,25 @@ export function DashboardSettingsView({
             `${getApiUrl("/api/v1/organizations/current/logo")}?v=${Date.now()}`
           );
         }
+        setGalleryPreviews([
+          organization.galleryImageSlots.includes(0)
+            ? `${getApiUrl("/api/v1/organizations/current/gallery/0")}?v=${Date.now()}`
+            : "",
+          organization.galleryImageSlots.includes(1)
+            ? `${getApiUrl("/api/v1/organizations/current/gallery/1")}?v=${Date.now()}`
+            : ""
+        ]);
+        setGalleryFocus(
+          [0, 1].map((slot) => {
+            const saved = organization.galleryFocus.find((item) => item.slot === slot);
+            return {
+              slot: slot as 0 | 1,
+              focusX: saved?.focusX ?? 50,
+              focusY: saved?.focusY ?? 50,
+              zoom: saved?.zoom ?? 100
+            };
+          })
+        );
     }
   }, [settingsQuery.data]);
 
@@ -265,16 +313,26 @@ export function DashboardSettingsView({
           : {})
     };
 
-    if (Object.keys(changes).length === 0 && !logoFile && !isOnboarding) {
-      setToast("No hay cambios por guardar.");
+    if (
+      Object.keys(changes).length === 0 &&
+      !logoFile &&
+      !galleryFiles.some(Boolean) &&
+      !galleryDeleteSlots.some(Boolean) &&
+      !hasGalleryFocusChanges &&
+      !isOnboarding
+    ) {
+      setToast("Todo está guardado.");
       return;
     }
 
     setIsSaving(true);
     setMessage("");
     try {
-      if (Object.keys(changes).length > 0 || isOnboarding) {
-        await updateOrganizationSettings(changes);
+      if (Object.keys(changes).length > 0 || hasGalleryFocusChanges || isOnboarding) {
+        await updateOrganizationSettings({
+          ...changes,
+          galleryFocus
+        });
         queryClient.setQueryData<OrganizationSettings>(
           queryKeys.organizationSettings,
           (current) =>
@@ -290,6 +348,7 @@ export function DashboardSettingsView({
                   province: settings.province,
                   instagram: settings.instagram,
                   description: settings.description,
+                  galleryFocus,
                   onboardingCompleted: current.onboardingCompleted
                 }
               : current
@@ -333,6 +392,57 @@ export function DashboardSettingsView({
         );
         window.dispatchEvent(new Event("turnosi:logo-updated"));
         setLogoFile(null);
+      }
+      for (const [slot, shouldDelete] of galleryDeleteSlots.entries()) {
+        const hadSavedImage = settingsQuery.data?.galleryImageSlots.includes(slot);
+        if (shouldDelete && hadSavedImage) {
+          await deleteOrganizationGalleryImage(slot as 0 | 1);
+        }
+      }
+      for (const [slot, file] of galleryFiles.entries()) {
+        if (!file) continue;
+        await uploadOrganizationGalleryImage(slot as 0 | 1, file);
+      }
+      if (galleryFiles.some(Boolean)) {
+        queryClient.setQueryData<OrganizationSettings>(
+          queryKeys.organizationSettings,
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  galleryImageSlots: [0, 1].filter(
+                    (slot) => galleryPreviews[slot] || galleryFiles[slot]
+                  )
+                }
+              : current
+        );
+        setGalleryFiles([null, null]);
+      }
+      if (galleryDeleteSlots.some(Boolean)) {
+        setGalleryDeleteSlots([false, false]);
+      }
+      const refreshedSettings = await settingsQuery.refetch();
+      const latestSettings = refreshedSettings.data;
+      if (latestSettings) {
+        const galleryVersionBySlot = new Map(
+          latestSettings.galleryVersions.map((item) => [item.slot, item.version])
+        );
+        setGalleryPreviews([
+          latestSettings.galleryImageSlots.includes(0)
+            ? `${getApiUrl("/api/v1/organizations/current/gallery/0")}?v=${galleryVersionBySlot.get(0) ?? Date.now()}`
+            : "",
+          latestSettings.galleryImageSlots.includes(1)
+            ? `${getApiUrl("/api/v1/organizations/current/gallery/1")}?v=${galleryVersionBySlot.get(1) ?? Date.now()}`
+            : ""
+        ]);
+      }
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.publicBooking(publicSlug)
+      });
+      if (organizationSlug && organizationSlug !== publicSlug) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.publicBooking(organizationSlug)
+        });
       }
       const nextSavedSettings = settings;
       setSavedSettings(nextSavedSettings);
@@ -439,8 +549,8 @@ export function DashboardSettingsView({
 
   function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
-    if (file && file.size > 1024 * 1024) {
-      setMessage("El logo no puede superar 1 MB.");
+    if (file && file.size > 8 * 1024 * 1024) {
+      setMessage("El logo no puede superar 8 MB.");
       event.target.value = "";
       return;
     }
@@ -450,13 +560,112 @@ export function DashboardSettingsView({
     setMessage("");
   }
 
+  function handleGalleryChange(slot: 0 | 1, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (file && file.size > 10 * 1024 * 1024) {
+      setMessage("Cada imagen del local no puede superar 10 MB.");
+      event.target.value = "";
+      return;
+    }
+    setGalleryFiles((current) => {
+      const next = [...current];
+      next[slot] = file;
+      return next;
+    });
+    setGalleryDeleteSlots((current) => {
+      const next = [...current];
+      next[slot] = false;
+      return next;
+    });
+    setGalleryPreviews((current) => {
+      const next = [...current];
+      if (next[slot].startsWith("blob:")) URL.revokeObjectURL(next[slot]);
+      next[slot] = file
+        ? URL.createObjectURL(file)
+        : settingsQuery.data?.galleryImageSlots.includes(slot)
+          ? `${getApiUrl(`/api/v1/organizations/current/gallery/${slot}`)}?v=${Date.now()}`
+          : "";
+      return next;
+    });
+    if (file) {
+      setShowGallerySettings(true);
+      setGalleryFocusPoint(slot, 50, 50, 100);
+      setCropEditorSlot(slot);
+    }
+    setMessage("");
+  }
+
+  function setGalleryFocusPoint(
+    slot: 0 | 1,
+    focusX: number,
+    focusY: number,
+    zoom?: number
+  ) {
+    setGalleryFocus((current) =>
+      current.map((item) =>
+        item.slot === slot
+          ? {
+              ...item,
+              focusX: Math.round(Math.max(0, Math.min(100, focusX))),
+              focusY: Math.round(Math.max(0, Math.min(100, focusY))),
+              zoom: Math.round(Math.max(100, Math.min(220, zoom ?? item.zoom)))
+            }
+          : item
+      )
+    );
+  }
+
+  function removeGalleryImage(slot: 0 | 1) {
+    setMessage("");
+    const preview = galleryPreviews[slot];
+    if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+    setGalleryFiles((current) => {
+      const next = [...current];
+      next[slot] = null;
+      return next;
+    });
+    setGalleryPreviews((current) => {
+      const next = [...current];
+      next[slot] = "";
+      return next;
+    });
+    setGalleryDeleteSlots((current) => {
+      const next = [...current];
+      next[slot] = Boolean(settingsQuery.data?.galleryImageSlots.includes(slot));
+      return next;
+    });
+    setGalleryFocusPoint(slot, 50, 50, 100);
+    setToast("Foto marcada para eliminar. Guardá los cambios para aplicarlo.");
+  }
+
   function cancelEditing() {
     setSettings(savedSettings);
     setLogoFile(null);
+    setGalleryFiles([null, null]);
+    setGalleryDeleteSlots([false, false]);
     setLogoPreview(
       settingsQuery.data?.hasLogo
         ? `${getApiUrl("/api/v1/organizations/current/logo")}?v=${Date.now()}`
         : ""
+    );
+    setGalleryPreviews([
+      settingsQuery.data?.galleryImageSlots.includes(0)
+        ? `${getApiUrl("/api/v1/organizations/current/gallery/0")}?v=${Date.now()}`
+        : "",
+      settingsQuery.data?.galleryImageSlots.includes(1)
+        ? `${getApiUrl("/api/v1/organizations/current/gallery/1")}?v=${Date.now()}`
+        : ""
+    ]);
+    setGalleryFocus(
+      [0, 1].map((slot) => {
+        const saved = settingsQuery.data?.galleryFocus.find((item) => item.slot === slot);
+        return {
+          slot: slot as 0 | 1,
+          focusX: saved?.focusX ?? 50,
+          focusY: saved?.focusY ?? 50,
+          zoom: saved?.zoom ?? 100
+        };
+      })
     );
     setMessage("");
     setIsEditing(false);
@@ -680,7 +889,7 @@ export function DashboardSettingsView({
                     Subir logo
                   </span>
                   <span className="mt-1 text-xs text-[var(--color-muted)]">
-                    PNG, JPEG o WebP. Máximo 1 MB.
+                    PNG, JPEG o WebP. Se optimiza automáticamente.
                   </span>
                   <input
                     type="file"
@@ -701,16 +910,55 @@ export function DashboardSettingsView({
               value={settings.businessName}
               onChange={(value) => updateSetting("businessName", value)}
             />
-            <SettingsField
-              label="Rubro"
-              placeholder="Ej: Peluquería"
-              readOnly={!isEditing}
-              highlightChanges={showUnsavedState}
-              savedValue={savedSettings.category}
-              options={businessCategories}
-              value={settings.category}
-              onChange={(value) => updateSetting("category", value)}
-            />
+            <div className="grid gap-2">
+              <label className="relative grid gap-1.5 text-sm">
+                <span className="font-semibold text-[var(--color-muted-strong)]">
+                  Rubro
+                </span>
+                <select
+                  disabled={!isEditing}
+                  value={
+                    !settings.category || businessCategories.includes(settings.category)
+                      ? settings.category
+                      : customBusinessCategory
+                  }
+                  onChange={(event) =>
+                    updateSetting(
+                      "category",
+                      event.target.value === customBusinessCategory
+                        ? ""
+                        : event.target.value
+                    )
+                  }
+                  className={`h-10 rounded-md border bg-white/70 px-3 outline-none disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] disabled:text-[var(--color-muted-strong)] ${
+                    showUnsavedState &&
+                    settings.category !== savedSettings.category
+                      ? "border-[#d65a50] focus:border-[#d65a50]"
+                      : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
+                  }`}
+                >
+                  <option value="">Seleccionar rubro</option>
+                  {businessCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                  <option value={customBusinessCategory}>Otro</option>
+                </select>
+              </label>
+              {isEditing &&
+                (!settings.category ||
+                  !businessCategories.includes(settings.category)) && (
+                  <SettingsField
+                    label="Rubro personalizado"
+                    placeholder="Ej: Veterinaria"
+                    highlightChanges={showUnsavedState}
+                    savedValue={savedSettings.category}
+                    value={settings.category}
+                    onChange={(value) => updateSetting("category", value)}
+                  />
+                )}
+            </div>
             <label className="relative grid gap-1.5 text-sm md:col-span-2">
               <span className="font-semibold text-[var(--color-muted-strong)]">
                 Descripción pública
@@ -730,6 +978,124 @@ export function DashboardSettingsView({
                 }`}
               />
             </label>
+            <div className="grid gap-3 md:col-span-2">
+              <button
+                type="button"
+                onClick={() => setShowGallerySettings((current) => !current)}
+                className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-white/60 px-4 py-3 text-left text-sm font-semibold text-[var(--color-ink)] hover:border-[var(--color-accent)]"
+              >
+                <span>
+                  Fotos del local
+                  <span className="ml-2 text-xs font-medium text-[var(--color-muted)]">
+                    {galleryPreviews.filter(Boolean).length}/2 cargadas
+                  </span>
+                </span>
+                <span className="text-lg leading-none">
+                  {showGallerySettings ? "−" : "+"}
+                </span>
+              </button>
+              {showGallerySettings && (
+                <div className="grid gap-3 md:grid-cols-2">
+                    {[0, 1].map((slot) => {
+                      const typedSlot = slot as 0 | 1;
+                      const currentFocus =
+                        galleryFocus.find((item) => item.slot === typedSlot) ?? {
+                          slot: typedSlot,
+                          focusX: 50,
+                          focusY: 50,
+                          zoom: 100
+                        };
+                      return (
+                        <div
+                          key={slot}
+                          className="flex flex-col rounded-xl border border-dashed border-[var(--color-border-strong)] bg-white/40 p-4 text-center"
+                        >
+                          <div className="mb-3 flex items-center justify-between gap-3 text-left">
+                            <div>
+                              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                                {slot === 0 ? "Foto principal" : "Foto secundaria"}
+                              </p>
+                              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                                {slot === 0 ? "Vista horizontal" : "Vista vertical"}
+                              </p>
+                            </div>
+                            <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-muted-strong)]">
+                              {slot === 0 ? "16:10" : "4:5"}
+                            </span>
+                          </div>
+
+                          <div
+                            className={`w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(32,24,54,0.05)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)] ${
+                              slot === 0 ? "aspect-[16/10]" : "aspect-[4/5]"
+                            }`}
+                          >
+                            {galleryPreviews[slot] ? (
+                              <img
+                                src={galleryPreviews[slot]}
+                                alt={`Imagen ${slot + 1} del local`}
+                                className="h-full w-full object-cover"
+                                style={{
+                                  objectPosition: `${currentFocus.focusX}% ${currentFocus.focusY}%`,
+                                  transform: `scale(${currentFocus.zoom / 100})`,
+                                  transformOrigin: `${currentFocus.focusX}% ${currentFocus.focusY}%`
+                                }}
+                              />
+                            ) : (
+                              <div className="grid h-full w-full place-items-center text-sm font-semibold text-[var(--color-muted-strong)]">
+                                {slot === 0
+                                  ? "Así se verá la foto principal"
+                                  : "Así se verá la foto secundaria"}
+                              </div>
+                            )}
+                          </div>
+
+                          <label
+                            className={`mt-4 rounded-lg border border-[var(--color-border)] bg-white/75 px-3 py-2 text-sm font-semibold text-[var(--color-ink)] ${
+                              isEditing
+                                ? "cursor-pointer hover:border-[var(--color-accent)]"
+                                : "cursor-not-allowed opacity-60"
+                            }`}
+                          >
+                            {galleryPreviews[slot]
+                              ? `Cambiar foto ${slot + 1}`
+                              : `Subir foto ${slot + 1}`}
+                            <input
+                              type="file"
+                              disabled={!isEditing}
+                              accept="image/png,image/jpeg,image/webp"
+                              onChange={(event) => handleGalleryChange(typedSlot, event)}
+                              className="sr-only"
+                            />
+                          </label>
+                          <span className="mt-1 text-xs text-[var(--color-muted)]">
+                            {slot === 0
+                              ? "Ideal horizontal 1600x1000. JPG, PNG o WebP. Se optimiza automáticamente."
+                              : "Ideal vertical 900x1100. JPG, PNG o WebP. Se optimiza automáticamente."}
+                          </span>
+                          {galleryPreviews[slot] && isEditing && (
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                              <button
+                                type="button"
+                                onClick={() => setCropEditorSlot(typedSlot)}
+                                className="rounded-lg border border-[var(--color-border)] bg-white/75 px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:border-[var(--color-accent)]"
+                              >
+                                Ajustar encuadre
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeGalleryImage(typedSlot)}
+                                className="rounded-lg border border-[#e7b9b2] bg-[#fff5f3] px-3 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5]"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
               </>
             )}
             {activeTab === "public" && (
@@ -931,6 +1297,25 @@ export function DashboardSettingsView({
           }}
         />
       )}
+      {cropEditorSlot !== null && (
+        <GalleryCropModal
+          aspectRatio={cropEditorSlot === 0 ? "16 / 10" : "4 / 5"}
+          imageUrl={galleryPreviews[cropEditorSlot]}
+          onChange={(focusX, focusY, zoom) =>
+            setGalleryFocusPoint(cropEditorSlot, focusX, focusY, zoom)
+          }
+          onClose={() => setCropEditorSlot(null)}
+          title={cropEditorSlot === 0 ? "Ajustar foto principal" : "Ajustar foto secundaria"}
+          value={
+            galleryFocus.find((item) => item.slot === cropEditorSlot) ?? {
+              slot: cropEditorSlot,
+              focusX: 50,
+              focusY: 50,
+              zoom: 100
+            }
+          }
+        />
+      )}
       {toast && <Toast message={toast} onDismiss={() => setToast("")} />}
     </section>
   );
@@ -1011,6 +1396,160 @@ function SettingsField({
         </span>
       )}
     </label>
+  );
+}
+
+function GalleryCropModal({
+  aspectRatio,
+  imageUrl,
+  onChange,
+  onClose,
+  title,
+  value
+}: {
+  aspectRatio: string;
+  imageUrl: string;
+  onChange: (focusX: number, focusY: number, zoom: number) => void;
+  onClose: () => void;
+  title: string;
+  value: { focusX: number; focusY: number; zoom: number };
+}) {
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
+
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: value.focusX,
+      originY: value.focusY
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const dragState = dragStateRef.current;
+    const frame = frameRef.current;
+    if (!dragState || !frame || dragState.pointerId !== event.pointerId) return;
+    const rect = frame.getBoundingClientRect();
+    const deltaX = ((event.clientX - dragState.startX) / rect.width) * 100;
+    const deltaY = ((event.clientY - dragState.startY) / rect.height) * 100;
+    onChange(dragState.originX - deltaX, dragState.originY - deltaY, value.zoom);
+  }
+
+  function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (dragStateRef.current?.pointerId === event.pointerId) {
+      dragStateRef.current = null;
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120] grid place-items-end bg-[rgba(32,24,54,0.72)] p-3 backdrop-blur-sm sm:place-items-center">
+      <section
+        role="dialog"
+        aria-modal="true"
+        className="w-full max-w-3xl rounded-2xl border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_30px_100px_rgba(32,24,54,0.32)] sm:p-6"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-[var(--color-ink)]">{title}</h3>
+            <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+              Arrastrá la imagen y ajustá el zoom como se verá en reservas.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-[var(--color-border-strong)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)]"
+          >
+            Listo
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <div
+            ref={frameRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            className="relative overflow-hidden rounded-[1.4rem] border border-[var(--color-border)] bg-[rgba(32,24,54,0.06)] touch-none shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]"
+            style={{ aspectRatio }}
+          >
+            <img
+              src={imageUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              draggable={false}
+              style={{
+                objectPosition: `${value.focusX}% ${value.focusY}%`,
+                transform: `scale(${value.zoom / 100})`,
+                transformOrigin: `${value.focusX}% ${value.focusY}%`
+              }}
+            />
+            <div className="pointer-events-none absolute inset-0 border-[10px] border-[rgba(255,255,255,0.24)]" />
+            <div className="pointer-events-none absolute inset-4 rounded-[1rem] border border-white/80 shadow-[0_0_0_9999px_rgba(32,24,54,0.06)]" />
+          </div>
+
+          <div className="rounded-2xl border border-[var(--color-border)] bg-white/72 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
+              Referencia
+            </p>
+            <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
+              Tamaño sugerido
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[var(--color-muted-strong)]">
+              {aspectRatio === "16 / 10"
+                ? "Foto horizontal, ideal 1600x1000 o mayor."
+                : "Foto vertical, ideal 900x1100 o mayor."}
+            </p>
+            <label className="mt-4 grid gap-2 text-sm font-semibold text-[var(--color-ink)]">
+              Zoom
+              <input
+                type="range"
+                min={100}
+                max={220}
+                value={value.zoom}
+                onChange={(event) =>
+                  onChange(value.focusX, value.focusY, Number(event.target.value))
+                }
+                className="accent-[var(--color-accent)]"
+              />
+              <span className="text-xs font-medium text-[var(--color-muted-strong)]">
+                {value.zoom}%
+              </span>
+            </label>
+            <p className="mt-4 text-sm font-semibold text-[var(--color-ink)]">
+              Vista final
+            </p>
+            <div
+              className="mt-2 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(32,24,54,0.06)]"
+              style={{ aspectRatio }}
+            >
+              <img
+                src={imageUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                draggable={false}
+                style={{
+                  objectPosition: `${value.focusX}% ${value.focusY}%`,
+                  transform: `scale(${value.zoom / 100})`,
+                  transformOrigin: `${value.focusX}% ${value.focusY}%`
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 

@@ -4,12 +4,13 @@ import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { clearAuthCookies } from "../../lib/cookies.js";
 import { ok } from "../../lib/http.js";
+import { optimizeImage } from "../../lib/image-optimizer.js";
 import { verifyPassword } from "../../lib/password.js";
 import { assertMembership } from "../../lib/membership.js";
 import { organizationParamsSchema } from "../../lib/schemas.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
-import { serveLogo } from "../../lib/logo.js";
+import { serveGalleryImage, serveLogo } from "../../lib/logo.js";
 import { appointmentsRouter } from "../appointments/appointments.routes.js";
 import { customersRouter } from "../customers/customers.routes.js";
 import { servicesRouter } from "../services/services.routes.js";
@@ -21,6 +22,7 @@ import {
 export const organizationsRouter = Router();
 
 const logoContentTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+const gallerySlots = new Set([0, 1]);
 
 function matchesImageSignature(data: Buffer, contentType: string) {
   if (contentType === "image/png") {
@@ -39,10 +41,16 @@ organizationsRouter.get("/current/logo", async (request, response) => {
   await serveLogo(request.tenant!.organizationId, response);
 });
 
+organizationsRouter.get("/current/gallery/:slot", async (request, response) => {
+  const slot = Number(request.params.slot);
+  if (!gallerySlots.has(slot)) return response.sendStatus(404);
+  await serveGalleryImage(request.tenant!.organizationId, slot, response);
+});
+
 organizationsRouter.put(
   "/current/logo",
   authRateLimit,
-  express.raw({ type: ["image/png", "image/jpeg", "image/webp"], limit: "1mb" }),
+  express.raw({ type: ["image/png", "image/jpeg", "image/webp"], limit: "8mb" }),
   async (request, response) => {
     const contentType = request.get("content-type")?.split(";")[0] ?? "";
     if (
@@ -67,24 +75,140 @@ organizationsRouter.put(
       });
     }
 
-    const logoData = Uint8Array.from(request.body);
+    let optimizedLogo;
+    try {
+      optimizedLogo = await optimizeImage(request.body, "logo");
+    } catch {
+      return response.status(400).json({
+        success: false,
+        message: "Logo must be a valid image",
+        code: "INVALID_LOGO"
+      });
+    }
     await prisma.organizationLogo.upsert({
       where: { organizationId: tenant.organizationId },
       create: {
         organizationId: tenant.organizationId,
-        contentType,
-        data: logoData
+        contentType: optimizedLogo.contentType,
+        data: optimizedLogo.data
       },
-      update: { contentType, data: logoData }
+      update: { contentType: optimizedLogo.contentType, data: optimizedLogo.data }
     });
     response.json(ok({ uploaded: true }));
+  }
+);
+
+organizationsRouter.put(
+  "/current/gallery/:slot",
+  authRateLimit,
+  express.raw({ type: ["image/png", "image/jpeg", "image/webp"], limit: "10mb" }),
+  async (request, response) => {
+    const slot = Number(request.params.slot);
+    if (!gallerySlots.has(slot)) {
+      return response.status(400).json({
+        success: false,
+        message: "Gallery slot must be 0 or 1",
+        code: "INVALID_GALLERY_SLOT"
+      });
+    }
+
+    const contentType = request.get("content-type")?.split(";")[0] ?? "";
+    if (
+      !logoContentTypes.has(contentType) ||
+      !Buffer.isBuffer(request.body) ||
+      request.body.length === 0 ||
+      !matchesImageSignature(request.body, contentType)
+    ) {
+      return response.status(400).json({
+        success: false,
+        message: "Gallery image must be a PNG, JPEG or WebP image",
+        code: "INVALID_GALLERY_IMAGE"
+      });
+    }
+
+    const tenant = request.tenant!;
+    if (tenant.role !== "owner" && tenant.role !== "admin") {
+      return response.status(403).json({
+        success: false,
+        message: "Insufficient permissions",
+        code: "FORBIDDEN"
+      });
+    }
+
+    let optimizedImage;
+    try {
+      optimizedImage = await optimizeImage(
+        request.body,
+        slot === 0 ? "galleryHorizontal" : "galleryVertical"
+      );
+    } catch {
+      return response.status(400).json({
+        success: false,
+        message: "Gallery image must be a valid image",
+        code: "INVALID_GALLERY_IMAGE"
+      });
+    }
+    await prisma.organizationGalleryImage.upsert({
+      where: {
+        organizationId_slot: {
+          organizationId: tenant.organizationId,
+          slot
+        }
+      },
+      create: {
+        organizationId: tenant.organizationId,
+        slot,
+        focusX: 50,
+        focusY: 50,
+        zoom: 100,
+        contentType: optimizedImage.contentType,
+        data: optimizedImage.data
+      },
+      update: { contentType: optimizedImage.contentType, data: optimizedImage.data }
+    });
+    response.json(ok({ uploaded: true }));
+  }
+);
+
+organizationsRouter.delete(
+  "/current/gallery/:slot",
+  authRateLimit,
+  async (request, response) => {
+    const slot = Number(request.params.slot);
+    if (!gallerySlots.has(slot)) {
+      return response.status(400).json({
+        success: false,
+        message: "Gallery slot must be 0 or 1",
+        code: "INVALID_GALLERY_SLOT"
+      });
+    }
+
+    const tenant = request.tenant!;
+    if (tenant.role !== "owner" && tenant.role !== "admin") {
+      return response.status(403).json({
+        success: false,
+        message: "Insufficient permissions",
+        code: "FORBIDDEN"
+      });
+    }
+
+    await prisma.organizationGalleryImage.deleteMany({
+      where: {
+        organizationId: tenant.organizationId,
+        slot
+      }
+    });
+    response.json(ok({ deleted: true }));
   }
 );
 
 organizationsRouter.get("/current/settings", async (request, response) => {
   const organization = await prisma.organization.findUnique({
     where: { id: request.tenant!.organizationId },
-    include: { logo: { select: { organizationId: true } } }
+    include: {
+      logo: { select: { organizationId: true, updatedAt: true } },
+      galleryImages: { select: { slot: true, focusX: true, focusY: true, zoom: true, updatedAt: true } }
+    }
   });
 
   if (!organization) {
@@ -105,7 +229,23 @@ organizationsRouter.get("/current/settings", async (request, response) => {
     instagram: organization.instagram ?? "",
     description: organization.description ?? "",
     onboardingCompleted: Boolean(organization.onboardingCompletedAt),
-    hasLogo: Boolean(organization.logo)
+    hasLogo: Boolean(organization.logo),
+    logoVersion: organization.logo?.updatedAt.getTime() ?? null,
+    galleryImageSlots: organization.galleryImages.map((image) => image.slot).sort(),
+    galleryVersions: organization.galleryImages
+      .map((image) => ({
+        slot: image.slot,
+        version: image.updatedAt.getTime()
+      }))
+      .sort((first, second) => first.slot - second.slot),
+    galleryFocus: organization.galleryImages
+      .map((image) => ({
+        slot: image.slot,
+        focusX: image.focusX,
+        focusY: image.focusY,
+        zoom: image.zoom
+      }))
+      .sort((first, second) => first.slot - second.slot)
   }));
 });
 
@@ -118,15 +258,34 @@ organizationsRouter.patch("/current/settings", authRateLimit, async (request, re
     return;
   }
 
+  const { galleryFocus, ...organizationData } = data;
   const organization = await prisma.organization.update({
     where: { id: tenant.organizationId },
     data: {
-      ...data,
-      ...(data.publicEmail !== undefined
-        ? { publicEmail: data.publicEmail || null }
+      ...organizationData,
+      ...(organizationData.publicEmail !== undefined
+        ? { publicEmail: organizationData.publicEmail || null }
         : {})
     }
   });
+
+  if (galleryFocus?.length) {
+    await prisma.$transaction(
+      galleryFocus.map((image) =>
+        prisma.organizationGalleryImage.updateMany({
+          where: {
+            organizationId: tenant.organizationId,
+            slot: image.slot
+          },
+          data: {
+            focusX: image.focusX,
+            focusY: image.focusY,
+            zoom: image.zoom
+          }
+        })
+      )
+    );
+  }
 
   await auditLog({
     organizationId: tenant.organizationId,

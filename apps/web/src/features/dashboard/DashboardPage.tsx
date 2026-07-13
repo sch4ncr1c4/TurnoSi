@@ -169,7 +169,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     enabled:
-      (activeView === "summary" || activeView === "agenda") &&
+      Boolean(session.data?.data.organizations?.[0]) &&
       session.data?.data.organizations?.[0]?.onboardingCompleted !== false
   });
   const allAppointments = appointmentsQuery.data ?? [];
@@ -466,7 +466,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
   return (
     <PageLayout>
-      <div className="grid min-h-screen lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="dashboard-shell min-h-screen">
         <DashboardSidebar
           activeView={activeView}
           brand={brand}
@@ -476,7 +476,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           onChangeView={changeDashboardView}
         />
 
-        <section className="min-w-0">
+        <section className="min-w-0 overflow-x-clip">
           <DashboardHeader
             activeView={activeView}
           />
