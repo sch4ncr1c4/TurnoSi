@@ -479,7 +479,6 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         <section className="min-w-0">
           <DashboardHeader
             activeView={activeView}
-            appointments={allAppointments}
           />
 
           <div className="space-y-4 px-5 py-4 sm:px-7">

@@ -69,6 +69,13 @@ export function DashboardSummaryView({
   showAllAppointments,
   visibleAppointments
 }: DashboardSummaryViewProps) {
+  const confirmedCount = filteredAppointments.filter(
+    (appointment) => getAppointmentStatus(appointment) === "Confirmado"
+  ).length;
+  const pendingCount = filteredAppointments.filter(
+    (appointment) => getAppointmentStatus(appointment) === "En espera"
+  ).length;
+
   return (
     <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <article
@@ -81,6 +88,26 @@ export function DashboardSummaryView({
             <p className="mt-1 text-sm text-[var(--color-muted)]">
               {scheduleSubtitle}
             </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-muted-strong)]">
+              <span>
+                <strong className="font-mono text-[var(--color-ink)]">
+                  {filteredAppointments.length}
+                </strong>{" "}
+                {filteredAppointments.length === 1 ? "turno en vista" : "turnos en vista"}
+              </span>
+              <span>
+                <strong className="font-mono text-[var(--color-ink)]">
+                  {confirmedCount}
+                </strong>{" "}
+                confirmados
+              </span>
+              <span>
+                <strong className="font-mono text-[var(--color-ink)]">
+                  {pendingCount}
+                </strong>{" "}
+                pendientes
+              </span>
+            </div>
           </div>
           <div className="flex rounded-md border border-[var(--color-border)] p-1 text-sm">
             {scheduleOptions.map((option) => (
