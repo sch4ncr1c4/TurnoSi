@@ -9,6 +9,8 @@ import { zonedTimeToUtc, parseTimeString } from "../../lib/timezone.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
 import {
   catalogItemSchema,
+  catalogCategoryParamsSchema,
+  catalogCategorySchema,
   catalogParamsSchema,
   exceptionParamsSchema,
   exceptionSchema,
@@ -76,15 +78,48 @@ availabilityRouter.put("/weekly", authRateLimit, async (request, response) => {
 
 function exceptionDates(data: {
   date: string;
+  status: string;
   startTime?: string;
   endTime?: string;
 }, timezone: string) {
-  const startMinutes = data.startTime ? parseTimeString(data.startTime) : 0;
-  const endMinutes = data.endTime ? parseTimeString(data.endTime) : 1439;
+  const startMinutes =
+    data.status === "No laborable"
+      ? 0
+      : data.startTime
+        ? parseTimeString(data.startTime)
+        : 540;
+  const endMinutes =
+    data.status === "No laborable"
+      ? 1440
+      : data.endTime
+        ? parseTimeString(data.endTime)
+        : 1080;
   return {
     startsAt: zonedTimeToUtc(data.date, startMinutes, timezone),
     endsAt: zonedTimeToUtc(data.date, endMinutes, timezone)
   };
+}
+
+function localDateInTimezone(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+function localTimeInTimezone(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.hour}:${value.minute}`;
 }
 
 availabilityRouter.get("/exceptions", async (request, response) => {
@@ -95,18 +130,18 @@ availabilityRouter.get("/exceptions", async (request, response) => {
   });
   response.json(ok(exceptions.map((exception) => ({
     id: exception.id,
-    date: exception.startsAt.toISOString().slice(0, 10),
+    date: localDateInTimezone(exception.startsAt, tenant.timezone),
     title: exception.label,
     detail: exception.notes ?? "",
     status: exception.isAvailable
       ? "Horario especial"
-      : exception.startsAt.getUTCHours() === 0 &&
-          exception.endsAt.getUTCHours() === 23
+      : localTimeInTimezone(exception.startsAt, tenant.timezone) === "00:00" &&
+          localTimeInTimezone(exception.endsAt, tenant.timezone) === "00:00"
         ? "No laborable"
         : "Bloque parcial",
     enabled: exception.isAvailable,
-    startTime: exception.startsAt.toISOString().slice(11, 16),
-    endTime: exception.endsAt.toISOString().slice(11, 16)
+    startTime: localTimeInTimezone(exception.startsAt, tenant.timezone),
+    endTime: localTimeInTimezone(exception.endsAt, tenant.timezone)
   }))));
 });
 
@@ -119,7 +154,7 @@ availabilityRouter.post("/exceptions", authRateLimit, async (request, response) 
       organizationId: tenant.organizationId,
       label: data.title,
       notes: data.detail,
-      isAvailable: data.enabled,
+      isAvailable: data.status === "Horario especial",
       ...exceptionDates(data, tenant.timezone)
     }
   });
@@ -136,7 +171,7 @@ availabilityRouter.patch("/exceptions/:exceptionId", authRateLimit, async (reque
     data: {
       label: data.title,
       notes: data.detail,
-      isAvailable: data.enabled,
+      isAvailable: data.status === "Horario especial",
       ...exceptionDates(data, tenant.timezone)
     }
   });
@@ -146,21 +181,56 @@ availabilityRouter.patch("/exceptions/:exceptionId", authRateLimit, async (reque
 
 availabilityRouter.get("/catalog", async (request, response) => {
   const tenant = request.tenant!;
-  const services = await prisma.service.findMany({
-    where: { organizationId: tenant.organizationId },
+  const [services, categories] = await Promise.all([
+  prisma.service.findMany({
+    where: { organizationId: tenant.organizationId, isActive: true },
     include: { resourceLinks: { include: { resource: true }, take: 1 } },
+    orderBy: [{ category: "asc" }, { name: "asc" }]
+  }),
+  prisma.serviceCategory.findMany({
+    where: { organizationId: tenant.organizationId },
     orderBy: { name: "asc" }
-  });
-  response.json(ok(services.map((service) => ({
+  })
+  ]);
+  response.json(ok({
+    categories: categories.map((category) => ({
+      id: category.id,
+      name: category.name
+    })),
+    services: services.map((service) => ({
     id: service.id,
     name: service.name,
+    category: service.category ?? "",
     durationMinutes: service.durationMinutes,
     capacity: service.capacity,
     bufferMinutes: service.bufferAfterMinutes,
     priceCents: service.priceCents,
     resourceName: service.resourceLinks[0]?.resource.name ?? "",
     online: service.isOnlineBookable
-  }))));
+    }))
+  }));
+});
+
+availabilityRouter.post("/catalog/categories", authRateLimit, async (request, response) => {
+  const data = catalogCategorySchema.parse(request.body);
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const baseSlug = slugify(data.name) || "categoria";
+  const category = await prisma.serviceCategory.upsert({
+    where: {
+      organizationId_slug: {
+        organizationId: tenant.organizationId,
+        slug: baseSlug
+      }
+    },
+    create: {
+      organizationId: tenant.organizationId,
+      name: data.name,
+      slug: baseSlug
+    },
+    update: { name: data.name }
+  });
+  response.status(201).json(ok({ id: category.id, name: category.name }));
 });
 
 availabilityRouter.post("/catalog", authRateLimit, async (request, response) => {
@@ -173,6 +243,7 @@ availabilityRouter.post("/catalog", authRateLimit, async (request, response) => 
         organizationId: tenant.organizationId,
         createdByUserId: request.auth!.sub,
         name: data.name,
+        category: data.category || null,
         slug: `${slugify(data.name) || "servicio"}-${Date.now().toString(36)}`,
         durationMinutes: data.durationMinutes,
         capacity: data.capacity,
@@ -221,6 +292,7 @@ availabilityRouter.patch("/catalog/:serviceId", authRateLimit, async (request, r
       where: { id: serviceId },
       data: {
         name: data.name,
+        category: data.category || null,
         durationMinutes: data.durationMinutes,
         capacity: data.capacity,
         bufferAfterMinutes: data.bufferMinutes,
@@ -251,4 +323,34 @@ availabilityRouter.patch("/catalog/:serviceId", authRateLimit, async (request, r
     }
   });
   response.json(ok({ updated: true }));
+});
+
+availabilityRouter.delete("/catalog/:serviceId", authRateLimit, async (request, response) => {
+  const { serviceId } = catalogParamsSchema.parse(request.params);
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const result = await prisma.service.updateMany({
+    where: { id: serviceId, organizationId: tenant.organizationId },
+    data: { isActive: false, isOnlineBookable: false }
+  });
+  if (!result.count) throw new AppError(404, "NOT_FOUND", "Service not found");
+  response.json(ok({ deleted: true }));
+});
+
+availabilityRouter.delete("/catalog/categories/:categoryId", authRateLimit, async (request, response) => {
+  const { categoryId } = catalogCategoryParamsSchema.parse(request.params);
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const category = await prisma.serviceCategory.findFirst({
+    where: { id: categoryId, organizationId: tenant.organizationId }
+  });
+  if (!category) throw new AppError(404, "NOT_FOUND", "Category not found");
+  await prisma.$transaction([
+    prisma.service.updateMany({
+      where: { organizationId: tenant.organizationId, category: category.name },
+      data: { category: null }
+    }),
+    prisma.serviceCategory.delete({ where: { id: category.id } })
+  ]);
+  response.json(ok({ deleted: true }));
 });

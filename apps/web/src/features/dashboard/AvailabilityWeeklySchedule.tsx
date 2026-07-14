@@ -5,7 +5,6 @@ import type { WeeklyAvailabilityDay } from "./availability.types";
 type AvailabilityWeeklyScheduleProps = {
   activeDayMenu: number | null;
   availability: WeeklyAvailabilityDay[];
-  onAddSlot: (dayIndex: number) => void;
   onDuplicateAll: (dayIndex: number) => void;
   onRemoveSlot: (dayIndex: number, slotIndex: number) => void;
   onDuplicateDay: (dayIndex: number) => void;
@@ -24,7 +23,6 @@ type AvailabilityWeeklyScheduleProps = {
 export function AvailabilityWeeklySchedule({
   activeDayMenu,
   availability,
-  onAddSlot,
   onDuplicateAll,
   onRemoveSlot,
   onDuplicateDay,
@@ -61,7 +59,6 @@ export function AvailabilityWeeklySchedule({
                   <DayActionsMenu
                     enabled={day.enabled}
                     hasBreak={Boolean(day.break)}
-                    onAddSlot={() => onAddSlot(dayIndex)}
                     onDuplicateAll={() => onDuplicateAll(dayIndex)}
                     onDuplicate={() => onDuplicateDay(dayIndex)}
                     onToggleBreak={() => onToggleBreak(dayIndex)}
@@ -241,7 +238,6 @@ export function AvailabilityWeeklySchedule({
                   <DayActionsMenu
                     enabled={day.enabled}
                     hasBreak={Boolean(day.break)}
-                    onAddSlot={() => onAddSlot(dayIndex)}
                     onDuplicateAll={() => onDuplicateAll(dayIndex)}
                     onDuplicate={() => onDuplicateDay(dayIndex)}
                     onToggleBreak={() => onToggleBreak(dayIndex)}
@@ -266,7 +262,6 @@ export function AvailabilityWeeklySchedule({
 function DayActionsMenu({
   enabled,
   hasBreak,
-  onAddSlot,
   onDuplicateAll,
   onDuplicate,
   onToggleBreak,
@@ -274,7 +269,6 @@ function DayActionsMenu({
 }: {
   enabled: boolean;
   hasBreak: boolean;
-  onAddSlot: () => void;
   onDuplicateAll: () => void;
   onDuplicate: () => void;
   onToggleBreak: () => void;
@@ -282,13 +276,6 @@ function DayActionsMenu({
 }) {
   return (
     <div className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-1.5 text-left shadow-[0_18px_48px_rgba(32,24,54,0.18)]">
-      <button
-        type="button"
-        onClick={onAddSlot}
-        className="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold hover:bg-[rgba(253,134,6,0.1)]"
-      >
-        Agregar horario
-      </button>
       <button
         type="button"
         onClick={onDuplicateAll}

@@ -1,4 +1,3 @@
-import { buttonMotionClass } from "./dashboard.constants";
 import type { DashboardView } from "./dashboard.types";
 
 type DashboardHeaderProps = {
@@ -42,15 +41,6 @@ export function DashboardHeader({
             {pageDescription}
           </p>
         </div>
-
-        {activeView === "availability" ? (
-          <button
-            type="button"
-            className={`w-fit rounded-md bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold text-[var(--color-button-text)] ${buttonMotionClass}`}
-          >
-            + Agregar horario
-          </button>
-        ) : null}
       </div>
     </header>
   );

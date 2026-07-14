@@ -46,6 +46,7 @@ export const exceptionParamsSchema = z.object({
 
 export const catalogItemSchema = z.object({
   name: z.string().trim().min(2).max(120),
+  category: z.string().trim().max(80).optional().default(""),
   durationMinutes: z.number().int().min(5).max(480),
   capacity: z.number().int().min(1).max(1000),
   bufferMinutes: z.number().int().min(0).max(180),
@@ -56,4 +57,12 @@ export const catalogItemSchema = z.object({
 
 export const catalogParamsSchema = z.object({
   serviceId: z.string().cuid()
+});
+
+export const catalogCategorySchema = z.object({
+  name: z.string().trim().min(2).max(80)
+});
+
+export const catalogCategoryParamsSchema = z.object({
+  categoryId: z.string().cuid()
 });

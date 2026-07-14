@@ -52,6 +52,34 @@ function localHourInTimezone(date: Date, timezone: string) {
   return `${value.year}-${value.month}-${value.day}-${value.hour}`;
 }
 
+function localMinuteInTimezone(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return Number(value.hour) * 60 + Number(value.minute);
+}
+
+function subtractWindow(
+  windows: { start: number; end: number }[],
+  blocked: { start: number; end: number }
+) {
+  return windows.flatMap((window) => {
+    if (blocked.end <= window.start || blocked.start >= window.end) return [window];
+    const next = [];
+    if (blocked.start > window.start) {
+      next.push({ start: window.start, end: Math.min(blocked.start, window.end) });
+    }
+    if (blocked.end < window.end) {
+      next.push({ start: Math.max(blocked.end, window.start), end: window.end });
+    }
+    return next;
+  });
+}
+
 async function getPublicContext(slug: string, serviceId: string) {
   const organization = await prisma.organization.findUnique({
     where: { slug }
@@ -255,23 +283,35 @@ async function calculateSlots(
     let windows = availabilityRules
       .filter((rule) => rule.weekday === weekday)
       .map((rule) => ({ start: rule.startMinute, end: rule.endMinute }));
+    const slotDayStart = zonedTimeToUtc(date, 0, organization.timezone);
+    const slotDayEnd = zonedTimeToUtc(date, 1440, organization.timezone);
     const exceptions = availabilityExceptions.filter(
-      (exception) => exception.startsAt.toISOString().slice(0, 10) === date
+      (exception) => localDateInTimezone(exception.startsAt, organization.timezone) === date
     );
-    if (exceptions.some((exception) => !exception.isAvailable &&
-      exception.startsAt.getUTCHours() === 0 && exception.endsAt.getUTCHours() === 23)) {
+    if (exceptions.some((exception) =>
+      !exception.isAvailable &&
+      exception.startsAt.getTime() <= slotDayStart.getTime() &&
+      exception.endsAt.getTime() >= slotDayEnd.getTime()
+    )) {
       windows = [];
     }
     const special = exceptions.find((exception) => exception.isAvailable);
     if (special) {
       windows = [{
-        start: special.startsAt.getUTCHours() * 60 + special.startsAt.getUTCMinutes(),
-        end: special.endsAt.getUTCHours() * 60 + special.endsAt.getUTCMinutes()
+        start: localMinuteInTimezone(special.startsAt, organization.timezone),
+        end: localMinuteInTimezone(special.endsAt, organization.timezone)
       }];
     }
-
-    const slotDayStart = zonedTimeToUtc(date, 0, organization.timezone);
-    const slotDayEnd = zonedTimeToUtc(date, 1440, organization.timezone);
+    for (const exception of exceptions.filter((item) => !item.isAvailable)) {
+      if (
+        exception.startsAt.getTime() <= slotDayStart.getTime() &&
+        exception.endsAt.getTime() >= slotDayEnd.getTime()
+      ) continue;
+      windows = subtractWindow(windows, {
+        start: localMinuteInTimezone(exception.startsAt, organization.timezone),
+        end: localMinuteInTimezone(exception.endsAt, organization.timezone)
+      });
+    }
     const dayAppointments = appointments.filter(
       (appointment) =>
         appointment.endsAt.getTime() +

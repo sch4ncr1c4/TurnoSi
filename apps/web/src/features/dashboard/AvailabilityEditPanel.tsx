@@ -4,7 +4,8 @@ import { Toast } from "../../components/ui";
 import type {
   AvailabilityException,
   AvailabilityPanel,
-  AvailabilityResource
+  AvailabilityResource,
+  AvailabilityServiceCategory
 } from "./availability.types";
 import { buttonMotionClass } from "./dashboard.constants";
 
@@ -12,35 +13,80 @@ type AvailabilityEditPanelProps = {
   exceptions: AvailabilityException[];
   panel: NonNullable<AvailabilityPanel>;
   resources: AvailabilityResource[];
+  categories: AvailabilityServiceCategory[];
   onClose: () => void;
   onSaveException: (index: number, value: AvailabilityException) => Promise<void>;
   onSaveResource: (index: number, value: AvailabilityResource) => Promise<void>;
 };
 
+function createEmptyResource(): AvailabilityResource {
+  return {
+    name: "",
+    category: "",
+    duration: "30 min",
+    capacity: "1",
+    price: "",
+    resource: "Sin asignar",
+    online: true,
+    buffer: "5 min"
+  };
+}
+
 export function AvailabilityEditPanel({
   exceptions,
   panel,
   resources,
+  categories,
   onClose,
   onSaveException,
   onSaveResource
 }: AvailabilityEditPanelProps) {
   const exception = panel.type === "exception" ? exceptions[panel.index] : null;
-  const resource = panel.type !== "exception" ? resources[panel.index] : null;
+  const resource = panel.type !== "exception" && panel.index >= 0 ? resources[panel.index] : null;
   const [exceptionDraft, setExceptionDraft] = useState<AvailabilityException | null>(() =>
     exception ? { ...exception } : null
   );
   const [resourceDraft, setResourceDraft] = useState<AvailabilityResource | null>(() =>
-    resource ? { ...resource } : null
+    panel.type !== "exception"
+      ? resource
+        ? { ...resource }
+        : createEmptyResource()
+      : null
   );
   const [toast, setToast] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const title =
     panel.type === "exception"
       ? "Editar excepción"
-      : panel.type === "rules"
-        ? "Editar reglas"
-        : "Ver recursos";
+      : panel.index < 0
+        ? "Nuevo servicio"
+        : "Editar reglas";
+
+  function setExceptionMode(status: AvailabilityException["status"]) {
+    setExceptionDraft((current) => {
+      if (!current) return current;
+      const enabled = status === "Horario especial";
+      return {
+        ...current,
+        status,
+        enabled,
+        title:
+          status === "No laborable"
+            ? "Cierre del local"
+            : status === "Horario especial"
+              ? "Horario especial"
+              : "Bloqueo de horario",
+        detail:
+          status === "No laborable"
+            ? "El local no atenderá en esta fecha."
+            : status === "Horario especial"
+              ? "El local atenderá con un horario distinto al semanal."
+              : "Esta franja no estará disponible para reservas.",
+        startTime: status === "No laborable" ? undefined : current.startTime ?? "09:00",
+        endTime: status === "No laborable" ? undefined : current.endTime ?? "18:00"
+      };
+    });
+  }
 
   async function acceptChanges() {
     if (isSaving) return;
@@ -89,6 +135,26 @@ export function AvailabilityEditPanel({
 
         {exception && (
           <div className="mt-4 grid gap-3">
+            <div className="grid gap-2 sm:grid-cols-3">
+              <ExceptionModeButton
+                active={exceptionDraft?.status === "No laborable"}
+                description="No se toman reservas."
+                label="Cerrar el local"
+                onClick={() => setExceptionMode("No laborable")}
+              />
+              <ExceptionModeButton
+                active={exceptionDraft?.status === "Horario especial"}
+                description="Abre fuera del semanal."
+                label="Abrir especial"
+                onClick={() => setExceptionMode("Horario especial")}
+              />
+              <ExceptionModeButton
+                active={exceptionDraft?.status === "Bloque parcial"}
+                description="Bloquea una franja."
+                label="Bloquear horario"
+                onClick={() => setExceptionMode("Bloque parcial")}
+              />
+            </div>
             <TextField
               label="Fecha"
               type="date"
@@ -131,38 +197,10 @@ export function AvailabilityEditPanel({
                 setExceptionDraft((current) => (current ? { ...current, detail: value } : current))
               }
             />
-            <label className="grid gap-1.5 text-sm">
-              <span className="font-semibold text-[var(--color-muted-strong)]">Estado</span>
-              <select
-                value={exceptionDraft?.status ?? ""}
-                onChange={(event) =>
-                  setExceptionDraft((current) =>
-                    current ? { ...current, status: event.target.value } : current
-                  )
-                }
-                className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none"
-              >
-                <option>No laborable</option>
-                <option>Horario especial</option>
-                <option>Bloque parcial</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-strong)]">
-              <input
-                checked={exceptionDraft?.enabled ?? false}
-                onChange={(event) =>
-                  setExceptionDraft((current) =>
-                    current ? { ...current, enabled: event.target.checked } : current
-                  )
-                }
-                type="checkbox"
-              />
-              Permitir atención en esta fecha
-            </label>
           </div>
         )}
 
-        {resource && (
+        {resourceDraft && (
           <div className="mt-4 grid gap-3">
             <TextField
               label="Servicio"
@@ -171,6 +209,27 @@ export function AvailabilityEditPanel({
                 setResourceDraft((current) => (current ? { ...current, name: value } : current))
               }
             />
+            <label className="grid gap-1.5 text-sm">
+              <span className="font-semibold text-[var(--color-muted-strong)]">
+                Categoría
+              </span>
+              <select
+                value={resourceDraft?.category ?? ""}
+                onChange={(event) =>
+                  setResourceDraft((current) =>
+                    current ? { ...current, category: event.target.value } : current
+                  )
+                }
+                className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.2)]"
+              >
+                <option value="">Sin categoría</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <TextField
               label="Recurso asignado (opcional)"
               placeholder="Ej. Mesa 1, Sillón 2 o Sin asignar"
@@ -193,7 +252,7 @@ export function AvailabilityEditPanel({
             />
             {panel.type === "rules" && (
               <div className="grid gap-3 sm:grid-cols-2">
-                <TextField
+                <MinutesField
                   label="Duración"
                   value={resourceDraft?.duration ?? ""}
                   onChange={(value) =>
@@ -202,7 +261,7 @@ export function AvailabilityEditPanel({
                     )
                   }
                 />
-                <TextField
+                <MinutesField
                   label="Margen entre turnos"
                   value={resourceDraft?.buffer ?? ""}
                   onChange={(value) =>
@@ -260,6 +319,70 @@ export function AvailabilityEditPanel({
       </div>
       {toast && <Toast message={toast} onDismiss={() => setToast("")} />}
     </div>
+  );
+}
+
+function ExceptionModeButton({
+  active,
+  description,
+  label,
+  onClick
+}: {
+  active: boolean;
+  description: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg border px-3 py-3 text-left transition ${
+        active
+          ? "border-[var(--color-accent)] bg-[rgba(253,134,6,0.1)] text-[var(--color-ink)]"
+          : "border-[var(--color-border)] bg-white/62 text-[var(--color-muted-strong)] hover:border-[var(--color-accent)]"
+      }`}
+    >
+      <span className="block text-sm font-semibold">{label}</span>
+      <span className="mt-1 block text-xs">{description}</span>
+    </button>
+  );
+}
+
+function getMinuteNumber(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function MinutesField({
+  label,
+  value,
+  onChange
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm">
+      <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
+      <span className="flex h-10 overflow-hidden rounded-md border border-[var(--color-border-strong)] bg-white/70 focus-within:border-[var(--color-accent)] focus-within:ring-2 focus-within:ring-[rgba(253,134,6,0.2)]">
+        <input
+          inputMode="numeric"
+          min={0}
+          type="number"
+          placeholder="30"
+          value={getMinuteNumber(value)}
+          onChange={(event) => {
+            const minutes = getMinuteNumber(event.target.value);
+            onChange(minutes ? `${minutes} min` : "");
+          }}
+          className="min-w-0 flex-1 bg-transparent px-3 outline-none"
+        />
+        <span className="grid w-14 place-items-center border-l border-[var(--color-border)] bg-[rgba(32,24,54,0.04)] text-xs font-semibold text-[var(--color-muted-strong)]">
+          min
+        </span>
+      </span>
+    </label>
   );
 }
 

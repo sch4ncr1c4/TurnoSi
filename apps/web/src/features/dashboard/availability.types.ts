@@ -31,6 +31,7 @@ export type AvailabilityException = {
 export type AvailabilityResource = {
   id?: string;
   name: string;
+  category: string;
   duration: string;
   capacity: string;
   price: string;
@@ -39,8 +40,12 @@ export type AvailabilityResource = {
   buffer: string;
 };
 
+export type AvailabilityServiceCategory = {
+  id: string;
+  name: string;
+};
+
 export type AvailabilityPanel =
   | { type: "exception"; index: number }
   | { type: "rules"; index: number }
-  | { type: "resources"; index: number }
   | null;

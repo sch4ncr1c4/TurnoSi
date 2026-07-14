@@ -13,6 +13,7 @@ import type {
   AvailabilityException,
   AvailabilityPanel,
   AvailabilityResource,
+  AvailabilityServiceCategory,
   AvailabilityTab,
   WeeklyAvailabilityDay
 } from "./availability.types";
@@ -22,7 +23,10 @@ import {
   getAvailabilityCatalog,
   getAvailabilityExceptions,
   getWeeklyAvailability,
+  deleteAvailabilityCatalogItem,
+  deleteAvailabilityCategory,
   saveAvailabilityCatalogItem,
+  saveAvailabilityCategory,
   saveAvailabilityException,
   updateWeeklyAvailability
 } from "./availability.api";
@@ -61,6 +65,8 @@ export function DashboardAvailabilityView() {
   const [duplicateDraft, setDuplicateDraft] = useState<DuplicateDayDraft>(null);
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
   const [resources, setResources] = useState<AvailabilityResource[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<AvailabilityServiceCategory[]>([]);
+  const [categoryDraft, setCategoryDraft] = useState<string | null>(null);
   const [availability, setAvailability] = useState<WeeklyAvailabilityDay[]>(() =>
     weeklyAvailability.map((day) => ({
       ...day,
@@ -122,7 +128,10 @@ export function DashboardAvailabilityView() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (catalogQuery.data) setResources(catalogQuery.data);
+    if (catalogQuery.data) {
+      setResources(catalogQuery.data.services);
+      setServiceCategories(catalogQuery.data.categories);
+    }
   }, [catalogQuery.data]);
 
   function updateSlotTime(
@@ -176,25 +185,6 @@ export function DashboardAvailabilityView() {
           : day
       )
     );
-  }
-
-  function addSlot(dayIndex: number) {
-    setAvailability((current) =>
-      current.map((day, currentDayIndex) =>
-        currentDayIndex === dayIndex
-          ? {
-              ...day,
-              enabled: true,
-              status: "Activo",
-              slots: [
-                ...day.slots,
-                day.slots.length === 0 ? defaultMorningSlot : defaultAfternoonSlot
-              ]
-            }
-          : day
-      )
-    );
-    setActiveDayMenu(null);
   }
 
   function openDuplicateDialog(sourceIndex: number) {
@@ -323,33 +313,17 @@ export function DashboardAvailabilityView() {
       ...current,
       {
         date: new Date().toISOString().slice(0, 10),
-        title: "Nueva excepción",
-        detail: "Definí si el local abre, cierra o trabaja con horario especial.",
-        status: "Horario especial",
-        enabled: true,
-        startTime: "09:00",
-        endTime: "18:00"
+        title: "Cierre del local",
+        detail: "El local no atenderá en esta fecha.",
+        status: "No laborable",
+        enabled: false
       }
     ]);
     setActivePanel({ type: "exception", index: nextIndex });
   }
 
   function addResource() {
-    const nextIndex = resources.length;
-
-    setResources((current) => [
-      ...current,
-      {
-        name: "Nuevo servicio",
-        duration: "30 min",
-        capacity: "1",
-        price: "",
-        resource: "Sin asignar",
-        online: true,
-        buffer: "5 min"
-      }
-    ]);
-    setActivePanel({ type: "rules", index: nextIndex });
+    setActivePanel({ type: "rules", index: -1 });
   }
 
   async function saveException(index: number, draft: AvailabilityException) {
@@ -380,21 +354,114 @@ export function DashboardAvailabilityView() {
       const result = await saveAvailabilityCatalogItem(draft);
       const saved = { ...draft, id: draft.id ?? result.data.id };
       setResources((current) =>
-        current.map((item, currentIndex) =>
-          currentIndex === index ? saved : item
-        )
+        index < 0
+          ? [...current, saved]
+          : current.map((item, currentIndex) =>
+              currentIndex === index ? saved : item
+            )
       );
-      queryClient.setQueryData<AvailabilityResource[]>(
+      queryClient.setQueryData<{
+        categories: AvailabilityServiceCategory[];
+        services: AvailabilityResource[];
+      }>(
         queryKeys.availabilityCatalog,
-        (current = []) =>
-          draft.id
-            ? current.map((item) => (item.id === draft.id ? saved : item))
-            : [...current, saved]
+        (current) => {
+          const categories = current?.categories ?? serviceCategories;
+          const services = current?.services ?? [];
+          return {
+            categories,
+            services:
+              index < 0
+                ? [...services, saved]
+                : draft.id
+                  ? services.map((item) => (item.id === draft.id ? saved : item))
+                  : [...services, saved]
+          };
+        }
       );
       setToast("Servicio guardado.");
     } catch {
       setToast("No pudimos guardar el servicio.");
       throw new Error("Unable to save service");
+    }
+  }
+
+  async function saveCategory(name: string) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setToast("Escribí un nombre de categoría.");
+      return;
+    }
+    try {
+      const result = await saveAvailabilityCategory(trimmedName);
+      const saved = result.data;
+      setServiceCategories((current) => {
+        const exists = current.some((category) => category.id === saved.id);
+        return exists
+          ? current.map((category) => (category.id === saved.id ? saved : category))
+          : [...current, saved].sort((first, second) => first.name.localeCompare(second.name));
+      });
+      queryClient.setQueryData<{
+        categories: AvailabilityServiceCategory[];
+        services: AvailabilityResource[];
+      }>(queryKeys.availabilityCatalog, (current) => ({
+        categories: [
+          ...((current?.categories ?? serviceCategories).filter(
+            (category) => category.id !== saved.id
+          )),
+          saved
+        ].sort((first, second) => first.name.localeCompare(second.name)),
+        services: current?.services ?? resources
+      }));
+      setCategoryDraft(null);
+      setToast("Categoría creada.");
+    } catch {
+      setToast("No pudimos guardar la categoría.");
+    }
+  }
+
+  async function removeResource(index: number) {
+    const resource = resources[index];
+    if (!resource?.id) return;
+    try {
+      await deleteAvailabilityCatalogItem(resource.id);
+      setResources((current) => current.filter((_, currentIndex) => currentIndex !== index));
+      queryClient.setQueryData<{
+        categories: AvailabilityServiceCategory[];
+        services: AvailabilityResource[];
+      }>(queryKeys.availabilityCatalog, (current) => ({
+        categories: current?.categories ?? serviceCategories,
+        services: (current?.services ?? resources).filter((item) => item.id !== resource.id)
+      }));
+      setToast("Servicio eliminado.");
+    } catch {
+      setToast("No pudimos eliminar el servicio.");
+    }
+  }
+
+  async function removeCategory(categoryId: string, categoryName: string) {
+    try {
+      await deleteAvailabilityCategory(categoryId);
+      setServiceCategories((current) => current.filter((category) => category.id !== categoryId));
+      setResources((current) =>
+        current.map((resource) =>
+          resource.category === categoryName ? { ...resource, category: "" } : resource
+        )
+      );
+      queryClient.setQueryData<{
+        categories: AvailabilityServiceCategory[];
+        services: AvailabilityResource[];
+      }>(queryKeys.availabilityCatalog, (current) => ({
+        categories: (current?.categories ?? serviceCategories).filter(
+          (category) => category.id !== categoryId
+        ),
+        services: (current?.services ?? resources).map((resource) =>
+          resource.category === categoryName ? { ...resource, category: "" } : resource
+        )
+      }));
+      setToast("Categoría eliminada.");
+    } catch {
+      setToast("No pudimos eliminar la categoría.");
     }
   }
 
@@ -481,27 +548,41 @@ export function DashboardAvailabilityView() {
               </button>
             )}
           </div>
-          <button
-            type="button"
-            disabled={activeTab === "weekly" && isSavingWeekly}
-            onClick={() => void handlePrimaryAction()}
-            className={`rounded-md border border-[var(--color-border-strong)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonMotionClass}`}
-          >
-            {activeTab === "weekly"
-              ? isSavingWeekly
-                ? "Guardando..."
-                : "Guardar horarios"
-              : activeTab === "exceptions"
-                ? "+ Agregar excepción"
-                : "+ Agregar servicio"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {activeTab === "resources" && (
+              <button
+                type="button"
+                onClick={() => setCategoryDraft("")}
+                className={`rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)] ${buttonMotionClass}`}
+              >
+                + Crear categoría
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={activeTab === "weekly" && isSavingWeekly}
+              onClick={() => void handlePrimaryAction()}
+              className={`rounded-md px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
+                activeTab === "resources"
+                  ? "bg-[var(--color-accent)] text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)]"
+                  : "border border-[var(--color-border-strong)] text-[var(--color-ink)]"
+              } ${buttonMotionClass}`}
+            >
+              {activeTab === "weekly"
+                ? isSavingWeekly
+                  ? "Guardando..."
+                  : "Guardar horarios"
+                : activeTab === "exceptions"
+                  ? "+ Agregar excepción"
+                  : "+ Agregar servicio"}
+            </button>
+          </div>
         </div>
 
         {activeTab === "weekly" && (
           <AvailabilityWeeklySchedule
             activeDayMenu={activeDayMenu}
             availability={availability}
-            onAddSlot={addSlot}
             onDuplicateAll={duplicateDayToAll}
             onDuplicateDay={openDuplicateDialog}
             onRemoveSlot={removeSlot}
@@ -524,7 +605,9 @@ export function DashboardAvailabilityView() {
 
         {activeTab === "resources" && (
           <AvailabilityResourcesView
-            onEditResources={(index) => setActivePanel({ type: "resources", index })}
+            categories={serviceCategories}
+            onDeleteCategory={(category) => void removeCategory(category.id, category.name)}
+            onDeleteResource={(index) => void removeResource(index)}
             onEditRules={(index) => setActivePanel({ type: "rules", index })}
             resources={resources}
           />
@@ -538,9 +621,18 @@ export function DashboardAvailabilityView() {
           exceptions={exceptions}
           panel={activePanel}
           resources={resources}
+          categories={serviceCategories}
           onClose={() => setActivePanel(null)}
           onSaveException={saveException}
           onSaveResource={saveResource}
+        />
+      )}
+      {categoryDraft !== null && (
+        <CategoryModal
+          value={categoryDraft}
+          onChange={setCategoryDraft}
+          onClose={() => setCategoryDraft(null)}
+          onSave={() => void saveCategory(categoryDraft)}
         />
       )}
       {duplicateDraft && (
@@ -556,6 +648,57 @@ export function DashboardAvailabilityView() {
       )}
       {toast && <Toast message={toast} onDismiss={() => setToast("")} />}
     </section>
+  );
+}
+
+function CategoryModal({
+  value,
+  onChange,
+  onClose,
+  onSave
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <div className="w-full max-w-md rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+        <div className="border-b border-[var(--color-border)] pb-3">
+          <h2 className="text-lg font-semibold">Nueva categoría</h2>
+          <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+            Después vas a poder crear servicios dentro de esta categoría.
+          </p>
+        </div>
+        <label className="mt-4 grid gap-1.5 text-sm">
+          <span className="font-semibold text-[var(--color-muted-strong)]">Nombre</span>
+          <input
+            autoFocus
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="Ej. Cabello, Manos, Canchas"
+            className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.2)]"
+          />
+        </label>
+        <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`rounded-md border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-muted-strong)] ${buttonMotionClass}`}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            className={`rounded-md bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold text-[var(--color-button-text)] ${buttonMotionClass}`}
+          >
+            Crear categoría
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

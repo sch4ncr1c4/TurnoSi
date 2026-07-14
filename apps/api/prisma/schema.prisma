@@ -104,6 +104,7 @@ model Organization {
   memberships            Membership[]
   customers              Customer[]
   services               Service[]
+  serviceCategories      ServiceCategory[]
   resources              Resource[]
   appointments           Appointment[]
   availabilityRules      AvailabilityRule[]
@@ -198,12 +199,26 @@ model Customer {
   @@index([organizationId, blockedAt])
 }
 
+model ServiceCategory {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, name])
+}
+
 model Service {
   id                  String        @id @default(cuid())
   organizationId      String
   createdByUserId     String?
   name                String
   slug                String
+  category            String?
   description         String?
   durationMinutes     Int
   capacity            Int           @default(1)

@@ -1,7 +1,8 @@
 import { apiRequest } from "../../lib/api";
 import type {
   AvailabilityException,
-  AvailabilityResource
+  AvailabilityResource,
+  AvailabilityServiceCategory
 } from "./availability.types";
 
 export type WeeklyAvailabilityResponse = {
@@ -52,26 +53,34 @@ export async function getAvailabilityCatalog() {
   const response = await apiRequest<{
     success: true;
     data: {
-      id: string;
-      name: string;
-      durationMinutes: number;
-      capacity: number;
-      bufferMinutes: number;
-      priceCents: number | null;
-      resourceName: string;
-      online: boolean;
-    }[];
+      categories: AvailabilityServiceCategory[];
+      services: {
+        id: string;
+        name: string;
+        category: string;
+        durationMinutes: number;
+        capacity: number;
+        bufferMinutes: number;
+        priceCents: number | null;
+        resourceName: string;
+        online: boolean;
+      }[];
+    };
   }>("/api/v1/availability/catalog");
-  return response.data.map((item): AvailabilityResource => ({
-    id: item.id,
-    name: item.name,
-    duration: `${item.durationMinutes} min`,
-    capacity: String(item.capacity),
-    buffer: `${item.bufferMinutes} min`,
-    price: item.priceCents == null ? "" : String(item.priceCents / 100),
-    resource: item.resourceName || "Sin asignar",
-    online: item.online
-  }));
+  return {
+    categories: response.data.categories,
+    services: response.data.services.map((item): AvailabilityResource => ({
+      id: item.id,
+      name: item.name,
+      category: item.category ?? "",
+      duration: `${item.durationMinutes} min`,
+      capacity: String(item.capacity),
+      buffer: `${item.bufferMinutes} min`,
+      price: item.priceCents == null ? "" : String(item.priceCents / 100),
+      resource: item.resourceName || "Sin asignar",
+      online: item.online
+    }))
+  };
 }
 
 function parseMinutes(value: string) {
@@ -88,6 +97,7 @@ export function saveAvailabilityCatalogItem(item: AvailabilityResource) {
       method: item.id ? "PATCH" : "POST",
       body: JSON.stringify({
         name: item.name,
+        category: item.category.trim(),
         durationMinutes: parseMinutes(item.duration),
         capacity: Math.max(1, parseMinutes(item.capacity)),
         bufferMinutes: parseMinutes(item.buffer),
@@ -98,5 +108,29 @@ export function saveAvailabilityCatalogItem(item: AvailabilityResource) {
         online: item.online
       })
     }
+  );
+}
+
+export function saveAvailabilityCategory(name: string) {
+  return apiRequest<{ success: true; data: AvailabilityServiceCategory }>(
+    "/api/v1/availability/catalog/categories",
+    {
+      method: "POST",
+      body: JSON.stringify({ name })
+    }
+  );
+}
+
+export function deleteAvailabilityCatalogItem(id: string) {
+  return apiRequest<{ success: true; data: { deleted: true } }>(
+    `/api/v1/availability/catalog/${id}`,
+    { method: "DELETE" }
+  );
+}
+
+export function deleteAvailabilityCategory(id: string) {
+  return apiRequest<{ success: true; data: { deleted: true } }>(
+    `/api/v1/availability/catalog/categories/${id}`,
+    { method: "DELETE" }
   );
 }
