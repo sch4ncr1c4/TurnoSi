@@ -49,6 +49,13 @@ export function saveAvailabilityException(exception: AvailabilityException) {
   );
 }
 
+export function deleteAvailabilityException(id: string) {
+  return apiRequest<{ success: true; data: { deleted: true } }>(
+    `/api/v1/availability/exceptions/${id}`,
+    { method: "DELETE" }
+  );
+}
+
 export async function getAvailabilityCatalog() {
   const response = await apiRequest<{
     success: true;

@@ -149,6 +149,20 @@ availabilityRouter.post("/exceptions", authRateLimit, async (request, response) 
   const data = exceptionSchema.parse(request.body);
   const tenant = request.tenant!;
   requireEditor(tenant.role);
+  const existing = await prisma.availabilityException.findFirst({
+    where: {
+      organizationId: tenant.organizationId,
+      userId: null,
+      resourceId: null,
+      startsAt: {
+        gte: zonedTimeToUtc(data.date, 0, tenant.timezone),
+        lt: zonedTimeToUtc(data.date, 1440, tenant.timezone)
+      }
+    }
+  });
+  if (existing) {
+    throw new AppError(409, "DUPLICATE_EXCEPTION", "Date already has an exception");
+  }
   const exception = await prisma.availabilityException.create({
     data: {
       organizationId: tenant.organizationId,
@@ -166,6 +180,21 @@ availabilityRouter.patch("/exceptions/:exceptionId", authRateLimit, async (reque
   const data = exceptionSchema.parse(request.body);
   const tenant = request.tenant!;
   requireEditor(tenant.role);
+  const duplicate = await prisma.availabilityException.findFirst({
+    where: {
+      id: { not: exceptionId },
+      organizationId: tenant.organizationId,
+      userId: null,
+      resourceId: null,
+      startsAt: {
+        gte: zonedTimeToUtc(data.date, 0, tenant.timezone),
+        lt: zonedTimeToUtc(data.date, 1440, tenant.timezone)
+      }
+    }
+  });
+  if (duplicate) {
+    throw new AppError(409, "DUPLICATE_EXCEPTION", "Date already has an exception");
+  }
   const result = await prisma.availabilityException.updateMany({
     where: { id: exceptionId, organizationId: tenant.organizationId },
     data: {
@@ -177,6 +206,17 @@ availabilityRouter.patch("/exceptions/:exceptionId", authRateLimit, async (reque
   });
   if (!result.count) throw new AppError(404, "NOT_FOUND", "Exception not found");
   response.json(ok({ updated: true }));
+});
+
+availabilityRouter.delete("/exceptions/:exceptionId", authRateLimit, async (request, response) => {
+  const { exceptionId } = exceptionParamsSchema.parse(request.params);
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const result = await prisma.availabilityException.deleteMany({
+    where: { id: exceptionId, organizationId: tenant.organizationId }
+  });
+  if (!result.count) throw new AppError(404, "NOT_FOUND", "Exception not found");
+  response.json(ok({ deleted: true }));
 });
 
 availabilityRouter.get("/catalog", async (request, response) => {

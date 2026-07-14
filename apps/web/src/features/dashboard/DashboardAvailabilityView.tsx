@@ -23,6 +23,7 @@ import {
   getAvailabilityCatalog,
   getAvailabilityExceptions,
   getWeeklyAvailability,
+  deleteAvailabilityException,
   deleteAvailabilityCatalogItem,
   deleteAvailabilityCategory,
   saveAvailabilityCatalogItem,
@@ -307,12 +308,19 @@ export function DashboardAvailabilityView() {
   }
 
   function addException() {
+    const today = new Date().toISOString().slice(0, 10);
+    const existingIndex = exceptions.findIndex((exception) => exception.date === today);
+    if (existingIndex >= 0) {
+      setActivePanel({ type: "exception", index: existingIndex });
+      setToast("Ya existe una excepción para hoy.");
+      return;
+    }
     const nextIndex = exceptions.length;
 
     setExceptions((current) => [
       ...current,
       {
-        date: new Date().toISOString().slice(0, 10),
+        date: today,
         title: "Cierre del local",
         detail: "El local no atenderá en esta fecha.",
         status: "No laborable",
@@ -327,6 +335,13 @@ export function DashboardAvailabilityView() {
   }
 
   async function saveException(index: number, draft: AvailabilityException) {
+    const duplicate = exceptions.some((item, currentIndex) =>
+      currentIndex !== index && item.date === draft.date
+    );
+    if (duplicate) {
+      setToast("Ya existe una excepción para esa fecha.");
+      throw new Error("Duplicate exception date");
+    }
     try {
       const result = await saveAvailabilityException(draft);
       const saved = { ...draft, id: draft.id ?? result.data.id };
@@ -346,6 +361,23 @@ export function DashboardAvailabilityView() {
     } catch {
       setToast("No pudimos guardar la excepción.");
       throw new Error("Unable to save exception");
+    }
+  }
+
+  async function removeException(index: number) {
+    const exception = exceptions[index];
+    if (!exception?.id) return;
+    try {
+      await deleteAvailabilityException(exception.id);
+      setExceptions((current) => current.filter((_, currentIndex) => currentIndex !== index));
+      queryClient.setQueryData<AvailabilityException[]>(
+        queryKeys.availabilityExceptions,
+        (current = []) => current.filter((item) => item.id !== exception.id)
+      );
+      setToast("Excepción eliminada.");
+    } catch {
+      setToast("No pudimos eliminar la excepción.");
+      throw new Error("Unable to delete exception");
     }
   }
 
@@ -623,6 +655,7 @@ export function DashboardAvailabilityView() {
           resources={resources}
           categories={serviceCategories}
           onClose={() => setActivePanel(null)}
+          onDeleteException={removeException}
           onSaveException={saveException}
           onSaveResource={saveResource}
         />

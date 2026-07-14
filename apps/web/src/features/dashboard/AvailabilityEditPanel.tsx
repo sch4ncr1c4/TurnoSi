@@ -15,6 +15,7 @@ type AvailabilityEditPanelProps = {
   resources: AvailabilityResource[];
   categories: AvailabilityServiceCategory[];
   onClose: () => void;
+  onDeleteException: (index: number) => Promise<void>;
   onSaveException: (index: number, value: AvailabilityException) => Promise<void>;
   onSaveResource: (index: number, value: AvailabilityResource) => Promise<void>;
 };
@@ -38,6 +39,7 @@ export function AvailabilityEditPanel({
   resources,
   categories,
   onClose,
+  onDeleteException,
   onSaveException,
   onSaveResource
 }: AvailabilityEditPanelProps) {
@@ -107,6 +109,17 @@ export function AvailabilityEditPanel({
         await onSaveResource(panel.index, resourceDraft);
       }
 
+      onClose();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function deleteException() {
+    if (isSaving || panel.type !== "exception") return;
+    setIsSaving(true);
+    try {
+      await onDeleteException(panel.index);
       onClose();
     } finally {
       setIsSaving(false);
@@ -299,6 +312,16 @@ export function AvailabilityEditPanel({
         )}
 
         <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:justify-end">
+          {panel.type === "exception" && exception?.id && (
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => void deleteException()}
+              className={`rounded-md border border-[#e7b9b2] px-4 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5] disabled:cursor-not-allowed disabled:opacity-60 sm:mr-auto ${buttonMotionClass}`}
+            >
+              Eliminar
+            </button>
+          )}
           <button
             type="button"
             disabled={isSaving}
