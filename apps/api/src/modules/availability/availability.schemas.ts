@@ -30,6 +30,10 @@ export const weeklyAvailabilitySchema = z.object({
   }
 });
 
+export const branchQuerySchema = z.object({
+  branchId: z.string().min(1).optional()
+});
+
 export const exceptionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   title: z.string().trim().min(2).max(120),

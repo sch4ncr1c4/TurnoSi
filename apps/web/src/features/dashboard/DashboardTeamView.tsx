@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button, Card, CardBody, CardHeader, Toast } from "../../components/ui";
+import { Button, Card, CardBody, CardHeader, ModalCloseButton, Toast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { queryKeys } from "../../lib/query-keys";
 import {
@@ -10,6 +11,7 @@ import {
   updateTeamMember,
   type TeamMember
 } from "./team.api";
+import { getBranches, type Branch } from "./branches.api";
 
 type TeamFormDraft = Pick<
   TeamMember,
@@ -21,6 +23,7 @@ type TeamFormDraft = Pick<
   | "bookingsEnabled"
   | "visibleInPublicBooking"
   | "hourlyCapacity"
+  | "branchIds"
 >;
 
 type TeamDraftMap = Record<string, TeamFormDraft>;
@@ -33,7 +36,8 @@ const initialCreateDraft: TeamFormDraft = {
   role: "member",
   bookingsEnabled: true,
   visibleInPublicBooking: true,
-  hourlyCapacity: 2
+  hourlyCapacity: 2,
+  branchIds: []
 };
 
 function roleLabel(role: TeamMember["role"]) {
@@ -59,7 +63,8 @@ function toDraft(member: TeamMember): TeamFormDraft {
     role: member.role,
     bookingsEnabled: member.bookingsEnabled,
     visibleInPublicBooking: member.visibleInPublicBooking,
-    hourlyCapacity: member.hourlyCapacity
+    hourlyCapacity: member.hourlyCapacity,
+    branchIds: member.branchIds
   };
 }
 
@@ -68,6 +73,10 @@ export function DashboardTeamView() {
   const teamQuery = useQuery({
     queryKey: queryKeys.teamMembers,
     queryFn: getTeamMembers
+  });
+  const branchesQuery = useQuery({
+    queryKey: queryKeys.organizationBranches,
+    queryFn: getBranches
   });
   const [drafts, setDrafts] = useState<TeamDraftMap>({});
   const [createDraft, setCreateDraft] = useState<TeamFormDraft>(initialCreateDraft);
@@ -90,7 +99,7 @@ export function DashboardTeamView() {
   function updateDraft(
     memberId: string,
     field: keyof TeamFormDraft,
-    value: string | boolean | number
+    value: string | boolean | number | string[]
   ) {
     setDrafts((current) => ({
       ...current,
@@ -191,7 +200,21 @@ export function DashboardTeamView() {
                 Gestioná datos, permisos y capacidad de cada persona.
               </p>
             </div>
-            <Button type="button" variant="primary" onClick={() => setIsCreateOpen(true)}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                const mainBranchId =
+                  branchesQuery.data?.find((branch) => branch.isMain)?.id ??
+                  branchesQuery.data?.[0]?.id ??
+                  "";
+                setCreateDraft({
+                  ...initialCreateDraft,
+                  branchIds: mainBranchId ? [mainBranchId] : []
+                });
+                setIsCreateOpen(true);
+              }}
+            >
               + Agregar integrante
             </Button>
           </div>
@@ -231,6 +254,14 @@ export function DashboardTeamView() {
                             </strong>
                           </span>
                         </div>
+                        <p className="mt-1.5 truncate text-xs text-[var(--color-muted-strong)]">
+                          Sedes:{" "}
+                          <strong className="font-medium text-[var(--color-ink)]">
+                            {member.branches.length
+                              ? member.branches.map((branch) => branch.name).join(", ")
+                              : "Sede principal"}
+                          </strong>
+                        </p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           <StatusLabel active={member.bookingsEnabled} label="Toma turnos" />
                           <StatusLabel active={member.visibleInPublicBooking} label="Visible online" />
@@ -269,6 +300,7 @@ export function DashboardTeamView() {
       </Card>
       {isCreateOpen && (
         <TeamModal
+          branches={branchesQuery.data ?? []}
           title="Agregar integrante"
           description="Creá su acceso y definí cómo participa en la agenda."
           draft={createDraft}
@@ -285,6 +317,7 @@ export function DashboardTeamView() {
       )}
       {editingId && teamQuery.data?.some((member) => member.id === editingId) && (
         <TeamModal
+          branches={branchesQuery.data ?? []}
           title="Editar integrante"
           description="Actualizá sus datos, permisos y capacidad."
           draft={drafts[editingId] ?? toDraft(teamQuery.data.find((member) => member.id === editingId)!)}
@@ -305,6 +338,7 @@ export function DashboardTeamView() {
 }
 
 function TeamModal({
+  branches,
   description,
   draft,
   isSaving,
@@ -314,12 +348,13 @@ function TeamModal({
   submitLabel,
   title
 }: {
+  branches: Branch[];
   description: string;
   draft: TeamFormDraft;
   isSaving: boolean;
   onChange: (
     field: keyof TeamFormDraft,
-    value: string | boolean | number
+    value: string | boolean | number | string[]
   ) => void;
   onClose: () => void;
   onSubmit: () => void;
@@ -330,11 +365,19 @@ function TeamModal({
     !(draft.firstName ?? "").trim() ||
     !(draft.lastName ?? "").trim() ||
     !(draft.phone ?? "").trim() ||
-    !draft.email.trim();
+    !draft.email.trim() ||
+    draft.branchIds.length === 0;
 
-  return (
+  function toggleBranch(branchId: string) {
+    const next = draft.branchIds.includes(branchId)
+      ? draft.branchIds.filter((id) => id !== branchId)
+      : [...draft.branchIds, branchId];
+    onChange("branchIds", next);
+  }
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center"
+      className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center"
       role="presentation"
       onMouseDown={(event) => {
         if (!isSaving && event.target === event.currentTarget) onClose();
@@ -344,7 +387,7 @@ function TeamModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="team-modal-title"
-        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
       >
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-4">
           <div>
@@ -355,14 +398,7 @@ function TeamModal({
               {description}
             </p>
           </div>
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm font-semibold text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Cerrar
-          </button>
+          <ModalCloseButton disabled={isSaving} onClick={onClose} />
         </div>
 
         <div className="grid gap-3 p-4 sm:grid-cols-2">
@@ -391,6 +427,44 @@ function TeamModal({
             <p className="border-t border-[var(--color-border)] pt-4 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-muted-strong)]">
               Acceso y agenda
             </p>
+          </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <p className="text-xs font-medium text-[var(--color-muted-strong)]">
+              Sedes donde atiende
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {branches.map((branch) => {
+                const checked = draft.branchIds.includes(branch.id);
+                return (
+                  <button
+                    key={branch.id}
+                    type="button"
+                    onClick={() => toggleBranch(branch.id)}
+                    className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition ${
+                      checked
+                        ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.06)] text-[var(--color-ink)]"
+                        : "border-[var(--color-border)] bg-white/60 text-[var(--color-muted-strong)]"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">{branch.name}</span>
+                      {branch.isMain && (
+                        <span className="text-xs text-[var(--color-muted)]">Principal</span>
+                      )}
+                    </span>
+                    <span
+                      className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-xs font-bold ${
+                        checked
+                          ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-white"
+                          : "border-[var(--color-border-strong)] text-transparent"
+                      }`}
+                    >
+                      ✓
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <SelectField
             label="Rol en el negocio"
@@ -434,7 +508,8 @@ function TeamModal({
           </Button>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
 

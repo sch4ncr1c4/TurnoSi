@@ -9,6 +9,7 @@ import {
 import { es } from "date-fns/locale";
 import { useState } from "react";
 
+import { ModalCloseButton } from "../../components/ui";
 import {
   scheduleOptions,
   statusClassName,
@@ -650,7 +651,7 @@ function AppointmentDetailsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center"
+      className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -660,7 +661,7 @@ function AppointmentDetailsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="appointment-details-title"
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-lg overflow-x-hidden rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
       >
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-4 sm:p-5">
           <div>
@@ -671,13 +672,7 @@ function AppointmentDetailsModal({
               {appointment.client}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm font-semibold text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.08)]"
-          >
-            Cerrar
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <div className="divide-y divide-[var(--color-border)] px-4 sm:px-5">

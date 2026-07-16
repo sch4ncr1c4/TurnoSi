@@ -36,7 +36,7 @@ export function StatusChangeModal({
   return (
     <div
       aria-modal="true"
-      className="fixed inset-0 z-50 grid place-items-center bg-[rgba(32,24,54,0.68)] px-4 backdrop-blur-sm"
+      className="modal-overlay-enter fixed inset-0 z-50 grid place-items-center bg-[rgba(32,24,54,0.68)] px-4 backdrop-blur-sm"
       role="dialog"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
@@ -44,7 +44,7 @@ export function StatusChangeModal({
         }
       }}
     >
-      <div className="w-full max-w-lg rounded-lg border border-[#d8cbbf] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.38)] ring-1 ring-[#fffaf4]">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#d8cbbf] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.38)] ring-1 ring-[#fffaf4]">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
           {draft.isCorrection ? "Editar estado" : "Cambiar estado"}
         </p>

@@ -51,9 +51,9 @@ export function PlansPage({ brand }: { brand: ReactNode }) {
           </Button>
         </div>
       </header>
-      <main className="flex flex-1 items-center px-3 py-6 sm:px-6 sm:py-10">
+      <main className="flex flex-1 items-center px-3 py-4 sm:px-6 sm:py-6">
         <section className="mx-auto w-full max-w-6xl">
-          <div className="mb-5 text-center">
+          <div className="mb-4 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
               Activá tu cuenta
             </p>
@@ -65,7 +65,7 @@ export function PlansPage({ brand }: { brand: ReactNode }) {
               comenzar con 7 días gratuitos o elegir un plan mensual.
             </p>
           </div>
-          <BillingSettings />
+          <BillingSettings compact />
         </section>
       </main>
     </PageLayout>

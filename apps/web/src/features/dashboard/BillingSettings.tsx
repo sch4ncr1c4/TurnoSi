@@ -15,35 +15,38 @@ const plans: {
   name: string;
   price: string;
   description: string;
+  highlight: string;
 }[] = [
   {
     id: "initial",
     name: "Inicial",
     price: "$15",
-    description: "Agenda pública y hasta 3 miembros."
+    description: "Agenda pública y hasta 3 miembros.",
+    highlight: "Para empezar"
   },
   {
     id: "professional",
     name: "Profesional",
     price: "$24.000",
-    description: "Equipo ilimitado y soporte prioritario."
+    description: "Equipo ilimitado y soporte prioritario.",
+    highlight: "Más elegido"
   },
   {
     id: "operation",
     name: "Operación",
     price: "$39.000",
-    description: "Para operaciones y agendas más exigentes."
+    description: "Para operaciones y agendas más exigentes.",
+    highlight: "Alto volumen"
   }
 ];
 
 const statusLabels = {
   pending: "Pendiente de autorización",
-  authorized: "Activo",
   paused: "Pausado",
   canceled: "Cancelado"
 } as const;
 
-export function BillingSettings() {
+export function BillingSettings({ compact = false }: { compact?: boolean }) {
   const session = useSessionQuery();
   const queryClient = useQueryClient();
   const subscriptionQuery = useQuery({
@@ -60,6 +63,16 @@ export function BillingSettings() {
   const [payerEmail, setPayerEmail] = useState("");
   const [message, setMessage] = useState("");
   const subscription = subscriptionQuery.data;
+  const currentPlanName =
+    subscription?.plan === "trial"
+      ? "Prueba gratuita"
+      : plans.find((plan) => plan.id === subscription?.plan)?.name;
+  const subscriptionStatusLabel =
+    subscription?.status === "authorized" && currentPlanName
+      ? `Plan actual: ${currentPlanName}`
+      : subscription && subscription.status !== "authorized"
+        ? statusLabels[subscription.status]
+        : "";
   const effectivePayerEmail =
     payerEmail ||
     subscription?.payerEmail ||
@@ -114,90 +127,123 @@ export function BillingSettings() {
           </div>
           {subscription && (
             <span className="w-fit rounded-full bg-[rgba(32,24,54,0.08)] px-3 py-1 text-xs font-semibold">
-              {statusLabels[subscription.status]}
+              {subscriptionStatusLabel}
             </span>
           )}
         </div>
       </CardHeader>
-      <CardBody className="p-4 sm:p-5">
-        {!subscription || subscription.status !== "authorized" ? (
-          <label className="mb-4 grid max-w-md gap-1.5 text-sm">
-            <span className="font-semibold text-[var(--color-muted-strong)]">
-              Email de la cuenta de Mercado Pago
-            </span>
-            <input
-              type="email"
-              value={effectivePayerEmail}
-              onChange={(event) => setPayerEmail(event.target.value)}
-              placeholder="Ej: comprador@mercadopago.com"
-              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)]"
-            />
-          </label>
-        ) : null}
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {!subscription?.trialStartedAt && (
-            <article className="rounded-lg border border-[var(--color-accent)] bg-[rgba(253,134,6,0.08)] p-4">
-              <h3 className="font-semibold">Prueba gratuita</h3>
-              <p className="mt-2 font-mono text-xl font-semibold">$0</p>
-              <p className="mt-2 min-h-10 text-xs leading-5 text-[var(--color-muted-strong)]">
-                Acceso completo durante 7 días. Sin Mercado Pago ni tarjeta.
+      <CardBody className={compact ? "p-4" : "p-4 sm:p-6"}>
+        <div className="mx-auto max-w-6xl">
+          {!compact && (
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                Activá tu cuenta
               </p>
-              <Button
-                type="button"
-                variant="accent"
-                disabled={selectedPlan !== null}
-                onClick={() => void activateTrial()}
-                className="mt-4 w-full"
-              >
-                {selectedPlan === "trial"
-                  ? "Activando..."
-                  : "Probar gratis 7 días"}
-              </Button>
-            </article>
+              <h3 className="mt-2 text-2xl font-semibold text-[var(--color-ink)]">
+                Elegí cómo querés empezar
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
+                Podés probar TurnoSi gratis o activar un plan mensual con Mercado Pago.
+              </p>
+            </div>
           )}
-          {plans.map((plan) => {
-            const current =
-              subscription?.plan === plan.id &&
-              subscription.status === "authorized";
-            return (
-              <article
-                key={plan.id}
-                className={`rounded-lg border p-4 ${
-                  current
-                    ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.05)]"
-                    : "border-[var(--color-border)] bg-white/45"
-                }`}
-              >
-                <h3 className="font-semibold">{plan.name}</h3>
-                <p className="mt-2 font-mono text-xl font-semibold">
-                  {plan.price}
-                  <span className="font-sans text-xs font-normal text-[var(--color-muted)]">
-                    {" "}/ mes
-                  </span>
-                </p>
-                <p className="mt-2 min-h-10 text-xs leading-5 text-[var(--color-muted-strong)]">
-                  {plan.description}
+
+          {!subscription || subscription.status !== "authorized" ? (
+            <label className={`mx-auto grid max-w-md gap-1.5 text-left text-sm ${compact ? "mt-1" : "mt-5"}`}>
+              <span className="font-semibold text-[var(--color-muted-strong)]">
+                Email de la cuenta de Mercado Pago
+              </span>
+              <input
+                type="email"
+                value={effectivePayerEmail}
+                onChange={(event) => setPayerEmail(event.target.value)}
+                placeholder="Ej: comprador@mercadopago.com"
+                className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white/80 px-3 text-center outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
+              />
+            </label>
+          ) : null}
+
+          <div
+            className={`${compact ? "mt-4" : "mt-6"} grid justify-items-center gap-4 sm:grid-cols-2 ${
+              subscription?.trialStartedAt ? "xl:grid-cols-3" : "xl:grid-cols-4"
+            }`}
+          >
+            {!subscription?.trialStartedAt && (
+              <article className={`${compact ? "min-h-[230px] p-4" : "min-h-[260px] p-5"} flex w-full max-w-[280px] flex-col rounded-2xl border border-[var(--color-accent)] bg-[linear-gradient(135deg,rgba(253,134,6,0.12),rgba(255,251,244,0.9))] shadow-[0_18px_48px_rgba(253,134,6,0.1)]`}>
+                <span className="w-fit rounded-full bg-[rgba(253,134,6,0.14)] px-3 py-1 text-xs font-bold text-[var(--color-accent)]">
+                  Gratis
+                </span>
+                <h3 className="mt-4 text-lg font-semibold">Prueba gratuita</h3>
+                <p className="mt-3 font-mono text-3xl font-semibold">$0</p>
+                <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
+                  Acceso completo durante 7 días. Sin Mercado Pago ni tarjeta.
                 </p>
                 <Button
                   type="button"
-                  variant={current ? "secondary" : "primary"}
-                  disabled={
-                    current ||
-                    selectedPlan !== null ||
-                    !effectivePayerEmail.trim()
-                  }
-                  onClick={() => void subscribe(plan.id)}
-                  className="mt-4 w-full"
+                  variant="accent"
+                  disabled={selectedPlan !== null}
+                  onClick={() => void activateTrial()}
+                  className="mt-auto w-full"
                 >
-                  {current
-                    ? "Plan actual"
-                    : selectedPlan === plan.id
-                      ? "Abriendo Mercado Pago..."
-                      : "Elegir plan"}
+                  {selectedPlan === "trial"
+                    ? "Activando..."
+                    : "Probar gratis 7 días"}
                 </Button>
               </article>
-            );
-          })}
+            )}
+            {plans.map((plan) => {
+              const current =
+                subscription?.plan === plan.id &&
+                subscription.status === "authorized";
+              return (
+                <article
+                  key={plan.id}
+                  className={`${compact ? "min-h-[230px] p-4" : "min-h-[260px] p-5"} flex w-full max-w-[280px] flex-col rounded-2xl border transition hover:-translate-y-0.5 hover:shadow-[0_18px_46px_rgba(32,24,54,0.08)] ${
+                    current
+                      ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.05)]"
+                      : "border-[var(--color-border)] bg-white/62"
+                  }`}
+                >
+                  <span
+                    className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
+                      plan.id === "professional"
+                        ? "bg-[var(--color-accent)] text-white"
+                        : "bg-[rgba(32,24,54,0.07)] text-[var(--color-muted-strong)]"
+                    }`}
+                  >
+                    {plan.id === "professional" ? "Recomendado" : plan.highlight}
+                  </span>
+                  <h3 className="mt-4 text-lg font-semibold">{plan.name}</h3>
+                  <p className="mt-3 font-mono text-3xl font-semibold">
+                    {plan.price}
+                    <span className="font-sans text-xs font-normal text-[var(--color-muted)]">
+                      {" "}/ mes
+                    </span>
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
+                    {plan.description}
+                  </p>
+                  <Button
+                    type="button"
+                    variant={current ? "secondary" : "primary"}
+                    disabled={
+                      current ||
+                      selectedPlan !== null ||
+                      !effectivePayerEmail.trim()
+                    }
+                    onClick={() => void subscribe(plan.id)}
+                    className="mt-auto w-full"
+                  >
+                    {current
+                      ? "Plan actual"
+                      : selectedPlan === plan.id
+                        ? "Abriendo Mercado Pago..."
+                        : "Elegir plan"}
+                  </Button>
+                </article>
+              );
+            })}
+          </div>
         </div>
         {message && (
           <p className="mt-4 rounded-md border border-[#e7b9b2] bg-[#fde8e5] px-3 py-2 text-sm text-[#9f1f16]">

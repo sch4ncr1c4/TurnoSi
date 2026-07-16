@@ -22,3 +22,16 @@ export const updateOrganizationSettingsSchema = z.object({
     )
     .max(2)
 }).partial();
+
+export const branchSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  phone: z.string().trim().max(40).optional().default(""),
+  whatsapp: z.string().trim().max(40).optional().default(""),
+  address: z.string().trim().max(240).optional().default(""),
+  city: z.string().trim().max(120).optional().default(""),
+  province: z.string().trim().max(120).optional().default("")
+});
+
+export const branchParamsSchema = z.object({
+  branchId: z.string().min(1)
+});

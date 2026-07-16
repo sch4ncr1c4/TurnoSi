@@ -6,12 +6,14 @@ export const publicBookingParamsSchema = z.object({
 
 export const publicSlotsQuerySchema = z.object({
   serviceId: z.string().cuid(),
+  branchId: z.string().min(1).optional(),
   assigneeId: z.string().cuid().optional(),
   days: z.coerce.number().int().min(1).max(30).default(14)
 });
 
 export const createPublicBookingSchema = z.object({
   serviceId: z.string().cuid(),
+  branchId: z.string().min(1).optional(),
   assigneeId: z.string().cuid().optional(),
   startsAt: z.string().datetime(),
   name: z.string().trim().min(2).max(120),

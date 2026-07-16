@@ -8,6 +8,7 @@ import { slugify } from "../../lib/slugify.js";
 import { zonedTimeToUtc, parseTimeString } from "../../lib/timezone.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
 import {
+  branchQuerySchema,
   catalogItemSchema,
   catalogCategoryParamsSchema,
   catalogCategorySchema,
@@ -19,12 +20,29 @@ import {
 
 export const availabilityRouter = Router();
 
+async function resolveBranchId(organizationId: string, branchId?: string) {
+  if (branchId) {
+    const branch = await prisma.branch.findFirst({
+      where: { id: branchId, organizationId, isActive: true }
+    });
+    if (!branch) throw new AppError(404, "NOT_FOUND", "Branch not found");
+    return branch.id;
+  }
+  const branch = await prisma.branch.findFirst({
+    where: { organizationId, isMain: true, isActive: true }
+  });
+  return branch?.id ?? null;
+}
+
 availabilityRouter.get("/weekly", async (request, response) => {
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
 
   const rules = await prisma.availabilityRule.findMany({
     where: {
       organizationId: tenant.organizationId,
+      branchId: resolvedBranchId,
       userId: null,
       resourceId: null
     },
@@ -48,11 +66,14 @@ availabilityRouter.get("/weekly", async (request, response) => {
 availabilityRouter.put("/weekly", authRateLimit, async (request, response) => {
   const data = weeklyAvailabilitySchema.parse(request.body);
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
 
   const rules = data.days.flatMap((day) =>
     day.slots.map((slot) => ({
       organizationId: tenant.organizationId,
+      branchId: resolvedBranchId,
       weekday: day.weekday,
       startMinute: slot.startMinute,
       endMinute: slot.endMinute,
@@ -64,6 +85,7 @@ availabilityRouter.put("/weekly", authRateLimit, async (request, response) => {
     await transaction.availabilityRule.deleteMany({
       where: {
         organizationId: tenant.organizationId,
+        branchId: resolvedBranchId,
         userId: null,
         resourceId: null
       }
@@ -124,8 +146,15 @@ function localTimeInTimezone(date: Date, timezone: string) {
 
 availabilityRouter.get("/exceptions", async (request, response) => {
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   const exceptions = await prisma.availabilityException.findMany({
-    where: { organizationId: tenant.organizationId, userId: null, resourceId: null },
+    where: {
+      organizationId: tenant.organizationId,
+      branchId: resolvedBranchId,
+      userId: null,
+      resourceId: null
+    },
     orderBy: { startsAt: "asc" }
   });
   response.json(ok(exceptions.map((exception) => ({
@@ -148,10 +177,13 @@ availabilityRouter.get("/exceptions", async (request, response) => {
 availabilityRouter.post("/exceptions", authRateLimit, async (request, response) => {
   const data = exceptionSchema.parse(request.body);
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
   const existing = await prisma.availabilityException.findFirst({
     where: {
       organizationId: tenant.organizationId,
+      branchId: resolvedBranchId,
       userId: null,
       resourceId: null,
       startsAt: {
@@ -166,6 +198,7 @@ availabilityRouter.post("/exceptions", authRateLimit, async (request, response) 
   const exception = await prisma.availabilityException.create({
     data: {
       organizationId: tenant.organizationId,
+      branchId: resolvedBranchId,
       label: data.title,
       notes: data.detail,
       isAvailable: data.status === "Horario especial",
@@ -179,11 +212,14 @@ availabilityRouter.patch("/exceptions/:exceptionId", authRateLimit, async (reque
   const { exceptionId } = exceptionParamsSchema.parse(request.params);
   const data = exceptionSchema.parse(request.body);
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
   const duplicate = await prisma.availabilityException.findFirst({
     where: {
       id: { not: exceptionId },
       organizationId: tenant.organizationId,
+      branchId: resolvedBranchId,
       userId: null,
       resourceId: null,
       startsAt: {
@@ -196,7 +232,7 @@ availabilityRouter.patch("/exceptions/:exceptionId", authRateLimit, async (reque
     throw new AppError(409, "DUPLICATE_EXCEPTION", "Date already has an exception");
   }
   const result = await prisma.availabilityException.updateMany({
-    where: { id: exceptionId, organizationId: tenant.organizationId },
+    where: { id: exceptionId, organizationId: tenant.organizationId, branchId: resolvedBranchId },
     data: {
       label: data.title,
       notes: data.detail,
@@ -211,9 +247,11 @@ availabilityRouter.patch("/exceptions/:exceptionId", authRateLimit, async (reque
 availabilityRouter.delete("/exceptions/:exceptionId", authRateLimit, async (request, response) => {
   const { exceptionId } = exceptionParamsSchema.parse(request.params);
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
   const result = await prisma.availabilityException.deleteMany({
-    where: { id: exceptionId, organizationId: tenant.organizationId }
+    where: { id: exceptionId, organizationId: tenant.organizationId, branchId: resolvedBranchId }
   });
   if (!result.count) throw new AppError(404, "NOT_FOUND", "Exception not found");
   response.json(ok({ deleted: true }));

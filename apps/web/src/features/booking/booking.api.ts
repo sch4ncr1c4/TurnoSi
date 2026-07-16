@@ -27,8 +27,19 @@ export type PublicBookingData = {
       zoom: number;
     }[];
   };
+  branches: {
+    id: string;
+    name: string;
+    address: string | null;
+    city: string | null;
+    province: string | null;
+    phone: string | null;
+    whatsapp: string | null;
+    isMain: boolean;
+  }[];
   team: {
     id: string;
+    branchIds: string[];
     name: string;
     hourlyCapacity: number;
   }[];
@@ -62,9 +73,11 @@ export async function getPublicBooking(slug: string) {
 export async function getPublicSlots(
   slug: string,
   serviceId: string,
+  branchId?: string,
   assigneeId?: string
 ) {
   const params = new URLSearchParams({ serviceId });
+  if (branchId) params.set("branchId", branchId);
   if (assigneeId) params.set("assigneeId", assigneeId);
   const response = await apiRequest<{ success: true; data: PublicSlotsData }>(
     `/api/v1/public/booking/${slug}/slots?${params.toString()}`
@@ -79,6 +92,7 @@ export function createPublicAppointment(
   slug: string,
   data: BookingConfirmData & {
     serviceId: string;
+    branchId?: string;
     startsAt: string;
     assigneeId?: string;
   }

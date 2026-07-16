@@ -46,6 +46,14 @@ function serializeTeamMember(
     bookingsEnabled: boolean;
     visibleInPublicBooking: boolean;
     hourlyCapacity: number;
+    branches?: {
+      branchId: string;
+      branch: {
+        id: string;
+        name: string;
+        isMain: boolean;
+      };
+    }[];
     user: {
       id: string;
       firstName: string | null;
@@ -73,6 +81,12 @@ function serializeTeamMember(
     bookingsEnabled: member.bookingsEnabled,
     visibleInPublicBooking: member.visibleInPublicBooking,
     hourlyCapacity: member.hourlyCapacity,
+    branchIds: member.branches?.map((item) => item.branchId) ?? [],
+    branches: member.branches?.map((item) => ({
+      id: item.branch.id,
+      name: item.branch.name,
+      isMain: item.branch.isMain
+    })) ?? [],
     todayAssignedCount: meta?.todayAssignedCount ?? 0,
     upcomingAssignedCount: meta?.upcomingAssignedCount ?? 0,
     temporaryPassword: meta?.temporaryPassword ?? null,
@@ -88,6 +102,46 @@ function generateTemporaryPassword() {
   const symbols = ["!", "@", "#", "$", "%", "&"];
   const symbol = symbols[bytes[8] % symbols.length];
   return `${upper}-${lower}-${String(digits).padStart(4, "0")}${symbol}`;
+}
+
+async function resolveMemberBranchIds(organizationId: string, branchIds: string[]) {
+  if (branchIds.length > 0) {
+    const branches = await prisma.branch.findMany({
+      where: {
+        id: { in: branchIds },
+        organizationId,
+        isActive: true
+      },
+      select: { id: true }
+    });
+    if (branches.length !== new Set(branchIds).size) {
+      throw new AppError(400, "INVALID_BRANCH", "Invalid branch selection");
+    }
+    return branches.map((branch) => branch.id);
+  }
+  const mainBranch = await prisma.branch.findFirst({
+    where: { organizationId, isMain: true, isActive: true },
+    select: { id: true }
+  });
+  if (mainBranch) return [mainBranch.id];
+  const organization = await prisma.organization.findUniqueOrThrow({
+    where: { id: organizationId }
+  });
+  const branch = await prisma.branch.create({
+    data: {
+      organizationId,
+      name: "Sede principal",
+      slug: "sede-principal",
+      phone: organization.phone,
+      whatsapp: organization.whatsapp,
+      address: organization.address,
+      city: organization.city,
+      province: organization.province,
+      isMain: true
+    },
+    select: { id: true }
+  });
+  return [branch.id];
 }
 
 teamRouter.post("/", authRateLimit, async (request, response) => {
@@ -110,6 +164,7 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
   if (data.role === "owner" || (tenant.role === "admin" && data.role !== "member")) {
     throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
   }
+  const branchIds = await resolveMemberBranchIds(tenant.organizationId, data.branchIds);
 
   const temporaryPassword = generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
@@ -132,7 +187,7 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
           }
         });
 
-    return transaction.membership.create({
+    const membership = await transaction.membership.create({
       data: {
         userId: user.id,
         organizationId: tenant.organizationId,
@@ -142,6 +197,23 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
         hourlyCapacity: data.hourlyCapacity
       },
       include: { user: true }
+    });
+    if (branchIds.length > 0) {
+      await transaction.membershipBranch.createMany({
+        data: branchIds.map((branchId) => ({
+          membershipId: membership.id,
+          branchId
+        }))
+      });
+    }
+    return transaction.membership.findUniqueOrThrow({
+      where: { id: membership.id },
+      include: {
+        branches: {
+          include: { branch: { select: { id: true, name: true, isMain: true } } }
+        },
+        user: true
+      }
     });
   });
 
@@ -160,6 +232,9 @@ teamRouter.get("/", async (request, response) => {
   const members = await prisma.membership.findMany({
     where: { organizationId: tenant.organizationId },
     include: {
+      branches: {
+        include: { branch: { select: { id: true, name: true, isMain: true } } }
+      },
       user: {
         select: {
           id: true,
@@ -220,6 +295,9 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
       organizationId: tenant.organizationId
     },
     include: {
+      branches: {
+        include: { branch: { select: { id: true, name: true, isMain: true } } }
+      },
       user: {
         select: {
           id: true,
@@ -235,46 +313,82 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
     throw new AppError(404, "NOT_FOUND", "Team member not found");
   }
 
+  const isSelf = membership.userId === tenant.userId;
+  const isOwnerMembership = membership.role === "owner";
+
   if (
-    membership.role === "owner" ||
-    data.role === "owner" ||
+    (isOwnerMembership && !isSelf) ||
+    (isOwnerMembership && data.role !== "owner") ||
+    (!isOwnerMembership && data.role === "owner") ||
     (tenant.role === "admin" && (membership.role !== "member" || data.role !== "member"))
   ) {
     throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
   }
 
-  if (
+  const hasProfileChanges =
     data.email.toLowerCase() !== membership.user.email.toLowerCase() ||
     data.firstName !== membership.user.firstName ||
     data.lastName !== membership.user.lastName ||
-    data.phone !== membership.user.phone
-  ) {
+    data.phone !== membership.user.phone;
+
+  if (hasProfileChanges && !isSelf) {
     throw new AppError(
       403,
       "PROFILE_CHANGE_FORBIDDEN",
       "Team members must update their own profile"
     );
   }
+  const branchIds = await resolveMemberBranchIds(tenant.organizationId, data.branchIds);
 
-  const updated = await prisma.membership.update({
-    where: { id: membershipId },
-    data: {
-      role: data.role,
-      bookingsEnabled: data.bookingsEnabled,
-      visibleInPublicBooking: data.visibleInPublicBooking,
-      hourlyCapacity: data.hourlyCapacity
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          email: true
+  const updated = await prisma.$transaction(async (transaction) => {
+    if (hasProfileChanges) {
+      await transaction.user.update({
+        where: { id: membership.userId },
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email.toLowerCase()
+        }
+      });
+    }
+    await transaction.membership.update({
+      where: { id: membershipId },
+      data: {
+        role: data.role,
+        bookingsEnabled: data.bookingsEnabled,
+        visibleInPublicBooking: data.visibleInPublicBooking,
+        hourlyCapacity: data.hourlyCapacity
+      }
+    });
+    await transaction.membershipBranch.deleteMany({
+      where: { membershipId }
+    });
+    if (branchIds.length > 0) {
+      await transaction.membershipBranch.createMany({
+        data: branchIds.map((branchId) => ({
+          membershipId,
+          branchId
+        }))
+      });
+    }
+    return transaction.membership.findUniqueOrThrow({
+      where: { id: membershipId },
+      include: {
+        branches: {
+          include: { branch: { select: { id: true, name: true, isMain: true } } }
+        },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true
+          }
         }
       }
-    }
+    });
   });
 
   response.json(ok(serializeTeamMember(updated)));

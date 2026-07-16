@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Toast } from "../../components/ui";
+import { ModalCloseButton, Toast } from "../../components/ui";
 import { queryKeys } from "../../lib/query-keys";
 import { AvailabilityEditPanel } from "./AvailabilityEditPanel";
 import { AvailabilityExceptionsView } from "./AvailabilityExceptionsView";
@@ -9,6 +9,14 @@ import { AvailabilityResourcesView } from "./AvailabilityResourcesView";
 import { AvailabilitySidePanel } from "./AvailabilitySidePanel";
 import { AvailabilityWeeklySchedule } from "./AvailabilityWeeklySchedule";
 import { availabilityTabs } from "./availability.constants";
+import { argentinaProvinces } from "./dashboard.options";
+import {
+  createBranch,
+  deleteBranch,
+  getBranches,
+  updateBranch,
+  type BranchDraft
+} from "./branches.api";
 import type {
   AvailabilityException,
   AvailabilityPanel,
@@ -34,6 +42,14 @@ import {
 
 const defaultMorningSlot = { start: "09:00", end: "12:00" };
 const defaultAfternoonSlot = { start: "17:00", end: "20:00" };
+const emptyBranchDraft: BranchDraft = {
+  name: "",
+  phone: "",
+  whatsapp: "",
+  address: "",
+  city: "",
+  province: ""
+};
 
 function minuteToTime(minutes: number) {
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
@@ -68,6 +84,9 @@ export function DashboardAvailabilityView() {
   const [resources, setResources] = useState<AvailabilityResource[]>([]);
   const [serviceCategories, setServiceCategories] = useState<AvailabilityServiceCategory[]>([]);
   const [categoryDraft, setCategoryDraft] = useState<string | null>(null);
+  const [branchDraft, setBranchDraft] = useState<BranchDraft | null>(null);
+  const [editingBranchId, setEditingBranchId] = useState<string | null>(null);
+  const [selectedBranchId, setSelectedBranchId] = useState("");
   const [availability, setAvailability] = useState<WeeklyAvailabilityDay[]>(() =>
     weeklyAvailability.map((day) => ({
       ...day,
@@ -78,22 +97,37 @@ export function DashboardAvailabilityView() {
   const [savedAvailability, setSavedAvailability] = useState<WeeklyAvailabilityDay[]>([]);
   const [toast, setToast] = useState("");
   const [isSavingWeekly, setIsSavingWeekly] = useState(false);
+  const hasWeeklyChanges =
+    savedAvailability.length > 0 &&
+    JSON.stringify(availability) !== JSON.stringify(savedAvailability);
   const queryClient = useQueryClient();
+  const branchesQuery = useQuery({
+    queryKey: queryKeys.organizationBranches,
+    queryFn: getBranches
+  });
+  const selectedBranch = branchesQuery.data?.find((branch) => branch.id === selectedBranchId);
   const weeklyQuery = useQuery({
-    queryKey: queryKeys.weeklyAvailability,
-    queryFn: getWeeklyAvailability,
-    enabled: activeTab === "weekly"
+    queryKey: queryKeys.weeklyAvailability(selectedBranchId),
+    queryFn: () => getWeeklyAvailability(selectedBranchId),
+    enabled: activeTab === "weekly" && Boolean(selectedBranchId)
   });
   const exceptionsQuery = useQuery({
-    queryKey: queryKeys.availabilityExceptions,
-    queryFn: getAvailabilityExceptions,
-    enabled: activeTab === "exceptions"
+    queryKey: queryKeys.availabilityExceptions(selectedBranchId),
+    queryFn: () => getAvailabilityExceptions(selectedBranchId),
+    enabled: activeTab === "exceptions" && Boolean(selectedBranchId)
   });
   const catalogQuery = useQuery({
     queryKey: queryKeys.availabilityCatalog,
     queryFn: getAvailabilityCatalog,
     enabled: activeTab === "resources"
   });
+
+  useEffect(() => {
+    if (!branchesQuery.data?.length || selectedBranchId) return;
+    const mainBranch = branchesQuery.data.find((branch) => branch.isMain);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedBranchId(mainBranch?.id ?? branchesQuery.data[0].id);
+  }, [branchesQuery.data, selectedBranchId]);
 
   useEffect(() => {
     if (weeklyQuery.data) {
@@ -343,7 +377,7 @@ export function DashboardAvailabilityView() {
       throw new Error("Duplicate exception date");
     }
     try {
-      const result = await saveAvailabilityException(draft);
+      const result = await saveAvailabilityException(draft, selectedBranchId);
       const saved = { ...draft, id: draft.id ?? result.data.id };
       setExceptions((current) =>
         current.map((item, currentIndex) =>
@@ -351,7 +385,7 @@ export function DashboardAvailabilityView() {
         )
       );
       queryClient.setQueryData<AvailabilityException[]>(
-        queryKeys.availabilityExceptions,
+        queryKeys.availabilityExceptions(selectedBranchId),
         (current = []) =>
           draft.id
             ? current.map((item) => (item.id === draft.id ? saved : item))
@@ -368,10 +402,10 @@ export function DashboardAvailabilityView() {
     const exception = exceptions[index];
     if (!exception?.id) return;
     try {
-      await deleteAvailabilityException(exception.id);
+      await deleteAvailabilityException(exception.id, selectedBranchId);
       setExceptions((current) => current.filter((_, currentIndex) => currentIndex !== index));
       queryClient.setQueryData<AvailabilityException[]>(
-        queryKeys.availabilityExceptions,
+        queryKeys.availabilityExceptions(selectedBranchId),
         (current = []) => current.filter((item) => item.id !== exception.id)
       );
       setToast("Excepción eliminada.");
@@ -525,8 +559,8 @@ export function DashboardAvailabilityView() {
       }
       setIsSavingWeekly(true);
       try {
-        await updateWeeklyAvailability(days);
-        queryClient.setQueryData(queryKeys.weeklyAvailability, {
+        await updateWeeklyAvailability(days, selectedBranchId);
+        queryClient.setQueryData(queryKeys.weeklyAvailability(selectedBranchId), {
           success: true,
           data: {
             timezone: weeklyQuery.data?.data.timezone ?? "America/Argentina/Buenos_Aires",
@@ -544,6 +578,81 @@ export function DashboardAvailabilityView() {
     }
     if (activeTab === "exceptions") addException();
     if (activeTab === "resources") addResource();
+  }
+
+  function cancelWeeklyChanges() {
+    setAvailability(
+      savedAvailability.map((day) => ({
+        ...day,
+        break: day.break ? { ...day.break } : null,
+        slots: day.slots.map((slot) => ({ ...slot }))
+      }))
+    );
+    setActiveDayMenu(null);
+    setToast("Cambios descartados.");
+  }
+
+  function handleBranchChange(branchId: string) {
+    if (hasWeeklyChanges) {
+      setToast("Guardá o cancelá los cambios antes de cambiar de sede.");
+      return;
+    }
+    setSelectedBranchId(branchId);
+    setActiveDayMenu(null);
+  }
+
+  function openCreateBranch() {
+    setEditingBranchId(null);
+    setBranchDraft(emptyBranchDraft);
+  }
+
+  function openEditBranch() {
+    if (!selectedBranch) return;
+    setEditingBranchId(selectedBranch.id);
+    setBranchDraft({
+      name: selectedBranch.name,
+      phone: selectedBranch.phone,
+      whatsapp: selectedBranch.whatsapp,
+      address: selectedBranch.address,
+      city: selectedBranch.city,
+      province: selectedBranch.province
+    });
+  }
+
+  async function saveBranch() {
+    if (!branchDraft?.name.trim()) {
+      setToast("Escribí el nombre de la sede.");
+      return;
+    }
+    try {
+      if (editingBranchId) {
+        await updateBranch(editingBranchId, branchDraft);
+      } else {
+        const created = await createBranch(branchDraft);
+        setSelectedBranchId(created.id);
+      }
+      await queryClient.invalidateQueries({ queryKey: queryKeys.organizationBranches });
+      setBranchDraft(null);
+      setEditingBranchId(null);
+      setToast(editingBranchId ? "Sede actualizada." : "Sede creada.");
+    } catch {
+      setToast(editingBranchId ? "No pudimos actualizar la sede." : "No pudimos crear la sede.");
+    }
+  }
+
+  async function removeBranch() {
+    if (!editingBranchId || selectedBranch?.isMain) return;
+    try {
+      await deleteBranch(editingBranchId);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.organizationBranches });
+      const fallback = branchesQuery.data?.find((branch) => branch.isMain)?.id ?? "";
+      setSelectedBranchId(fallback);
+      setBranchDraft(null);
+      setEditingBranchId(null);
+      setToast("Sede eliminada.");
+    } catch {
+      setToast("No pudimos eliminar la sede.");
+    }
   }
 
   return (
@@ -568,16 +677,40 @@ export function DashboardAvailabilityView() {
               ))}
             </div>
             {activeTab !== "resources" && (
-              <button
-                type="button"
-                className="mt-4 flex w-44 items-center justify-between rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.72)] px-3 py-2 text-left text-sm"
-              >
-                <span>
-                  <span className="block text-xs text-[var(--color-muted)]">Sucursal</span>
-                  <span className="font-semibold">Sede principal</span>
-                </span>
-                <span>⌄</span>
-              </button>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+                <label className="grid w-full gap-1 text-sm sm:max-w-sm">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                    Sede
+                  </span>
+                  <select
+                    value={selectedBranchId}
+                    onChange={(event) => handleBranchChange(event.target.value)}
+                    className="h-11 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.78)] px-3 font-semibold outline-none focus:border-[var(--color-accent)]"
+                  >
+                    {(branchesQuery.data ?? []).map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name}
+                        {branch.isMain ? " · Principal" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={openCreateBranch}
+                  className={`h-11 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] ${buttonMotionClass}`}
+                >
+                  + Nueva sede
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedBranch}
+                  onClick={openEditBranch}
+                  className={`h-11 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 ${buttonMotionClass}`}
+                >
+                  Editar sede
+                </button>
+              </div>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -590,24 +723,19 @@ export function DashboardAvailabilityView() {
                 + Crear categoría
               </button>
             )}
-            <button
-              type="button"
-              disabled={activeTab === "weekly" && isSavingWeekly}
-              onClick={() => void handlePrimaryAction()}
-              className={`rounded-md px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
-                activeTab === "resources"
-                  ? "bg-[var(--color-accent)] text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)]"
-                  : "border border-[var(--color-border-strong)] text-[var(--color-ink)]"
-              } ${buttonMotionClass}`}
-            >
-              {activeTab === "weekly"
-                ? isSavingWeekly
-                  ? "Guardando..."
-                  : "Guardar horarios"
-                : activeTab === "exceptions"
-                  ? "+ Agregar excepción"
-                  : "+ Agregar servicio"}
-            </button>
+            {activeTab !== "weekly" && (
+              <button
+                type="button"
+                onClick={() => void handlePrimaryAction()}
+                className={`rounded-md px-4 py-2 text-sm font-semibold ${
+                  activeTab === "resources"
+                    ? "bg-[var(--color-accent)] text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)]"
+                    : "border border-[var(--color-border-strong)] text-[var(--color-ink)]"
+                } ${buttonMotionClass}`}
+              >
+                {activeTab === "exceptions" ? "+ Agregar excepción" : "+ Agregar servicio"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -626,6 +754,26 @@ export function DashboardAvailabilityView() {
             onUpdateBreakTime={updateBreakTime}
             onUpdateSlotTime={updateSlotTime}
           />
+        )}
+        {activeTab === "weekly" && hasWeeklyChanges && (
+          <div className="flex flex-col-reverse items-center justify-center gap-2 border-t border-[var(--color-border)] px-4 py-5 sm:flex-row">
+            <button
+              type="button"
+              disabled={isSavingWeekly}
+              onClick={cancelWeeklyChanges}
+              className={`rounded-md border border-[var(--color-border-strong)] px-5 py-2.5 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonMotionClass}`}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={isSavingWeekly}
+              onClick={() => void handlePrimaryAction()}
+              className={`rounded-md bg-[var(--color-ink)] px-5 py-2.5 text-sm font-semibold text-[var(--color-button-text)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonMotionClass}`}
+            >
+              {isSavingWeekly ? "Guardando..." : "Guardar horarios"}
+            </button>
+          </div>
         )}
 
         {activeTab === "exceptions" && (
@@ -646,7 +794,7 @@ export function DashboardAvailabilityView() {
         )}
       </article>
 
-      <AvailabilitySidePanel activeTab={activeTab} />
+      <AvailabilitySidePanel activeTab={activeTab} availability={availability} />
 
       {activePanel && (
         <AvailabilityEditPanel
@@ -668,6 +816,20 @@ export function DashboardAvailabilityView() {
           onSave={() => void saveCategory(categoryDraft)}
         />
       )}
+      {branchDraft && (
+        <BranchModal
+          canDelete={Boolean(editingBranchId && !selectedBranch?.isMain)}
+          mode={editingBranchId ? "edit" : "create"}
+          value={branchDraft}
+          onChange={setBranchDraft}
+          onClose={() => {
+            setBranchDraft(null);
+            setEditingBranchId(null);
+          }}
+          onDelete={() => void removeBranch()}
+          onSave={() => void saveBranch()}
+        />
+      )}
       {duplicateDraft && (
         <DuplicateDayModal
           availability={availability}
@@ -684,6 +846,145 @@ export function DashboardAvailabilityView() {
   );
 }
 
+function BranchModal({
+  canDelete,
+  mode,
+  value,
+  onChange,
+  onClose,
+  onDelete,
+  onSave
+}: {
+  canDelete: boolean;
+  mode: "create" | "edit";
+  value: BranchDraft;
+  onChange: (value: BranchDraft) => void;
+  onClose: () => void;
+  onDelete: () => void;
+  onSave: () => void;
+}) {
+  function updateField(field: keyof BranchDraft, nextValue: string) {
+    onChange({ ...value, [field]: nextValue });
+  }
+
+  return (
+    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)] sm:p-5">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+              Multi sede
+            </p>
+            <h2 className="mt-1 text-lg font-semibold">
+              {mode === "edit" ? "Editar sede" : "Nueva sede"}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+              {mode === "edit"
+                ? "Actualizá los datos públicos de esta sede."
+                : "Cada sede puede tener sus propios horarios y excepciones."}
+            </p>
+          </div>
+          <ModalCloseButton onClick={onClose} />
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm sm:col-span-2">
+            <span className="font-semibold text-[var(--color-muted-strong)]">Nombre de la sede</span>
+            <input
+              autoFocus
+              value={value.name}
+              onChange={(event) => updateField("name", event.target.value)}
+              placeholder="Ej. Sucursal centro"
+              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.2)]"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-semibold text-[var(--color-muted-strong)]">Teléfono</span>
+            <input
+              value={value.phone}
+              onChange={(event) => updateField("phone", event.target.value)}
+              placeholder="Ej. 1122334455"
+              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)]"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-semibold text-[var(--color-muted-strong)]">WhatsApp</span>
+            <input
+              value={value.whatsapp}
+              onChange={(event) => updateField("whatsapp", event.target.value)}
+              placeholder="Ej. 91122334455"
+              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)]"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm sm:col-span-2">
+            <span className="font-semibold text-[var(--color-muted-strong)]">Dirección</span>
+            <input
+              value={value.address}
+              onChange={(event) => updateField("address", event.target.value)}
+              placeholder="Ej. Av. Rivadavia 123"
+              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)]"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-semibold text-[var(--color-muted-strong)]">Localidad</span>
+            <input
+              value={value.city}
+              onChange={(event) => updateField("city", event.target.value)}
+              placeholder="Ej. Tapiales"
+              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)]"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="font-semibold text-[var(--color-muted-strong)]">Provincia</span>
+            <select
+              value={value.province}
+              onChange={(event) => updateField("province", event.target.value)}
+              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)]"
+            >
+              <option value="">Seleccionar provincia</option>
+              {argentinaProvinces.map((province) => (
+                <option key={province} value={province}>
+                  {province}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:justify-between">
+          {canDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className={`rounded-md border border-[#efb0aa] px-4 py-2 text-sm font-semibold text-[#a33b32] ${buttonMotionClass}`}
+            >
+              Eliminar sede
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`rounded-md border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-muted-strong)] ${buttonMotionClass}`}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            className={`rounded-md bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold text-[var(--color-button-text)] ${buttonMotionClass}`}
+          >
+            {mode === "edit" ? "Guardar cambios" : "Crear sede"}
+          </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CategoryModal({
   value,
   onChange,
@@ -696,8 +997,8 @@ function CategoryModal({
   onSave: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
-      <div className="w-full max-w-md rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <div className="border-b border-[var(--color-border)] pb-3">
           <h2 className="text-lg font-semibold">Nueva categoría</h2>
           <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
@@ -755,8 +1056,8 @@ function DuplicateDayModal({
   const source = availability[draft.sourceIndex];
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
-      <div className="w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)] sm:p-5">
+    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)] sm:p-5">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-3">
           <div>
             <h2 className="text-lg font-semibold">Duplicar horarios</h2>
@@ -764,13 +1065,7 @@ function DuplicateDayModal({
               Copiá la disponibilidad de {source.day} a uno o varios días.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm font-semibold text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.08)]"
-          >
-            Cerrar
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         <div className="mt-4 rounded-lg border border-[var(--color-border)] bg-white/60 p-4">

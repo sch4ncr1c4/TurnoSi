@@ -77,11 +77,26 @@ authRouter.post("/register", authRateLimit, async (request, response) => {
       }
     });
 
-    await tx.membership.create({
+    const mainBranch = await tx.branch.create({
+      data: {
+        organizationId: organization.id,
+        name: "Sede principal",
+        slug: "sede-principal",
+        isMain: true
+      }
+    });
+
+    const membership = await tx.membership.create({
       data: {
         userId: user.id,
         organizationId: organization.id,
         role: MembershipRole.owner
+      }
+    });
+    await tx.membershipBranch.create({
+      data: {
+        membershipId: membership.id,
+        branchId: mainBranch.id
       }
     });
 

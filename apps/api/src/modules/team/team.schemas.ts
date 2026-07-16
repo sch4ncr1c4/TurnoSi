@@ -15,7 +15,8 @@ export const createTeamMemberSchema = z.object({
   role: teamRoleSchema,
   bookingsEnabled: z.boolean().default(true),
   visibleInPublicBooking: z.boolean().default(true),
-  hourlyCapacity: z.number().int().min(1).max(12).default(2)
+  hourlyCapacity: z.number().int().min(1).max(12).default(2),
+  branchIds: z.array(z.string().min(1)).default([])
 });
 
 export const updateTeamMemberSchema = z.object({
@@ -26,5 +27,6 @@ export const updateTeamMemberSchema = z.object({
   role: teamRoleSchema,
   bookingsEnabled: z.boolean(),
   visibleInPublicBooking: z.boolean(),
-  hourlyCapacity: z.number().int().min(1).max(12)
+  hourlyCapacity: z.number().int().min(1).max(12),
+  branchIds: z.array(z.string().min(1)).default([])
 });

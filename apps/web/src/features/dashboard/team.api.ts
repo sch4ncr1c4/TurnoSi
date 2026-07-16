@@ -12,6 +12,12 @@ export type TeamMember = {
   bookingsEnabled: boolean;
   visibleInPublicBooking: boolean;
   hourlyCapacity: number;
+  branchIds: string[];
+  branches: {
+    id: string;
+    name: string;
+    isMain: boolean;
+  }[];
   todayAssignedCount: number;
   upcomingAssignedCount: number;
   temporaryPassword: string | null;
@@ -37,6 +43,7 @@ export async function updateTeamMember(
     | "bookingsEnabled"
     | "visibleInPublicBooking"
     | "hourlyCapacity"
+    | "branchIds"
   >
 ) {
   const response = await apiRequest<{ success: true; data: TeamMember }>(
@@ -60,6 +67,7 @@ export async function createTeamMember(
     | "bookingsEnabled"
     | "visibleInPublicBooking"
     | "hourlyCapacity"
+    | "branchIds"
   >
 ) {
   const response = await apiRequest<{ success: true; data: TeamMember }>(

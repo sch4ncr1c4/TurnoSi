@@ -24,12 +24,61 @@
 
 html {
   scroll-behavior: smooth;
-  scrollbar-gutter: stable;
 }
 
 body {
   margin: 0;
   background: var(--color-page);
+  overflow-x: clip;
+}
+
+.viewport-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.modal-overlay-enter {
+  animation: modal-overlay-in 180ms ease-out both;
+}
+
+.modal-panel-enter {
+  animation: modal-panel-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.modal-scroll-panel {
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 #root {
@@ -642,6 +691,11 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .modal-overlay-enter,
+  .modal-panel-enter {
+    animation: none;
+  }
+
   .booking-hero,
   .booking-hero-copy,
   .booking-gallery,

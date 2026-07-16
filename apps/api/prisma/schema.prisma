@@ -102,6 +102,7 @@ model Organization {
   description            String?
   onboardingCompletedAt  DateTime?
   memberships            Membership[]
+  branches               Branch[]
   customers              Customer[]
   services               Service[]
   serviceCategories      ServiceCategory[]
@@ -115,6 +116,31 @@ model Organization {
   subscription           OrganizationSubscription?
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
+}
+
+model Branch {
+  id                     String                  @id @default(cuid())
+  organizationId         String
+  name                   String
+  slug                   String
+  phone                  String?
+  whatsapp               String?
+  address                String?
+  city                   String?
+  province               String?
+  isMain                 Boolean                 @default(false)
+  isActive               Boolean                 @default(true)
+  organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships            MembershipBranch[]
+  appointments           Appointment[]
+  resources              Resource[]
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, isActive])
 }
 
 model OrganizationSubscription {
@@ -168,11 +194,23 @@ model Membership {
   hourlyCapacity        Int      @default(2)
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branches       MembershipBranch[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
   @@unique([userId, organizationId])
   @@index([organizationId, role])
+}
+
+model MembershipBranch {
+  membershipId String
+  branchId     String
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  branch       Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@id([membershipId, branchId])
+  @@index([branchId])
 }
 
 model Customer {
@@ -241,12 +279,14 @@ model Service {
 model Resource {
   id                     String                  @id @default(cuid())
   organizationId         String
+  branchId               String?
   name                   String
   slug                   String
   description            String?
   capacity               Int                     @default(1)
   isActive               Boolean                 @default(true)
   organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch                 Branch?                 @relation(fields: [branchId], references: [id], onDelete: SetNull)
   appointments           Appointment[]
   availabilityRules      AvailabilityRule[]
   availabilityExceptions AvailabilityException[]
@@ -256,6 +296,7 @@ model Resource {
 
   @@unique([organizationId, slug])
   @@index([organizationId, isActive])
+  @@index([organizationId, branchId])
 }
 
 model ServiceResource {
@@ -272,6 +313,7 @@ model ServiceResource {
 model Appointment {
   id             String            @id @default(cuid())
   organizationId String
+  branchId       String?
   customerId     String
   serviceId      String
   resourceId     String?
@@ -285,6 +327,7 @@ model Appointment {
   status         AppointmentStatus @default(pending)
   deletedAt      DateTime?
   organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch         Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
   customer       Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
   service        Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
   resource       Resource?         @relation(fields: [resourceId], references: [id], onDelete: SetNull)
@@ -294,6 +337,7 @@ model Appointment {
   updatedAt      DateTime          @updatedAt
 
   @@index([organizationId, startsAt])
+  @@index([organizationId, branchId, startsAt])
   @@index([organizationId, customerId, startsAt])
   @@index([organizationId, serviceId, startsAt])
   @@index([organizationId, resourceId, startsAt])
@@ -303,6 +347,7 @@ model Appointment {
 model AvailabilityRule {
   id             String       @id @default(cuid())
   organizationId String
+  branchId       String?
   userId         String?
   resourceId     String?
   weekday        Int
@@ -310,6 +355,7 @@ model AvailabilityRule {
   endMinute      Int
   timezone       String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch         Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
   user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   resource       Resource?    @relation(fields: [resourceId], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
@@ -317,11 +363,13 @@ model AvailabilityRule {
 
   @@index([organizationId, userId, weekday])
   @@index([organizationId, resourceId, weekday])
+  @@index([organizationId, branchId, weekday])
 }
 
 model AvailabilityException {
   id             String       @id @default(cuid())
   organizationId String
+  branchId       String?
   userId         String?
   resourceId     String?
   startsAt       DateTime
@@ -330,12 +378,14 @@ model AvailabilityException {
   label          String
   notes          String?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch         Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
   user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   resource       Resource?    @relation(fields: [resourceId], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId, startsAt, endsAt])
+  @@index([organizationId, branchId, startsAt])
   @@index([organizationId, userId, startsAt])
   @@index([organizationId, resourceId, startsAt])
 }

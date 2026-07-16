@@ -256,8 +256,8 @@ export function DashboardCustomersView() {
       </Card>
 
       {selected && (
-        <div className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.6)] p-3 backdrop-blur-sm sm:place-items-center">
-          <div className="w-full max-w-lg rounded-lg border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+        <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.6)] p-3 backdrop-blur-sm sm:place-items-center">
+          <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b42318]">
               Control de reserva
             </p>

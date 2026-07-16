@@ -6,6 +6,7 @@ import { clearAuthCookies } from "../../lib/cookies.js";
 import { ok } from "../../lib/http.js";
 import { optimizeImage } from "../../lib/image-optimizer.js";
 import { verifyPassword } from "../../lib/password.js";
+import { slugify } from "../../lib/slugify.js";
 import { assertMembership } from "../../lib/membership.js";
 import { organizationParamsSchema } from "../../lib/schemas.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
@@ -16,6 +17,8 @@ import { customersRouter } from "../customers/customers.routes.js";
 import { servicesRouter } from "../services/services.routes.js";
 import { cancelMercadoPagoSubscription } from "../billing/mercadopago-subscription.service.js";
 import {
+  branchParamsSchema,
+  branchSchema,
   updateOrganizationSettingsSchema
 } from "./organizations.schemas.js";
 
@@ -23,6 +26,29 @@ export const organizationsRouter = Router();
 
 const logoContentTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const gallerySlots = new Set([0, 1]);
+
+async function ensureMainBranch(organizationId: string) {
+  const existing = await prisma.branch.findFirst({
+    where: { organizationId, isMain: true }
+  });
+  if (existing) return existing;
+  const organization = await prisma.organization.findUniqueOrThrow({
+    where: { id: organizationId }
+  });
+  return prisma.branch.create({
+    data: {
+      organizationId,
+      name: "Sede principal",
+      slug: "sede-principal",
+      phone: organization.phone,
+      whatsapp: organization.whatsapp,
+      address: organization.address,
+      city: organization.city,
+      province: organization.province,
+      isMain: true
+    }
+  });
+}
 
 function matchesImageSignature(data: Buffer, contentType: string) {
   if (contentType === "image/png") {
@@ -45,6 +71,83 @@ organizationsRouter.get("/current/gallery/:slot", async (request, response) => {
   const slot = Number(request.params.slot);
   if (!gallerySlots.has(slot)) return response.sendStatus(404);
   await serveGalleryImage(request.tenant!.organizationId, slot, response);
+});
+
+organizationsRouter.get("/current/branches", async (request, response) => {
+  const tenant = request.tenant!;
+  await ensureMainBranch(tenant.organizationId);
+  const branches = await prisma.branch.findMany({
+    where: { organizationId: tenant.organizationId, isActive: true },
+    orderBy: [{ isMain: "desc" }, { name: "asc" }]
+  });
+  response.json(ok(branches.map((branch) => ({
+    id: branch.id,
+    name: branch.name,
+    slug: branch.slug,
+    phone: branch.phone ?? "",
+    whatsapp: branch.whatsapp ?? "",
+    address: branch.address ?? "",
+    city: branch.city ?? "",
+    province: branch.province ?? "",
+    isMain: branch.isMain
+  }))));
+});
+
+organizationsRouter.post("/current/branches", authRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  if (tenant.role !== "owner" && tenant.role !== "admin") {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
+  }
+  const data = branchSchema.parse(request.body);
+  const baseSlug = slugify(data.name) || "sede";
+  const branch = await prisma.branch.create({
+    data: {
+      organizationId: tenant.organizationId,
+      name: data.name,
+      slug: `${baseSlug}-${Date.now().toString(36)}`,
+      phone: data.phone,
+      whatsapp: data.whatsapp,
+      address: data.address,
+      city: data.city,
+      province: data.province
+    }
+  });
+  response.status(201).json(ok({ id: branch.id }));
+});
+
+organizationsRouter.patch("/current/branches/:branchId", authRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  if (tenant.role !== "owner" && tenant.role !== "admin") {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
+  }
+  const { branchId } = branchParamsSchema.parse(request.params);
+  const data = branchSchema.parse(request.body);
+  const result = await prisma.branch.updateMany({
+    where: { id: branchId, organizationId: tenant.organizationId },
+    data
+  });
+  if (!result.count) throw new AppError(404, "NOT_FOUND", "Branch not found");
+  response.json(ok({ updated: true }));
+});
+
+organizationsRouter.delete("/current/branches/:branchId", authRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  if (tenant.role !== "owner" && tenant.role !== "admin") {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
+  }
+  const { branchId } = branchParamsSchema.parse(request.params);
+  const branch = await prisma.branch.findFirst({
+    where: { id: branchId, organizationId: tenant.organizationId }
+  });
+  if (!branch) throw new AppError(404, "NOT_FOUND", "Branch not found");
+  if (branch.isMain) {
+    throw new AppError(400, "MAIN_BRANCH", "Main branch cannot be deleted");
+  }
+  await prisma.branch.update({
+    where: { id: branch.id },
+    data: { isActive: false }
+  });
+  response.json(ok({ deleted: true }));
 });
 
 organizationsRouter.put(

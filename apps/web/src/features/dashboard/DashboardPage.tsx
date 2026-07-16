@@ -27,6 +27,7 @@ import {
 import { es } from "date-fns/locale";
 
 import { PageLayout } from "../../components/layout/PageLayout";
+import { ModalCloseButton } from "../../components/ui";
 import { queryKeys } from "../../lib/query-keys";
 import { useSessionQuery } from "../auth/auth.queries";
 import type { AuthResult } from "../auth/auth.types";
@@ -604,11 +605,11 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         />
       )}
       {showBillingPlans && (
-        <div className="fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+        <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
           <section
             role="dialog"
             aria-modal="true"
-            className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+            className="modal-panel-enter modal-scroll-panel w-full max-w-6xl rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
           >
             <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-4 sm:p-5">
               <div>
@@ -617,13 +618,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
                 </p>
                 <h2 className="mt-1 text-xl font-semibold">Mejorar plan</h2>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowBillingPlans(false)}
-                className="rounded-md border border-[var(--color-border-strong)] px-3 py-2 text-sm font-semibold"
-              >
-                Cerrar
-              </button>
+              <ModalCloseButton onClick={() => setShowBillingPlans(false)} />
             </div>
             <div className="p-3 sm:p-5">
               <BillingSettings />
@@ -632,11 +627,11 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         </div>
       )}
       {pendingDashboardView && (
-        <div className="fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+        <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
           <section
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+            className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
           >
             <h2 className="text-lg font-semibold">Tenés cambios sin guardar</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">

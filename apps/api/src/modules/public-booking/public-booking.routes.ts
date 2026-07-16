@@ -80,7 +80,41 @@ function subtractWindow(
   });
 }
 
-async function getPublicContext(slug: string, serviceId: string) {
+async function getPublicBranch(organization: {
+  id: string;
+  phone: string | null;
+  whatsapp: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+}, branchId?: string) {
+  if (branchId) {
+    const branch = await prisma.branch.findFirst({
+      where: { id: branchId, organizationId: organization.id, isActive: true }
+    });
+    if (!branch) throw new AppError(404, "NOT_FOUND", "Branch not found");
+    return branch;
+  }
+  const existing = await prisma.branch.findFirst({
+    where: { organizationId: organization.id, isMain: true, isActive: true }
+  });
+  if (existing) return existing;
+  return prisma.branch.create({
+    data: {
+      organizationId: organization.id,
+      name: "Sede principal",
+      slug: "sede-principal",
+      phone: organization.phone,
+      whatsapp: organization.whatsapp,
+      address: organization.address,
+      city: organization.city,
+      province: organization.province,
+      isMain: true
+    }
+  });
+}
+
+async function getPublicContext(slug: string, serviceId: string, branchId?: string) {
   const organization = await prisma.organization.findUnique({
     where: { slug }
   });
@@ -102,13 +136,15 @@ async function getPublicContext(slug: string, serviceId: string) {
     include: { resourceLinks: { include: { resource: true }, take: 1 } }
   });
   if (!service) throw new AppError(404, "NOT_FOUND", "Service not found");
+  const branch = await getPublicBranch(organization, branchId);
   const teamMembers = isResourceOnlyBookingCategory(organization.category)
     ? []
     : await prisma.membership.findMany({
         where: {
           organizationId: organization.id,
           bookingsEnabled: true,
-          visibleInPublicBooking: true
+          visibleInPublicBooking: true,
+          branches: { some: { branchId: branch.id } }
         },
         select: {
           userId: true,
@@ -125,13 +161,14 @@ async function getPublicContext(slug: string, serviceId: string) {
       });
   const mappedTeamMembers = teamMembers.map((member) => ({
     userId: member.userId,
-    hourlyCapacity: member.hourlyCapacity,
+      hourlyCapacity: member.hourlyCapacity,
     name:
       [member.user.firstName, member.user.lastName].filter(Boolean).join(" ") ||
       member.user.email
   }));
   return {
     organization,
+    branch,
     service,
     resourceId: service.resourceLinks[0]?.resourceId ?? null,
     teamMembers: mappedTeamMembers
@@ -144,6 +181,7 @@ async function getPublicTeam(organization: {
   memberships: {
     userId: string;
     hourlyCapacity: number;
+    branches: { branchId: string }[];
     user: {
       firstName: string | null;
       lastName: string | null;
@@ -154,6 +192,7 @@ async function getPublicTeam(organization: {
   if (isResourceOnlyBookingCategory(organization.category)) return [];
   return organization.memberships.map((member) => ({
     id: member.userId,
+    branchIds: member.branches.map((branch) => branch.branchId),
     name:
       [member.user.firstName, member.user.lastName].filter(Boolean).join(" ") ||
       member.user.email,
@@ -206,11 +245,13 @@ async function calculateSlots(
   slug: string,
   serviceId: string,
   dayCount: number,
+  branchId?: string,
   selectedAssigneeId?: string
 ) {
-  const { organization, service, resourceId, teamMembers } = await getPublicContext(
+  const { organization, branch, service, resourceId, teamMembers } = await getPublicContext(
     slug,
-    serviceId
+    serviceId,
+    branchId
   );
   const selectedAssignee = selectedAssigneeId
     ? teamMembers.find((member) => member.userId === selectedAssigneeId) ?? null
@@ -219,6 +260,7 @@ async function calculateSlots(
     throw new AppError(404, "NOT_FOUND", "Team member not found");
   }
   const today = localDateInTimezone(new Date(), organization.timezone);
+  const requiresTeam = !isResourceOnlyBookingCategory(organization.category);
   const base = new Date(`${today}T00:00:00.000Z`);
   const lastDay = new Date(base.getTime() + (dayCount - 1) * 86_400_000);
 
@@ -234,6 +276,7 @@ async function calculateSlots(
       prisma.availabilityRule.findMany({
         where: {
           organizationId: organization.id,
+          branchId: branch.id,
           userId: null,
           resourceId: null
         },
@@ -242,6 +285,7 @@ async function calculateSlots(
       prisma.availabilityException.findMany({
         where: {
           organizationId: organization.id,
+          branchId: branch.id,
           userId: null,
           resourceId: null,
           startsAt: { lt: dayEnd },
@@ -251,6 +295,7 @@ async function calculateSlots(
       prisma.appointment.findMany({
         where: {
           organizationId: organization.id,
+          branchId: branch.id,
           deletedAt: null,
           startsAt: { lt: new Date(dayEnd.getTime() + 180 * 60_000) },
           endsAt: { gt: new Date(dayStart.getTime() - 180 * 60_000) },
@@ -353,7 +398,7 @@ async function calculateSlots(
               );
         if (
           hasServiceSlot &&
-          (teamMembers.length === 0 ||
+          (!requiresTeam ||
             (selectedAssignee
               ? eligibleAssignees.some(
                   (member) => member.userId === selectedAssignee.userId
@@ -373,6 +418,7 @@ async function calculateSlots(
   }
   return {
     organization,
+    branch,
     service,
     resourceId,
     days: result,
@@ -398,6 +444,7 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
         select: {
           userId: true,
           hourlyCapacity: true,
+          branches: { select: { branchId: true } },
           user: {
             select: {
               firstName: true,
@@ -413,6 +460,10 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
         include: { resourceLinks: { include: { resource: true }, take: 1 } },
         orderBy: { name: "asc" }
       },
+      branches: {
+        where: { isActive: true },
+        orderBy: [{ isMain: "desc" }, { name: "asc" }]
+      },
       logo: { select: { organizationId: true, updatedAt: true } },
       galleryImages: { select: { slot: true, focusX: true, focusY: true, zoom: true, updatedAt: true } }
     }
@@ -424,6 +475,10 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
       "BOOKING_UNAVAILABLE",
       "Online booking is not available"
     );
+  }
+  if (organization.branches.length === 0) {
+    const branch = await getPublicBranch(organization);
+    organization.branches.push(branch);
   }
   response.json(ok({
     organization: {
@@ -456,6 +511,16 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
         }))
         .sort((first, second) => first.slot - second.slot)
     },
+    branches: organization.branches.map((branch) => ({
+      id: branch.id,
+      name: branch.name,
+      address: branch.address ?? organization.address,
+      city: branch.city ?? organization.city,
+      province: branch.province ?? organization.province,
+      phone: branch.phone ?? organization.phone,
+      whatsapp: branch.whatsapp ?? organization.whatsapp,
+      isMain: branch.isMain
+    })),
     team: await getPublicTeam(organization),
     services: organization.services.map(publicServicePayload)
   }));
@@ -492,6 +557,7 @@ publicBookingRouter.get("/:organizationSlug/slots", publicSlotsRateLimit, async 
     organizationSlug,
     query.serviceId,
     query.days,
+    query.branchId,
     query.assigneeId
   );
   response.json(
@@ -512,6 +578,7 @@ publicBookingRouter.post(
       organizationSlug,
       data.serviceId,
       30,
+      data.branchId,
       data.assigneeId
     );
     const valid = context.days.some((day) =>
@@ -530,6 +597,7 @@ publicBookingRouter.post(
             await transaction.appointment.findMany({
               where: {
                 organizationId: context.organization.id,
+                branchId: context.branch.id,
                 deletedAt: null,
                 startsAt: {
                   lt: new Date(
@@ -674,6 +742,7 @@ publicBookingRouter.post(
           return transaction.appointment.create({
         data: {
           organizationId: context.organization.id,
+          branchId: context.branch.id,
           customerId: customer.id,
           serviceId: context.service.id,
           resourceId: context.resourceId,

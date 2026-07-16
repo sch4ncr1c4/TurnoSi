@@ -19,6 +19,7 @@ import {
 } from "./settings.api";
 import { useOrganizationSettingsQuery } from "./settings.queries";
 import type { OrganizationSettings } from "./settings.types";
+import { argentinaProvinces } from "./dashboard.options";
 
 function createPublicSlug(value: string) {
   return value
@@ -67,33 +68,6 @@ const businessCategories = [
 ];
 const customBusinessCategory = "__custom__";
 
-const argentinaProvinces = [
-  "Buenos Aires",
-  "Ciudad Autónoma de Buenos Aires",
-  "Catamarca",
-  "Chaco",
-  "Chubut",
-  "Córdoba",
-  "Corrientes",
-  "Entre Ríos",
-  "Formosa",
-  "Jujuy",
-  "La Pampa",
-  "La Rioja",
-  "Mendoza",
-  "Misiones",
-  "Neuquén",
-  "Río Negro",
-  "Salta",
-  "San Juan",
-  "San Luis",
-  "Santa Cruz",
-  "Santa Fe",
-  "Santiago del Estero",
-  "Tierra del Fuego",
-  "Tucumán"
-];
-
 type LocalSettings = typeof initialLocalSettings;
 type SettingsTab = "business" | "public" | "account";
 
@@ -107,6 +81,7 @@ export function DashboardSettingsView({
   const [settings, setSettings] = useState<LocalSettings>(initialLocalSettings);
   const [savedSettings, setSavedSettings] = useState<LocalSettings>(initialLocalSettings);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [customCategoryDraft, setCustomCategoryDraft] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isClosingGuide, setIsClosingGuide] = useState(false);
@@ -125,6 +100,7 @@ export function DashboardSettingsView({
   const [toast, setToast] = useState("");
   const [activeTab, setActiveTab] = useState<SettingsTab>("business");
   const [isEditing, setIsEditing] = useState(isOnboarding);
+  const canEditSettings = isOnboarding || isEditing;
   const [accountHasUnsavedChanges, setAccountHasUnsavedChanges] = useState(false);
   const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
   const [showUnsavedState, setShowUnsavedState] = useState(false);
@@ -677,12 +653,12 @@ export function DashboardSettingsView({
       {isOnboarding &&
         sessionQuery.data &&
         !sessionQuery.data.data.user.onboardingGuideSeen && (
-          <div className="fixed inset-0 z-[110] grid place-items-end bg-[rgba(32,24,54,0.66)] p-3 backdrop-blur-sm sm:place-items-center">
+          <div className="viewport-overlay modal-overlay-enter z-[110] grid place-items-end bg-[rgba(32,24,54,0.66)] p-3 backdrop-blur-sm sm:place-items-center">
             <section
               role="dialog"
               aria-modal="true"
               aria-labelledby="onboarding-guide-title"
-              className="w-full max-w-2xl rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_30px_100px_rgba(32,24,54,0.4)] sm:p-7"
+              className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_30px_100px_rgba(32,24,54,0.4)] sm:p-7"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                 Primeros pasos
@@ -864,7 +840,7 @@ export function DashboardSettingsView({
                       </p>
                     </div>
                   </div>
-                  {isEditing && (
+                  {canEditSettings && (
                     <label className="shrink-0 cursor-pointer rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 py-2 text-center font-medium text-[var(--color-ink)] hover:border-[var(--color-accent)] sm:self-center">
                       Cambiar logo
                       <input
@@ -878,7 +854,7 @@ export function DashboardSettingsView({
                 </div>
               ) : (
                 <label className={`flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/35 px-5 py-7 text-center ${
-                  isEditing
+                  canEditSettings
                     ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/55"
                     : "cursor-default"
                 }`}>
@@ -893,7 +869,7 @@ export function DashboardSettingsView({
                   </span>
                   <input
                     type="file"
-                    disabled={!isEditing}
+                    disabled={!canEditSettings}
                     accept="image/png,image/jpeg,image/webp"
                     onChange={handleLogoChange}
                     className="sr-only"
@@ -901,35 +877,35 @@ export function DashboardSettingsView({
                 </label>
               )}
             </div>
-            <SettingsField
-              label="Nombre del local"
-              placeholder="Ej: Barbería Central"
-              readOnly={!isEditing}
-              highlightChanges={showUnsavedState}
-              savedValue={savedSettings.businessName}
-              value={settings.businessName}
-              onChange={(value) => updateSetting("businessName", value)}
-            />
-            <div className="grid gap-2">
+            <div className="grid items-start gap-4 md:col-span-2 lg:grid-cols-2">
+              <SettingsField
+                label="Nombre del local"
+                placeholder="Ej: Barbería Central"
+                readOnly={!canEditSettings}
+                highlightChanges={showUnsavedState}
+                savedValue={savedSettings.businessName}
+                value={settings.businessName}
+                onChange={(value) => updateSetting("businessName", value)}
+              />
+              <div className="grid gap-2">
               <label className="relative grid gap-1.5 text-sm">
                 <span className="font-semibold text-[var(--color-muted-strong)]">
                   Rubro
                 </span>
                 <select
-                  disabled={!isEditing}
+                  disabled={!canEditSettings}
                   value={
                     !settings.category || businessCategories.includes(settings.category)
                       ? settings.category
                       : customBusinessCategory
                   }
-                  onChange={(event) =>
-                    updateSetting(
-                      "category",
-                      event.target.value === customBusinessCategory
-                        ? ""
-                        : event.target.value
-                    )
-                  }
+                  onChange={(event) => {
+                    if (event.target.value === customBusinessCategory) {
+                      setCustomCategoryDraft(settings.category);
+                      return;
+                    }
+                    updateSetting("category", event.target.value);
+                  }}
                   className={`h-10 rounded-md border bg-white/70 px-3 outline-none disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] disabled:text-[var(--color-muted-strong)] ${
                     showUnsavedState &&
                     settings.category !== savedSettings.category
@@ -946,18 +922,7 @@ export function DashboardSettingsView({
                   <option value={customBusinessCategory}>Otro</option>
                 </select>
               </label>
-              {isEditing &&
-                (!settings.category ||
-                  !businessCategories.includes(settings.category)) && (
-                  <SettingsField
-                    label="Rubro personalizado"
-                    placeholder="Ej: Veterinaria"
-                    highlightChanges={showUnsavedState}
-                    savedValue={savedSettings.category}
-                    value={settings.category}
-                    onChange={(value) => updateSetting("category", value)}
-                  />
-                )}
+              </div>
             </div>
             <label className="relative grid gap-1.5 text-sm md:col-span-2">
               <span className="font-semibold text-[var(--color-muted-strong)]">
@@ -965,7 +930,7 @@ export function DashboardSettingsView({
               </span>
               <textarea
                 value={settings.description}
-                disabled={!isEditing}
+                disabled={!canEditSettings}
                 placeholder="Contá brevemente qué servicios ofrece tu negocio."
                 onChange={(event) =>
                   updateSetting("description", event.target.value)
@@ -1051,7 +1016,7 @@ export function DashboardSettingsView({
 
                           <label
                             className={`mt-4 rounded-lg border border-[var(--color-border)] bg-white/75 px-3 py-2 text-sm font-semibold text-[var(--color-ink)] ${
-                              isEditing
+                              canEditSettings
                                 ? "cursor-pointer hover:border-[var(--color-accent)]"
                                 : "cursor-not-allowed opacity-60"
                             }`}
@@ -1061,7 +1026,7 @@ export function DashboardSettingsView({
                               : `Subir foto ${slot + 1}`}
                             <input
                               type="file"
-                              disabled={!isEditing}
+                              disabled={!canEditSettings}
                               accept="image/png,image/jpeg,image/webp"
                               onChange={(event) => handleGalleryChange(typedSlot, event)}
                               className="sr-only"
@@ -1072,7 +1037,7 @@ export function DashboardSettingsView({
                               ? "Ideal horizontal 1600x1000. JPG, PNG o WebP. Se optimiza automáticamente."
                               : "Ideal vertical 900x1100. JPG, PNG o WebP. Se optimiza automáticamente."}
                           </span>
-                          {galleryPreviews[slot] && isEditing && (
+                          {galleryPreviews[slot] && canEditSettings && (
                             <div className="mt-3 grid gap-2 sm:grid-cols-2">
                               <button
                                 type="button"
@@ -1103,7 +1068,7 @@ export function DashboardSettingsView({
             <SettingsField
               label="Teléfono"
               placeholder="Ej: 11 2345 6789"
-              readOnly={!isEditing}
+              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.phone}
               value={settings.phone}
@@ -1113,7 +1078,7 @@ export function DashboardSettingsView({
               label="WhatsApp"
               prefix="+54 9"
               placeholder="Ej: 11 2345 6789"
-              readOnly={!isEditing}
+              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.whatsapp}
               value={settings.whatsapp}
@@ -1124,7 +1089,7 @@ export function DashboardSettingsView({
             <SettingsField
               label="Email público"
               placeholder="Ej: contacto@negocio.com"
-              readOnly={!isEditing}
+              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.email}
               value={settings.email}
@@ -1134,7 +1099,7 @@ export function DashboardSettingsView({
               className="md:col-span-2"
               label="Dirección"
               placeholder="Ej: Av. Corrientes 1234"
-              readOnly={!isEditing}
+              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.address}
               value={settings.address}
@@ -1143,7 +1108,7 @@ export function DashboardSettingsView({
             <SettingsField
               label="Localidad"
               placeholder="Ej: Palermo"
-              readOnly={!isEditing}
+              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.city}
               value={settings.city}
@@ -1154,7 +1119,7 @@ export function DashboardSettingsView({
                 Provincia
               </span>
               <select
-                disabled={!isEditing}
+                disabled={!canEditSettings}
                 value={settings.province}
                 onChange={(event) => updateSetting("province", event.target.value)}
                 className={`h-10 rounded-md border bg-white/70 px-3 outline-none disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] ${
@@ -1173,7 +1138,7 @@ export function DashboardSettingsView({
             <SettingsField
               label="Instagram"
               placeholder="Ej: @minegocio"
-              readOnly={!isEditing}
+              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.instagram}
               value={settings.instagram}
@@ -1188,7 +1153,7 @@ export function DashboardSettingsView({
             />
               </>
             )}
-            {isEditing && (
+            {canEditSettings && (
               <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-center md:col-span-2">
                 {!isOnboarding && (
                   <Button type="button" onClick={cancelEditing} className="w-full sm:w-auto">
@@ -1284,6 +1249,19 @@ export function DashboardSettingsView({
       {showDeleteConfirm && (
         <DeleteAccountModal onClose={() => setShowDeleteConfirm(false)} />
       )}
+      {customCategoryDraft !== null && (
+        <CustomCategoryModal
+          value={customCategoryDraft}
+          onChange={setCustomCategoryDraft}
+          onClose={() => setCustomCategoryDraft(null)}
+          onSave={() => {
+            const value = customCategoryDraft.trim();
+            if (!value) return;
+            updateSetting("category", value);
+            setCustomCategoryDraft(null);
+          }}
+        />
+      )}
       {pendingTab && (
         <UnsavedChangesModal
           onCancel={() => {
@@ -1352,7 +1330,7 @@ function SettingsField({
   return (
     <label className={`relative grid gap-1.5 text-sm ${className}`}>
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
-      <span className={`flex min-w-0 overflow-hidden rounded-md border bg-white/70 focus-within:ring-2 ${
+      <span className={`flex h-10 min-w-0 overflow-hidden rounded-md border bg-white/70 focus-within:ring-2 ${
         changed
           ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
           : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
@@ -1368,7 +1346,7 @@ function SettingsField({
           placeholder={placeholder}
           value={value}
           onChange={(event) => onChange?.(event.target.value)}
-          className={`min-w-0 flex-1 bg-transparent px-3 py-2 outline-none placeholder:text-[var(--color-muted)] ${
+          className={`min-w-0 flex-1 bg-transparent px-3 outline-none placeholder:text-[var(--color-muted)] ${
             readOnly ? "cursor-not-allowed bg-[rgba(32,24,54,0.035)] text-[var(--color-muted-strong)]" : ""
           }`}
         />
@@ -1396,6 +1374,44 @@ function SettingsField({
         </span>
       )}
     </label>
+  );
+}
+
+function CustomCategoryModal({
+  value,
+  onChange,
+  onClose,
+  onSave
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="viewport-overlay modal-overlay-enter z-[90] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+      <section className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          Rubro personalizado
+        </p>
+        <h2 className="mt-2 text-lg font-semibold">Escribí el rubro del negocio</h2>
+        <input
+          autoFocus
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Ej: Veterinaria"
+          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
+        />
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="button" variant="primary" disabled={!value.trim()} onClick={onSave}>
+            Guardar rubro
+          </Button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -1452,11 +1468,11 @@ function GalleryCropModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-end bg-[rgba(32,24,54,0.72)] p-3 backdrop-blur-sm sm:place-items-center">
+    <div className="modal-overlay-enter fixed inset-0 z-[120] grid place-items-end bg-[rgba(32,24,54,0.72)] p-3 backdrop-blur-sm sm:place-items-center">
       <section
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-3xl rounded-2xl border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_30px_100px_rgba(32,24,54,0.32)] sm:p-6"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-3xl rounded-2xl border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_30px_100px_rgba(32,24,54,0.32)] sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -1561,11 +1577,11 @@ function UnsavedChangesModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+    <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
       <section
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
       >
         <h2 className="text-lg font-semibold">Tenés cambios sin guardar</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
@@ -1611,8 +1627,8 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.62)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
-      <div className="w-full max-w-lg rounded-lg border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.62)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <h2 className="text-lg font-semibold text-[#8f1b13]">
           Confirmar eliminación
         </h2>

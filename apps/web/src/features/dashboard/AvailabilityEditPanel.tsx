@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Toast } from "../../components/ui";
+import { ModalCloseButton, Toast } from "../../components/ui";
 import type {
   AvailabilityException,
   AvailabilityPanel,
@@ -127,8 +127,8 @@ export function AvailabilityEditPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
-      <div className="w-full max-w-xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-3">
           <div>
             <h2 className="text-lg font-semibold">{title}</h2>
@@ -136,14 +136,7 @@ export function AvailabilityEditPanel({
               Los cambios se aplican en esta maqueta local.
             </p>
           </div>
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm font-semibold text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Cerrar
-          </button>
+          <ModalCloseButton disabled={isSaving} onClick={onClose} />
         </div>
 
         {exception && (

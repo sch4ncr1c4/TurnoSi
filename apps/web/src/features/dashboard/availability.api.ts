@@ -16,32 +16,40 @@ export type WeeklyAvailabilityResponse = {
   };
 };
 
-export function getWeeklyAvailability() {
-  return apiRequest<WeeklyAvailabilityResponse>("/api/v1/availability/weekly");
+function withBranch(path: string, branchId?: string) {
+  if (!branchId) return path;
+  return `${path}?branchId=${encodeURIComponent(branchId)}`;
+}
+
+export function getWeeklyAvailability(branchId?: string) {
+  return apiRequest<WeeklyAvailabilityResponse>(
+    withBranch("/api/v1/availability/weekly", branchId)
+  );
 }
 
 export function updateWeeklyAvailability(
-  days: WeeklyAvailabilityResponse["data"]["days"]
+  days: WeeklyAvailabilityResponse["data"]["days"],
+  branchId?: string
 ) {
-  return apiRequest("/api/v1/availability/weekly", {
+  return apiRequest(withBranch("/api/v1/availability/weekly", branchId), {
     method: "PUT",
     body: JSON.stringify({ days })
   });
 }
 
-export async function getAvailabilityExceptions() {
+export async function getAvailabilityExceptions(branchId?: string) {
   const response = await apiRequest<{ success: true; data: AvailabilityException[] }>(
-    "/api/v1/availability/exceptions"
+    withBranch("/api/v1/availability/exceptions", branchId)
   );
   return response.data;
 }
 
-export function saveAvailabilityException(exception: AvailabilityException) {
+export function saveAvailabilityException(exception: AvailabilityException, branchId?: string) {
   const path = exception.id
     ? `/api/v1/availability/exceptions/${exception.id}`
     : "/api/v1/availability/exceptions";
   return apiRequest<{ success: true; data: { id?: string; updated?: true } }>(
-    path,
+    withBranch(path, branchId),
     {
       method: exception.id ? "PATCH" : "POST",
       body: JSON.stringify(exception)
@@ -49,9 +57,9 @@ export function saveAvailabilityException(exception: AvailabilityException) {
   );
 }
 
-export function deleteAvailabilityException(id: string) {
+export function deleteAvailabilityException(id: string, branchId?: string) {
   return apiRequest<{ success: true; data: { deleted: true } }>(
-    `/api/v1/availability/exceptions/${id}`,
+    withBranch(`/api/v1/availability/exceptions/${id}`, branchId),
     { method: "DELETE" }
   );
 }
