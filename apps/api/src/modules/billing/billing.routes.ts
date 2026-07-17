@@ -1,7 +1,9 @@
 import { Router } from "express";
 import {
+  Invoice,
   InvalidWebhookSignatureError,
   MercadoPagoConfig,
+  Payment,
   PreApproval,
   WebhookSignatureValidator
 } from "mercadopago";
@@ -22,6 +24,7 @@ const plans = {
   operation: { name: "Turnosi Operación", amount: 39_000 }
 } as const;
 const pendingSubscriptionTtlMs = 30 * 60 * 1000;
+const failedPaymentGraceMs = 3 * 24 * 60 * 60 * 1000;
 
 type MercadoPagoSubscription = {
   id?: string;
@@ -32,7 +35,21 @@ type MercadoPagoSubscription = {
   date_created?: string | null;
 };
 
-function mercadoPagoClient() {
+type MercadoPagoInvoice = {
+  id?: string;
+  external_reference?: string | null;
+  preapproval_id?: string | null;
+  debit_date?: string | null;
+  transaction_amount?: number | null;
+  currency_id?: string | null;
+  payment?: {
+    id?: string | number;
+    status?: string;
+    status_detail?: string;
+  } | null;
+};
+
+function mercadoPagoConfig() {
   if (!env.MERCADOPAGO_ACCESS_TOKEN) {
     throw new AppError(
       503,
@@ -40,9 +57,19 @@ function mercadoPagoClient() {
       "Mercado Pago is not configured"
     );
   }
-  return new PreApproval(
-    new MercadoPagoConfig({ accessToken: env.MERCADOPAGO_ACCESS_TOKEN })
-  );
+  return new MercadoPagoConfig({ accessToken: env.MERCADOPAGO_ACCESS_TOKEN });
+}
+
+function mercadoPagoClient() {
+  return new PreApproval(mercadoPagoConfig());
+}
+
+function mercadoPagoPaymentClient() {
+  return new Payment(mercadoPagoConfig());
+}
+
+function mercadoPagoInvoiceClient() {
+  return new Invoice(mercadoPagoConfig());
 }
 
 function normalizeStatus(status?: string) {
@@ -55,6 +82,35 @@ function normalizeStatus(status?: string) {
 function planFromExternalReference(reference?: string | null) {
   const [, plan] = (reference ?? "").split(":");
   return plan in plans ? (plan as keyof typeof plans) : null;
+}
+
+function organizationFromExternalReference(reference?: string | null) {
+  return (reference ?? "").split(":")[0] || null;
+}
+
+function normalizePaymentStatus(status?: string) {
+  if (status === "approved") return "approved" as const;
+  if (status === "rejected") return "rejected" as const;
+  if (status === "cancelled" || status === "canceled") return "cancelled" as const;
+  if (status === "refunded") return "refunded" as const;
+  if (status === "charged_back") return "charged_back" as const;
+  if (status === "pending" || status === "in_process" || status === "authorized") {
+    return "pending" as const;
+  }
+  return "unknown" as const;
+}
+
+function paymentStatusNeedsGrace(status: ReturnType<typeof normalizePaymentStatus>) {
+  return (
+    status === "rejected" ||
+    status === "cancelled" ||
+    status === "refunded" ||
+    status === "charged_back"
+  );
+}
+
+function amountToCents(amount?: number | null) {
+  return typeof amount === "number" ? Math.round(amount * 100) : null;
 }
 
 function isExpiredPendingSubscription(subscription: {
@@ -85,6 +141,107 @@ async function findAuthorizedMercadoPagoSubscription(organizationId: string) {
           new Date(first.date_created ?? 0).getTime()
       )[0] ?? null
   );
+}
+
+async function findInvoiceByPayment(paymentId: string) {
+  const result = await mercadoPagoInvoiceClient().search({
+    options: { payment_id: Number(paymentId), limit: 1 }
+  });
+  return (result.results?.[0] ?? null) as MercadoPagoInvoice | null;
+}
+
+async function syncSubscriptionPayment(
+  paymentId: string,
+  knownInvoice?: MercadoPagoInvoice | null
+) {
+  const payment = await mercadoPagoPaymentClient().get({ id: paymentId });
+  const invoice = knownInvoice ?? (await findInvoiceByPayment(paymentId));
+  const reference = invoice?.external_reference ?? payment.external_reference;
+  const organizationId = organizationFromExternalReference(reference);
+  const plan = planFromExternalReference(reference);
+  const preapprovalId =
+    invoice?.preapproval_id ??
+    (typeof payment.metadata?.preapproval_id === "string"
+      ? payment.metadata.preapproval_id
+      : null);
+
+  const subscription = organizationId
+    ? await prisma.organizationSubscription.findUnique({ where: { organizationId } })
+    : preapprovalId
+      ? await prisma.organizationSubscription.findUnique({
+          where: { mercadoPagoPreapprovalId: preapprovalId }
+        })
+      : null;
+
+  if (!subscription) return;
+
+  const status = normalizePaymentStatus(payment.status ?? invoice?.payment?.status);
+  const now = new Date();
+  const graceEndsAt = paymentStatusNeedsGrace(status)
+    ? subscription.paymentGraceEndsAt ?? new Date(now.getTime() + failedPaymentGraceMs)
+    : null;
+
+  await prisma.$transaction([
+    prisma.organizationSubscriptionPayment.upsert({
+      where: { mercadoPagoPaymentId: paymentId },
+      create: {
+        organizationId: subscription.organizationId,
+        subscriptionId: subscription.id,
+        mercadoPagoPaymentId: paymentId,
+        mercadoPagoInvoiceId: invoice?.id ?? null,
+        mercadoPagoPreapprovalId: preapprovalId ?? subscription.mercadoPagoPreapprovalId,
+        status,
+        statusDetail: payment.status_detail ?? invoice?.payment?.status_detail ?? null,
+        amountCents: amountToCents(payment.transaction_amount ?? invoice?.transaction_amount),
+        currencyId: payment.currency_id ?? invoice?.currency_id ?? null,
+        paidAt: payment.date_approved ? new Date(payment.date_approved) : null,
+        dueAt: invoice?.debit_date ? new Date(invoice.debit_date) : null,
+        raw: payment as object
+      },
+      update: {
+        subscriptionId: subscription.id,
+        mercadoPagoInvoiceId: invoice?.id ?? undefined,
+        mercadoPagoPreapprovalId: preapprovalId ?? subscription.mercadoPagoPreapprovalId,
+        status,
+        statusDetail: payment.status_detail ?? invoice?.payment?.status_detail ?? null,
+        amountCents: amountToCents(payment.transaction_amount ?? invoice?.transaction_amount),
+        currencyId: payment.currency_id ?? invoice?.currency_id ?? null,
+        paidAt: payment.date_approved ? new Date(payment.date_approved) : null,
+        dueAt: invoice?.debit_date ? new Date(invoice.debit_date) : null,
+        raw: payment as object
+      }
+    }),
+    prisma.organizationSubscription.update({
+      where: { id: subscription.id },
+      data: {
+        ...(plan ? { plan } : {}),
+        lastPaymentStatus: status,
+        paymentGraceEndsAt: status === "approved" ? null : graceEndsAt,
+        ...(status === "approved"
+          ? { status: "authorized" as const, trialEndsAt: null }
+          : {})
+      }
+    })
+  ]);
+}
+
+async function syncSubscriptionInvoice(invoiceId: string) {
+  const invoice = (await mercadoPagoInvoiceClient().get({
+    id: invoiceId
+  })) as MercadoPagoInvoice;
+  const paymentId = invoice.payment?.id ? String(invoice.payment.id) : "";
+  if (!paymentId) return;
+  await syncSubscriptionPayment(paymentId, invoice);
+}
+
+async function syncRecentSubscriptionPayments(preapprovalId: string) {
+  const result = await mercadoPagoInvoiceClient().search({
+    options: { preapproval_id: preapprovalId, limit: 5 }
+  });
+  for (const invoice of (result.results ?? []) as MercadoPagoInvoice[]) {
+    const paymentId = invoice.payment?.id ? String(invoice.payment.id) : "";
+    if (paymentId) await syncSubscriptionPayment(paymentId, invoice);
+  }
 }
 
 billingRouter.get("/subscription", async (request, response) => {
@@ -150,6 +307,12 @@ billingRouter.get("/subscription", async (request, response) => {
             : null
         }
       });
+      if (remoteSubscription.id) {
+        await syncRecentSubscriptionPayments(remoteSubscription.id);
+        subscription = await prisma.organizationSubscription.findUnique({
+          where: { organizationId: request.tenant!.organizationId }
+        });
+      }
     } catch {
       // Return the last webhook-backed state if Mercado Pago is temporarily unavailable.
     }
@@ -314,7 +477,24 @@ billingPublicRouter.post("/mercadopago", async (request, response) => {
   }
 
   const type = String(request.query.type ?? request.body?.type ?? "");
-  if (type !== "subscription_preapproval" || !dataId) {
+  if (!dataId) {
+    response.sendStatus(200);
+    return;
+  }
+
+  if (type === "payment") {
+    await syncSubscriptionPayment(dataId);
+    response.sendStatus(200);
+    return;
+  }
+
+  if (type === "subscription_authorized_payment") {
+    await syncSubscriptionInvoice(dataId);
+    response.sendStatus(200);
+    return;
+  }
+
+  if (type !== "subscription_preapproval") {
     response.sendStatus(200);
     return;
   }

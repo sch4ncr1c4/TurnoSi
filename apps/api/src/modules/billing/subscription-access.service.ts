@@ -5,11 +5,31 @@ type SubscriptionAccess = {
   status: string;
   plan: string;
   trialEndsAt: Date | null;
+  paymentGraceEndsAt?: Date | null;
+  lastPaymentStatus?: string | null;
 };
+
+const paymentFailureStatuses = new Set([
+  "rejected",
+  "cancelled",
+  "refunded",
+  "charged_back"
+]);
 
 export function subscriptionGrantsAccess(subscription: SubscriptionAccess | null, now = new Date()) {
   if (!subscription || subscription.status !== "authorized") return false;
-  return subscription.plan !== "trial" || Boolean(subscription.trialEndsAt && subscription.trialEndsAt > now);
+  if (subscription.plan === "trial") {
+    return Boolean(subscription.trialEndsAt && subscription.trialEndsAt > now);
+  }
+  if (
+    subscription.lastPaymentStatus &&
+    paymentFailureStatuses.has(subscription.lastPaymentStatus) &&
+    subscription.paymentGraceEndsAt &&
+    subscription.paymentGraceEndsAt <= now
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export async function hasActiveSubscription(organizationId: string) {
@@ -19,6 +39,24 @@ export async function hasActiveSubscription(organizationId: string) {
 
   if (subscriptionGrantsAccess(subscription)) {
     return true;
+  }
+
+  if (
+    subscription?.status === "authorized" &&
+    subscription.plan !== "trial" &&
+    subscription.lastPaymentStatus &&
+    paymentFailureStatuses.has(subscription.lastPaymentStatus) &&
+    subscription.paymentGraceEndsAt &&
+    subscription.paymentGraceEndsAt <= new Date()
+  ) {
+    await prisma.organizationSubscription.updateMany({
+      where: {
+        id: subscription.id,
+        status: "authorized"
+      },
+      data: { status: "paused" }
+    });
+    return false;
   }
 
   if (!subscription || subscription.status !== "authorized" || subscription.plan !== "trial") return false;

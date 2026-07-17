@@ -42,6 +42,16 @@ enum SubscriptionStatus {
   canceled
 }
 
+enum SubscriptionPaymentStatus {
+  pending
+  approved
+  rejected
+  cancelled
+  refunded
+  charged_back
+  unknown
+}
+
 model User {
   id                     String                  @id @default(cuid())
   username               String?                 @unique
@@ -115,6 +125,7 @@ model Organization {
   logo                   OrganizationLogo?
   galleryImages          OrganizationGalleryImage[]
   subscription           OrganizationSubscription?
+  subscriptionPayments   OrganizationSubscriptionPayment[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
 }
@@ -154,10 +165,37 @@ model OrganizationSubscription {
   nextPaymentAt            DateTime?
   trialStartedAt           DateTime?
   trialEndsAt              DateTime?
+  paymentGraceEndsAt       DateTime?
+  lastPaymentStatus        SubscriptionPaymentStatus?
   lastWebhookAt            DateTime?
   organization             Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payments                 OrganizationSubscriptionPayment[]
   createdAt                DateTime            @default(now())
   updatedAt                DateTime            @updatedAt
+}
+
+model OrganizationSubscriptionPayment {
+  id                         String                     @id @default(cuid())
+  organizationId             String
+  subscriptionId             String?
+  mercadoPagoPaymentId       String                     @unique
+  mercadoPagoInvoiceId       String?                    @unique
+  mercadoPagoPreapprovalId   String?
+  status                     SubscriptionPaymentStatus  @default(pending)
+  statusDetail               String?
+  amountCents                Int?
+  currencyId                 String?
+  paidAt                     DateTime?
+  dueAt                      DateTime?
+  raw                        Json?
+  organization               Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription               OrganizationSubscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([mercadoPagoPreapprovalId])
+  @@index([status])
 }
 
 model OrganizationLogo {

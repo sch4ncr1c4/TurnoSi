@@ -31,6 +31,16 @@ export type SubscriptionStatus = {
   nextPaymentAt: string | null;
   trialStartedAt: string | null;
   trialEndsAt: string | null;
+  paymentGraceEndsAt: string | null;
+  lastPaymentStatus:
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "cancelled"
+    | "refunded"
+    | "charged_back"
+    | "unknown"
+    | null;
 } | null;
 
 export async function getSubscription() {

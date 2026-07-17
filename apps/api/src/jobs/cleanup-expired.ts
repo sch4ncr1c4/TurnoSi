@@ -76,8 +76,21 @@ const localPendingSubscriptions = await prisma.organizationSubscription.updateMa
   data: { status: "canceled" }
 });
 
+const graceExpiredSubscriptions = await prisma.organizationSubscription.updateMany({
+  where: {
+    status: "authorized",
+    plan: { not: "trial" },
+    lastPaymentStatus: {
+      in: ["rejected", "cancelled", "refunded", "charged_back"]
+    },
+    paymentGraceEndsAt: { lte: now }
+  },
+  data: { status: "paused" }
+});
+
 logger.info("billing cleanup completed", {
   localPendingSubscriptions: localPendingSubscriptions.count,
+  graceExpiredSubscriptions: graceExpiredSubscriptions.count,
   mercadoPagoPendingSubscriptions
 });
 
