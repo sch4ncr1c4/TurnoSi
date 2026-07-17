@@ -2,7 +2,6 @@ import { Router } from "express";
 
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
-import { requireEditor } from "../../lib/membership.js";
 import { ok } from "../../lib/http.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
@@ -22,6 +21,7 @@ calendarRouter.get("/appointments", async (request, response) => {
     where: {
       organizationId: tenant.organizationId,
       deletedAt: null,
+      ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {}),
       startsAt: { gte: new Date(query.from), lt: new Date(query.to) }
     },
     include: {
@@ -53,13 +53,13 @@ calendarRouter.patch("/appointments/:appointmentId/status", authRateLimit, async
   const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
   const data = updateCalendarStatusSchema.parse(request.body);
   const tenant = request.tenant!;
-  requireEditor(tenant.role);
 
   const appointment = await prisma.appointment.findFirst({
     where: {
       id: appointmentId,
       organizationId: tenant.organizationId,
-      deletedAt: null
+      deletedAt: null,
+      ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {})
     },
     select: { id: true, customerId: true, status: true }
   });

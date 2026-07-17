@@ -155,10 +155,11 @@ authRouter.post("/register", authRateLimit, async (request, response) => {
 
 authRouter.post("/login", authRateLimit, async (request, response) => {
   const data = loginSchema.parse(request.body);
-  const email = data.email.toLowerCase();
+  const identifier = data.email.toLowerCase();
+  const isEmail = identifier.includes("@");
 
-  const user = await prisma.user.findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: isEmail ? { email: identifier } : { username: identifier },
     include: {
       memberships: {
         include: {
@@ -208,7 +209,7 @@ authRouter.post("/login", authRateLimit, async (request, response) => {
     action: "user.login",
     entityType: "User",
     entityId: user.id,
-    metadata: { email }
+    metadata: { identifier }
   });
   response.json(
     ok({

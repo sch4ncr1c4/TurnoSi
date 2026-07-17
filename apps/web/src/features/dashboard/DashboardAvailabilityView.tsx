@@ -105,16 +105,19 @@ export function DashboardAvailabilityView() {
     queryKey: queryKeys.organizationBranches,
     queryFn: getBranches
   });
-  const selectedBranch = branchesQuery.data?.find((branch) => branch.id === selectedBranchId);
+  const fallbackBranchId =
+    branchesQuery.data?.find((branch) => branch.isMain)?.id ?? branchesQuery.data?.[0]?.id ?? "";
+  const activeBranchId = selectedBranchId || fallbackBranchId;
+  const selectedBranch = branchesQuery.data?.find((branch) => branch.id === activeBranchId);
   const weeklyQuery = useQuery({
-    queryKey: queryKeys.weeklyAvailability(selectedBranchId),
-    queryFn: () => getWeeklyAvailability(selectedBranchId),
-    enabled: activeTab === "weekly" && Boolean(selectedBranchId)
+    queryKey: queryKeys.weeklyAvailability(activeBranchId),
+    queryFn: () => getWeeklyAvailability(activeBranchId),
+    enabled: activeTab === "weekly" && Boolean(activeBranchId)
   });
   const exceptionsQuery = useQuery({
-    queryKey: queryKeys.availabilityExceptions(selectedBranchId),
-    queryFn: () => getAvailabilityExceptions(selectedBranchId),
-    enabled: activeTab === "exceptions" && Boolean(selectedBranchId)
+    queryKey: queryKeys.availabilityExceptions(activeBranchId),
+    queryFn: () => getAvailabilityExceptions(activeBranchId),
+    enabled: activeTab === "exceptions" && Boolean(activeBranchId)
   });
   const catalogQuery = useQuery({
     queryKey: queryKeys.availabilityCatalog,
@@ -123,50 +126,60 @@ export function DashboardAvailabilityView() {
   });
 
   useEffect(() => {
-    if (!branchesQuery.data?.length || selectedBranchId) return;
-    const mainBranch = branchesQuery.data.find((branch) => branch.isMain);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelectedBranchId(mainBranch?.id ?? branchesQuery.data[0].id);
-  }, [branchesQuery.data, selectedBranchId]);
+    if (!weeklyQuery.data) return;
+    let cancelled = false;
+    const { data } = weeklyQuery.data;
+    const loaded = weeklyAvailability.map((metadata, weekday) => {
+      const slots = (data.days.find((day) => day.weekday === weekday)?.slots ?? [])
+        .map((slot) => ({
+          start: minuteToTime(slot.startMinute),
+          end: minuteToTime(slot.endMinute)
+        }));
+      return {
+        ...metadata,
+        enabled: slots.length > 0,
+        status: slots.length > 0 ? "Activo" : "Inactivo",
+        slots,
+        break:
+          slots.length >= 2 && slots[0].end !== slots[1].start
+            ? { start: slots[0].end, end: slots[1].start }
+            : null
+      } satisfies WeeklyAvailabilityDay;
+    });
 
-  useEffect(() => {
-    if (weeklyQuery.data) {
-      const { data } = weeklyQuery.data;
-      const loaded = weeklyAvailability.map((metadata, weekday) => {
-        const slots = (data.days.find((day) => day.weekday === weekday)?.slots ?? [])
-          .map((slot) => ({
-            start: minuteToTime(slot.startMinute),
-            end: minuteToTime(slot.endMinute)
-          }));
-        return {
-          ...metadata,
-          enabled: slots.length > 0,
-          status: slots.length > 0 ? "Activo" : "Inactivo",
-          slots,
-          break:
-            slots.length >= 2 && slots[0].end !== slots[1].start
-              ? { start: slots[0].end, end: slots[1].start }
-              : null
-        } satisfies WeeklyAvailabilityDay;
-      });
-      // The editor keeps a local draft until the user saves.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    queueMicrotask(() => {
+      if (cancelled) return;
       setAvailability(loaded);
       setSavedAvailability(loaded);
-    }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [weeklyQuery.data]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (exceptionsQuery.data) setExceptions(exceptionsQuery.data);
+    if (!exceptionsQuery.data) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setExceptions(exceptionsQuery.data);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [exceptionsQuery.data]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (catalogQuery.data) {
+    if (!catalogQuery.data) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
       setResources(catalogQuery.data.services);
       setServiceCategories(catalogQuery.data.categories);
-    }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [catalogQuery.data]);
 
   function updateSlotTime(
@@ -377,7 +390,7 @@ export function DashboardAvailabilityView() {
       throw new Error("Duplicate exception date");
     }
     try {
-      const result = await saveAvailabilityException(draft, selectedBranchId);
+      const result = await saveAvailabilityException(draft, activeBranchId);
       const saved = { ...draft, id: draft.id ?? result.data.id };
       setExceptions((current) =>
         current.map((item, currentIndex) =>
@@ -385,7 +398,7 @@ export function DashboardAvailabilityView() {
         )
       );
       queryClient.setQueryData<AvailabilityException[]>(
-        queryKeys.availabilityExceptions(selectedBranchId),
+        queryKeys.availabilityExceptions(activeBranchId),
         (current = []) =>
           draft.id
             ? current.map((item) => (item.id === draft.id ? saved : item))
@@ -402,10 +415,10 @@ export function DashboardAvailabilityView() {
     const exception = exceptions[index];
     if (!exception?.id) return;
     try {
-      await deleteAvailabilityException(exception.id, selectedBranchId);
+      await deleteAvailabilityException(exception.id, activeBranchId);
       setExceptions((current) => current.filter((_, currentIndex) => currentIndex !== index));
       queryClient.setQueryData<AvailabilityException[]>(
-        queryKeys.availabilityExceptions(selectedBranchId),
+        queryKeys.availabilityExceptions(activeBranchId),
         (current = []) => current.filter((item) => item.id !== exception.id)
       );
       setToast("Excepción eliminada.");
@@ -559,8 +572,8 @@ export function DashboardAvailabilityView() {
       }
       setIsSavingWeekly(true);
       try {
-        await updateWeeklyAvailability(days, selectedBranchId);
-        queryClient.setQueryData(queryKeys.weeklyAvailability(selectedBranchId), {
+        await updateWeeklyAvailability(days, activeBranchId);
+        queryClient.setQueryData(queryKeys.weeklyAvailability(activeBranchId), {
           success: true,
           data: {
             timezone: weeklyQuery.data?.data.timezone ?? "America/Argentina/Buenos_Aires",
@@ -683,7 +696,7 @@ export function DashboardAvailabilityView() {
                     Sede
                   </span>
                   <select
-                    value={selectedBranchId}
+                    value={activeBranchId}
                     onChange={(event) => handleBranchChange(event.target.value)}
                     className="h-11 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.78)] px-3 font-semibold outline-none focus:border-[var(--color-accent)]"
                   >

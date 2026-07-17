@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { randomBytes } from "node:crypto";
 
 import { prisma } from "../../database/prisma.js";
 import { ok } from "../../lib/http.js";
@@ -9,6 +8,7 @@ import { hashPassword } from "../../lib/password.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
 import {
   createTeamMemberSchema,
+  resetTeamMemberPasswordSchema,
   teamMemberParamsSchema,
   updateTeamMemberSchema
 } from "./team.schemas.js";
@@ -30,11 +30,13 @@ function getDisplayName(member: {
   user: {
     firstName: string | null;
     lastName: string | null;
+    username: string | null;
     email: string;
   };
 }) {
   return (
     [member.user.firstName, member.user.lastName].filter(Boolean).join(" ") ||
+    member.user.username ||
     member.user.email
   );
 }
@@ -58,6 +60,7 @@ function serializeTeamMember(
       id: string;
       firstName: string | null;
       lastName: string | null;
+      username: string | null;
       phone: string | null;
       email: string;
     };
@@ -76,6 +79,7 @@ function serializeTeamMember(
     lastName: member.user.lastName,
     phone: member.user.phone,
     name: getDisplayName(member),
+    username: member.user.username,
     email: member.user.email,
     role: member.role,
     bookingsEnabled: member.bookingsEnabled,
@@ -92,16 +96,6 @@ function serializeTeamMember(
     temporaryPassword: meta?.temporaryPassword ?? null,
     isNewUser: meta?.isNewUser ?? false
   };
-}
-
-function generateTemporaryPassword() {
-  const bytes = randomBytes(10);
-  const upper = bytes.subarray(0, 2).toString("hex").toUpperCase();
-  const lower = bytes.subarray(2, 6).toString("hex");
-  const digits = bytes.readUInt16BE(6) % 10000;
-  const symbols = ["!", "@", "#", "$", "%", "&"];
-  const symbol = symbols[bytes[8] % symbols.length];
-  return `${upper}-${lower}-${String(digits).padStart(4, "0")}${symbol}`;
 }
 
 async function resolveMemberBranchIds(organizationId: string, branchIds: string[]) {
@@ -148,17 +142,20 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
   const tenant = request.tenant!;
   requireEditor(tenant.role);
   const data = createTeamMemberSchema.parse(request.body);
-  const email = data.email.toLowerCase();
+  const username = data.username.toLowerCase();
+  const email = `${username}@team.turnosi.local`;
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [{ username }, { email }]
+    },
     select: { id: true }
   });
   if (existingUser) {
     throw new AppError(
       409,
-      "ACCOUNT_ALREADY_EXISTS",
-      "An existing account must join through an invitation"
+      "USERNAME_ALREADY_IN_USE",
+      "Username already in use"
     );
   }
   if (data.role === "owner" || (tenant.role === "admin" && data.role !== "member")) {
@@ -166,13 +163,13 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
   }
   const branchIds = await resolveMemberBranchIds(tenant.organizationId, data.branchIds);
 
-  const temporaryPassword = generateTemporaryPassword();
-  const passwordHash = await hashPassword(temporaryPassword);
+  const passwordHash = await hashPassword(data.password);
 
   const created = await prisma.$transaction(async (transaction) => {
     const user = await transaction.user.create({
           data: {
             email,
+            username,
             passwordHash,
             firstName: data.firstName,
             lastName: data.lastName,
@@ -182,6 +179,7 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
             id: true,
             firstName: true,
             lastName: true,
+            username: true,
             phone: true,
             email: true
           }
@@ -220,7 +218,6 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
   response.status(201).json(
     ok(
       serializeTeamMember(created, {
-        temporaryPassword,
         isNewUser: true
       })
     )
@@ -229,6 +226,7 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
 
 teamRouter.get("/", async (request, response) => {
   const tenant = request.tenant!;
+  requireEditor(tenant.role);
   const members = await prisma.membership.findMany({
     where: { organizationId: tenant.organizationId },
     include: {
@@ -240,6 +238,7 @@ teamRouter.get("/", async (request, response) => {
           id: true,
           firstName: true,
           lastName: true,
+          username: true,
           phone: true,
           email: true
         }
@@ -303,6 +302,7 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
           id: true,
           firstName: true,
           lastName: true,
+          username: true,
           phone: true,
           email: true
         }
@@ -320,13 +320,14 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
     (isOwnerMembership && !isSelf) ||
     (isOwnerMembership && data.role !== "owner") ||
     (!isOwnerMembership && data.role === "owner") ||
-    (tenant.role === "admin" && (membership.role !== "member" || data.role !== "member"))
+    (tenant.role === "admin" &&
+      !isSelf &&
+      (membership.role !== "member" || data.role !== "member"))
   ) {
     throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
   }
 
   const hasProfileChanges =
-    data.email.toLowerCase() !== membership.user.email.toLowerCase() ||
     data.firstName !== membership.user.firstName ||
     data.lastName !== membership.user.lastName ||
     data.phone !== membership.user.phone;
@@ -347,8 +348,7 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
         data: {
           firstName: data.firstName,
           lastName: data.lastName,
-          phone: data.phone,
-          email: data.email.toLowerCase()
+          phone: data.phone
         }
       });
     }
@@ -383,6 +383,7 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
             id: true,
             firstName: true,
             lastName: true,
+            username: true,
             phone: true,
             email: true
           }
@@ -392,4 +393,38 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
   });
 
   response.json(ok(serializeTeamMember(updated)));
+});
+
+teamRouter.patch("/:membershipId/password", authRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const { membershipId } = teamMemberParamsSchema.parse(request.params);
+  const data = resetTeamMemberPasswordSchema.parse(request.body);
+
+  const membership = await prisma.membership.findFirst({
+    where: {
+      id: membershipId,
+      organizationId: tenant.organizationId
+    },
+    select: {
+      role: true,
+      userId: true
+    }
+  });
+  if (!membership) {
+    throw new AppError(404, "NOT_FOUND", "Team member not found");
+  }
+  if (membership.role === "owner" && tenant.userId !== membership.userId) {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
+  }
+  if (tenant.role === "admin" && membership.userId !== tenant.userId && membership.role !== "member") {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
+  }
+
+  await prisma.user.update({
+    where: { id: membership.userId },
+    data: { passwordHash: await hashPassword(data.password) }
+  });
+
+  response.json(ok({ updated: true }));
 });

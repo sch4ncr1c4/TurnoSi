@@ -36,6 +36,7 @@ async function resolveBranchId(organizationId: string, branchId?: string) {
 
 availabilityRouter.get("/weekly", async (request, response) => {
   const tenant = request.tenant!;
+  requireEditor(tenant.role);
   const { branchId } = branchQuerySchema.parse(request.query);
   const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
 
@@ -146,6 +147,7 @@ function localTimeInTimezone(date: Date, timezone: string) {
 
 availabilityRouter.get("/exceptions", async (request, response) => {
   const tenant = request.tenant!;
+  requireEditor(tenant.role);
   const { branchId } = branchQuerySchema.parse(request.query);
   const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   const exceptions = await prisma.availabilityException.findMany({
@@ -259,6 +261,7 @@ availabilityRouter.delete("/exceptions/:exceptionId", authRateLimit, async (requ
 
 availabilityRouter.get("/catalog", async (request, response) => {
   const tenant = request.tenant!;
+  requireEditor(tenant.role);
   const [services, categories] = await Promise.all([
   prisma.service.findMany({
     where: { organizationId: tenant.organizationId, isActive: true },

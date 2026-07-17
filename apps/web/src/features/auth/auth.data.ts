@@ -42,9 +42,9 @@ export const authRoutes: readonly AuthRouteConfig[] = [
     fields: [
       {
         id: "email",
-        label: "Email",
-        type: "email",
-        placeholder: "nombre@negocio.com"
+        label: "Email o usuario",
+        type: "text",
+        placeholder: "nombre@negocio.com o juan.ramos"
       },
       {
         id: "password",

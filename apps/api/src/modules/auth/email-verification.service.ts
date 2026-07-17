@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { env } from "../../config/env.js";
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
+import { renderTurnosiEmail } from "../../lib/email-template.js";
 import { logger } from "../../lib/logger.js";
 
 function hashToken(token: string) {
@@ -35,7 +36,17 @@ export async function createEmailVerification(userId: string, email: string) {
         from: env.EMAIL_FROM,
         to: [email],
         subject: "Verificá tu cuenta de TurnoSi",
-        html: `<p>Confirmá tu correo para activar tu cuenta.</p><p><a href="${verificationUrl}">Verificar cuenta</a></p><p>El enlace vence en 5 minutos.</p>`
+        html: renderTurnosiEmail({
+          eyebrow: "Verificación de cuenta",
+          title: "Activá tu cuenta en TurnoSi",
+          intro:
+            "Confirmá tu correo para terminar el alta y empezar a configurar tu negocio.",
+          action: {
+            label: "Verificar cuenta",
+            url: verificationUrl
+          },
+          note: "Este enlace vence en 5 minutos por seguridad."
+        })
       })
     });
     if (!response.ok) {

@@ -7,6 +7,7 @@ import { useSessionQuery } from "../auth/auth.queries";
 import { getApiUrl } from "../../lib/api";
 import { buttonMotionClass } from "./dashboard.constants";
 import { dashboardSections } from "./dashboard.data";
+import { canOpenBillingPlans, canAccessDashboardView, type DashboardRole } from "./dashboard.permissions";
 import type { DashboardView } from "./dashboard.types";
 import type { SubscriptionStatus } from "../billing/billing.api";
 
@@ -14,6 +15,7 @@ type DashboardSidebarProps = {
   activeView: DashboardView;
   brand: ReactNode;
   navigationLocked?: boolean;
+  role?: DashboardRole;
   subscription?: SubscriptionStatus;
   onChangeView: (view: DashboardView) => void;
   onOpenBillingPlans: () => void;
@@ -30,6 +32,7 @@ export function DashboardSidebar({
   activeView,
   brand,
   navigationLocked = false,
+  role,
   subscription,
   onChangeView,
   onOpenBillingPlans
@@ -103,6 +106,7 @@ export function DashboardSidebar({
                   : section.label === "Configuración"
                   ? "settings"
                 : "summary";
+          if (!canAccessDashboardView(role, view)) return null;
           const isActive =
             (activeView === "summary" && index === 0) ||
             activeView === view;
@@ -173,7 +177,7 @@ export function DashboardSidebar({
           </div>
         </div>
 
-        {membership?.role === "owner" && (
+        {canOpenBillingPlans(membership?.role) && (
           <button
             type="button"
             disabled={navigationLocked}

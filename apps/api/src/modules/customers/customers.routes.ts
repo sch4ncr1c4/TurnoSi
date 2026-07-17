@@ -108,7 +108,8 @@ customerManagementRouter.post("/:customerId/unblock", authRateLimit, async (requ
 
 customersRouter.get("/", authenticatedRateLimit, async (request, response) => {
   const { organizationId } = organizationParamsSchema.parse(request.params);
-  await assertMembership(request.auth!.sub, organizationId);
+  const membership = await assertMembership(request.auth!.sub, organizationId);
+  requireEditor(membership.role);
   const { search, status: _status, ...pagination } = customersQuerySchema
     .merge(paginationSchema)
     .parse(request.query);
@@ -141,7 +142,8 @@ customersRouter.get("/", authenticatedRateLimit, async (request, response) => {
 
 customersRouter.post("/", authRateLimit, async (request, response) => {
   const { organizationId } = organizationParamsSchema.parse(request.params);
-  await assertMembership(request.auth!.sub, organizationId);
+  const membership = await assertMembership(request.auth!.sub, organizationId);
+  requireEditor(membership.role);
   const data = createCustomerSchema.parse(request.body);
   const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
 
@@ -159,7 +161,8 @@ customersRouter.post("/", authRateLimit, async (request, response) => {
 
 customersRouter.delete("/:customerId", authRateLimit, async (request, response) => {
   const { organizationId } = organizationParamsSchema.parse(request.params);
-  await assertMembership(request.auth!.sub, organizationId);
+  const membership = await assertMembership(request.auth!.sub, organizationId);
+  requireEditor(membership.role);
   const { customerId } = customerParamsSchema.parse(request.params);
 
   const deleted = await softDelete("customer", {
@@ -176,7 +179,8 @@ customersRouter.delete("/:customerId", authRateLimit, async (request, response) 
 
 customersRouter.post("/:customerId/restore", authRateLimit, async (request, response) => {
   const { organizationId } = organizationParamsSchema.parse(request.params);
-  await assertMembership(request.auth!.sub, organizationId);
+  const membership = await assertMembership(request.auth!.sub, organizationId);
+  requireEditor(membership.role);
   const { customerId } = customerParamsSchema.parse(request.params);
 
   const restored = await restore("customer", {

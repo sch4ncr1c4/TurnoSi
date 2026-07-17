@@ -5,6 +5,7 @@ import { env } from "../../config/env.js";
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { hashToken } from "../../lib/crypto.js";
+import { renderTurnosiEmail } from "../../lib/email-template.js";
 import { hashPassword, verifyPassword } from "../../lib/password.js";
 
 async function sendResetCode(email: string, code: string) {
@@ -20,7 +21,14 @@ async function sendResetCode(email: string, code: string) {
       from: env.EMAIL_FROM,
       to: [email],
       subject: "Código para recuperar tu cuenta de TurnoSi",
-      html: `<p>Tu código para cambiar la contraseña es:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${code}</p><p>Vence en 3 minutos. Si no lo solicitaste, ignorá este correo.</p>`
+      html: renderTurnosiEmail({
+        eyebrow: "Recuperación de acceso",
+        title: "Tu código de seguridad",
+        intro:
+          "Usá este código para cambiar la contraseña de tu cuenta de TurnoSi.",
+        code,
+        note: "El código vence en 3 minutos y solo puede usarse una vez."
+      })
     })
   });
   if (!response.ok) {

@@ -192,6 +192,8 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                             ? "given-name"
                             : field.id === "lastName"
                               ? "family-name"
+                              : field.id === "email" && isLogin
+                                ? "username"
                               : field.type === "password"
                                 ? isLogin
                                   ? "current-password"

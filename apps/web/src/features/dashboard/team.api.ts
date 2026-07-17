@@ -7,6 +7,7 @@ export type TeamMember = {
   lastName: string | null;
   phone: string | null;
   name: string;
+  username: string | null;
   email: string;
   role: "owner" | "admin" | "member";
   bookingsEnabled: boolean;
@@ -24,6 +25,23 @@ export type TeamMember = {
   isNewUser: boolean;
 };
 
+export type TeamMemberFormData = Pick<
+  TeamMember,
+  | "firstName"
+  | "lastName"
+  | "phone"
+  | "role"
+  | "bookingsEnabled"
+  | "visibleInPublicBooking"
+  | "hourlyCapacity"
+  | "branchIds"
+>;
+
+export type CreateTeamMemberData = TeamMemberFormData & {
+  username: string;
+  password: string;
+};
+
 export async function getTeamMembers() {
   const response = await apiRequest<{ success: true; data: TeamMember[] }>(
     "/api/v1/team"
@@ -33,18 +51,7 @@ export async function getTeamMembers() {
 
 export async function updateTeamMember(
   membershipId: string,
-  data: Pick<
-    TeamMember,
-    | "firstName"
-    | "lastName"
-    | "phone"
-    | "email"
-    | "role"
-    | "bookingsEnabled"
-    | "visibleInPublicBooking"
-    | "hourlyCapacity"
-    | "branchIds"
-  >
+  data: TeamMemberFormData
 ) {
   const response = await apiRequest<{ success: true; data: TeamMember }>(
     `/api/v1/team/${membershipId}`,
@@ -56,20 +63,7 @@ export async function updateTeamMember(
   return response.data;
 }
 
-export async function createTeamMember(
-  data: Pick<
-    TeamMember,
-    | "firstName"
-    | "lastName"
-    | "phone"
-    | "email"
-    | "role"
-    | "bookingsEnabled"
-    | "visibleInPublicBooking"
-    | "hourlyCapacity"
-    | "branchIds"
-  >
-) {
+export async function createTeamMember(data: CreateTeamMemberData) {
   const response = await apiRequest<{ success: true; data: TeamMember }>(
     "/api/v1/team",
     {
@@ -78,4 +72,17 @@ export async function createTeamMember(
     }
   );
   return response.data;
+}
+
+export async function resetTeamMemberPassword(
+  membershipId: string,
+  password: string
+) {
+  return apiRequest<{ success: true; data: { updated: true } }>(
+    `/api/v1/team/${membershipId}/password`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ password })
+    }
+  );
 }

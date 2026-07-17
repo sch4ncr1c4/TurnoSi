@@ -306,8 +306,13 @@ organizationsRouter.delete(
 );
 
 organizationsRouter.get("/current/settings", async (request, response) => {
+  const tenant = request.tenant!;
+  if (tenant.role !== "owner" && tenant.role !== "admin") {
+    response.status(403).json({ success: false, message: "Insufficient permissions", code: "FORBIDDEN" });
+    return;
+  }
   const organization = await prisma.organization.findUnique({
-    where: { id: request.tenant!.organizationId },
+    where: { id: tenant.organizationId },
     include: {
       logo: { select: { organizationId: true, updatedAt: true } },
       galleryImages: { select: { slot: true, focusX: true, focusY: true, zoom: true, updatedAt: true } }

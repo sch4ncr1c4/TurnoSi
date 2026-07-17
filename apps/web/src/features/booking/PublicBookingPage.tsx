@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -70,21 +70,24 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
     staleTime: 10 * 60 * 1000
   });
   const data: PublicBookingData | undefined = bookingQuery.data;
+  const fallbackBranchId =
+    data && data.branches.length <= 1 ? data.branches[0]?.id ?? "" : "";
+  const activeBranchId = selectedBranchId || fallbackBranchId;
   const slotsQuery = useQuery({
     queryKey: queryKeys.publicSlots(
       organizationSlug,
       selectedServiceId,
       selectedAssigneeId || "auto",
-      selectedBranchId || "main"
+      activeBranchId || "main"
     ),
     queryFn: () =>
       getPublicSlots(
         organizationSlug,
         selectedServiceId,
-        selectedBranchId || undefined,
+        activeBranchId || undefined,
         selectedAssigneeId || undefined
       ),
-    enabled: Boolean(selectedServiceId) && Boolean(selectedBranchId),
+    enabled: Boolean(selectedServiceId) && Boolean(activeBranchId),
     staleTime: 30 * 1000
   });
   const days = slotsQuery.data?.days ?? [];
@@ -92,15 +95,6 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
     data?.organization.galleryImageSlots.filter(
       (slot): slot is 0 | 1 => slot === 0 || slot === 1
     ) ?? [];
-
-  useEffect(() => {
-    if (!data || selectedBranchId) return;
-    if (data.branches.length <= 1) {
-      setSelectedBranchId(data.branches[0]?.id ?? "");
-      return;
-    }
-    setStep("branch");
-  }, [data, selectedBranchId]);
 
   if (bookingQuery.isPending) {
     return (
@@ -207,12 +201,14 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
   const serviceId = selectedServiceId;
   const resourceOnlyBooking = isResourceOnlyBooking(data.organization.category);
   const hasBranchStep = data.branches.length > 1;
+  const activeStep: BookingStep =
+    hasBranchStep && !selectedBranchId && step !== "success" ? "branch" : step;
   const selectedBranch =
-    data.branches.find((branch) => branch.id === selectedBranchId) ??
+    data.branches.find((branch) => branch.id === activeBranchId) ??
     data.branches.find((branch) => branch.isMain) ??
     data.branches[0];
-  const availableTeam = selectedBranchId
-    ? data.team.filter((member) => member.branchIds.includes(selectedBranchId))
+  const availableTeam = activeBranchId
+    ? data.team.filter((member) => member.branchIds.includes(activeBranchId))
     : data.team;
   const suggestedAssigneeId = slotsQuery.data?.suggestedAssigneeId ?? null;
   const selectedAssignee =
@@ -248,7 +244,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
     { id: "schedule" as const, label: "Fecha y hora" },
     { id: "details" as const, label: "Tus datos" }
   ];
-  const currentStepIndex = steps.findIndex((item) => item.id === step);
+  const currentStepIndex = steps.findIndex((item) => item.id === activeStep);
   const stepNumber = (id: BookingStep) =>
     Math.max(1, steps.findIndex((item) => item.id === id) + 1);
 
@@ -282,7 +278,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
       await createPublicAppointment(organizationSlug, {
         ...result.parsed,
         serviceId,
-        branchId: selectedBranchId || undefined,
+        branchId: activeBranchId || undefined,
         startsAt,
         assigneeId: selectedAssigneeId || undefined
       });
@@ -295,7 +291,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
           organizationSlug,
           serviceId,
           selectedAssigneeId || "auto",
-          selectedBranchId || "main"
+          activeBranchId || "main"
         )
       });
     } catch (error) {
@@ -419,14 +415,14 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
           </div>
         </section>
 
-        {step !== "success" && (
+        {activeStep !== "success" && (
           <nav className="booking-stepper mb-4 p-2 sm:mb-5 sm:p-3">
             <ol
               className="grid sm:flex sm:items-center"
               style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
             >
               {steps.map((item, index) => {
-                const active = item.id === step;
+                const active = item.id === activeStep;
                 const completed = index < currentStepIndex;
                 return (
                   <li key={item.id} className="flex min-w-0 items-center sm:flex-1">
@@ -463,7 +459,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
           </nav>
         )}
 
-        {step === "success" ? (
+        {activeStep === "success" ? (
           <section className="booking-success mx-auto max-w-2xl p-6 text-center sm:p-10">
             <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[rgba(64,145,91,0.14)] text-2xl text-[#347548]">✓</span>
             <h2 className="mt-5 text-2xl font-semibold">Turno confirmado</h2>
@@ -505,7 +501,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         ) : (
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div className="booking-panel-enter">
-              {step === "branch" && (
+              {activeStep === "branch" && (
                 <StepCard
                   eyebrow={`Paso ${stepNumber("branch")}`}
                   title="Elegí la sede"
@@ -529,7 +525,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                             setStartsAt("");
                           }}
                           className={`booking-choice rounded-xl border p-4 text-left ${
-                            branch.id === selectedBranchId
+                            branch.id === activeBranchId
                               ? "booking-choice-selected border-[var(--color-ink)]"
                               : "border-[var(--color-border)] bg-white/55 hover:border-[var(--color-border-strong)]"
                           }`}
@@ -557,13 +553,13 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                     })}
                   </div>
                   <StepActions
-                    nextDisabled={!selectedBranchId}
+                    nextDisabled={!activeBranchId}
                     onNext={() => setStep("service")}
                   />
                 </StepCard>
               )}
 
-              {step === "service" && (
+              {activeStep === "service" && (
                 <StepCard
                   eyebrow={`Paso ${stepNumber("service")}`}
                   title={
@@ -632,7 +628,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                 </StepCard>
               )}
 
-              {step === "professional" && (
+              {activeStep === "professional" && (
                 <StepCard
                   eyebrow={`Paso ${stepNumber("professional")}`}
                   title="¿Con quién querés atenderte?"
@@ -676,7 +672,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                 </StepCard>
               )}
 
-              {step === "schedule" && (
+              {activeStep === "schedule" && (
                 <StepCard
                   eyebrow={`Paso ${stepNumber("schedule")}`}
                   title="Elegí fecha y horario"
@@ -758,7 +754,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                 </StepCard>
               )}
 
-              {step === "details" && (
+              {activeStep === "details" && (
                 <StepCard
                   eyebrow={`Paso ${steps.length}`}
                   title="Completá tus datos"

@@ -48,6 +48,7 @@ import {
 import type { DashboardView } from "./dashboard.types";
 import { getSubscription } from "../billing/billing.api";
 import { BillingSettings } from "./BillingSettings";
+import { canAccessDashboardView } from "./dashboard.permissions";
 
 const DashboardAgendaView = lazy(() =>
   import("./DashboardAgendaView").then((module) => ({
@@ -183,14 +184,16 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
   useEffect(() => {
     if (session.data) {
+      const role = session.data.data.organizations?.[0]?.role;
       const required =
         session.data.data.organizations?.[0]?.onboardingCompleted === false;
       // Session state can force the first dashboard view.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnboardingRequired(required);
       if (required) setActiveView("settings");
+      else if (!canAccessDashboardView(role, activeView)) setActiveView("summary");
     }
-  }, [session.data]);
+  }, [activeView, session.data]);
 
   useEffect(() => {
     if (searchParams.get("subscription") !== "return") return;
@@ -445,6 +448,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   }
 
   function changeDashboardView(view: DashboardView) {
+    if (!canAccessDashboardView(currentOrganization?.role, view)) return;
     if (onboardingRequired && view !== "settings") return;
     if (view === activeView) return;
     if (activeView === "settings" && settingsHaveUnsavedChanges) {
@@ -456,6 +460,12 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   }
 
   const currentOrganization = session.data?.data.organizations?.[0];
+  const effectiveActiveView = canAccessDashboardView(
+    currentOrganization?.role,
+    activeView
+  )
+    ? activeView
+    : "summary";
   const requiresSubscription =
     currentOrganization?.role === "owner" &&
     subscriptionQuery.isSuccess &&
@@ -469,17 +479,18 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     <PageLayout>
       <div className="dashboard-shell min-h-screen">
         <DashboardSidebar
-          activeView={activeView}
+          activeView={effectiveActiveView}
           brand={brand}
           navigationLocked={onboardingRequired}
           subscription={subscriptionQuery.data}
+          role={currentOrganization?.role}
           onOpenBillingPlans={() => setShowBillingPlans(true)}
           onChangeView={changeDashboardView}
         />
 
         <section className="min-w-0 overflow-x-clip">
           <DashboardHeader
-            activeView={activeView}
+            activeView={effectiveActiveView}
           />
 
           <div className="space-y-4 px-5 py-4 sm:px-7">
@@ -494,7 +505,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
               </div>
             )}
             <Suspense fallback={<DashboardSectionFallback />}>
-              {activeView === "agenda" ? (
+              {effectiveActiveView === "agenda" ? (
                 <DashboardAgendaView
                   appointments={allAppointments}
                   filteredAppointments={filteredAppointments}
@@ -511,13 +522,13 @@ export function DashboardPage({ brand }: DashboardPageProps) {
                   onSelectDate={setSelectedDate}
                   onSelectScheduleView={selectScheduleView}
                 />
-              ) : activeView === "customers" ? (
+              ) : effectiveActiveView === "customers" ? (
                 <DashboardCustomersView />
-              ) : activeView === "team" ? (
+              ) : effectiveActiveView === "team" ? (
                 <DashboardTeamView />
-              ) : activeView === "availability" ? (
+              ) : effectiveActiveView === "availability" ? (
                 <DashboardAvailabilityView />
-              ) : activeView === "settings" ? (
+              ) : effectiveActiveView === "settings" ? (
                 <DashboardSettingsView
                   isOnboarding={onboardingRequired}
                   onCompleted={() => {
