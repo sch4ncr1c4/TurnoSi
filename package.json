@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
+    "pretypecheck": "pnpm --filter @sistema-turnos/api prisma:generate",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "deploy:api": "pnpm --filter @sistema-turnos/api prisma:migrate:deploy && pnpm --filter @sistema-turnos/api build"
