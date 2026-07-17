@@ -1,10 +1,10 @@
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
 import { ApiError } from "../../lib/api";
 import { parseFormData } from "../../utils/validation";
-import { login, register } from "./auth.api";
+import { login, register, resendVerification } from "./auth.api";
 import { authRoutes } from "./auth.data";
 import { useSessionQuery } from "./auth.queries";
 import { loginSchema, registerSchema } from "./auth.schemas";
@@ -13,6 +13,8 @@ type AuthPageProps = {
   brand: ReactNode;
   route: "login" | "register";
 };
+
+const maxVerificationSendAttempts = 5;
 
 function getAuthErrorMessage(error: ApiError) {
   if (error.code === "INVALID_CREDENTIALS") {
@@ -50,6 +52,17 @@ export function AuthPage({ brand, route }: AuthPageProps) {
   const [formError, setFormError] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [verificationSendAttempts, setVerificationSendAttempts] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timeout = window.setTimeout(() => {
+      setResendCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [resendCooldown]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,18 +91,57 @@ export function AuthPage({ brand, route }: AuthPageProps) {
           navigate(dashboardTarget, { replace: true });
           return;
         }
+        setPendingVerificationEmail(registration.data.email ?? result.parsed.email);
+        setVerificationSendAttempts(1);
+        setResendCooldown(10);
         setFormMessage(
-          "Cuenta creada. Revisá tu correo para verificarla antes de ingresar."
+          "Te enviamos un correo para verificar tu cuenta. La cuenta se crea recién cuando confirmás ese enlace."
         );
         return;
       }
       navigate(dashboardTarget, { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
+        if (isLogin && error.code === "EMAIL_NOT_VERIFIED") {
+          const email = String(data.email ?? "");
+          if (email.includes("@")) setPendingVerificationEmail(email);
+        }
         setFormError(getAuthErrorMessage(error));
       } else {
         setFormError("No pudimos conectar con el servidor.");
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    if (
+      !pendingVerificationEmail ||
+      isSubmitting ||
+      verificationSendAttempts >= maxVerificationSendAttempts
+    ) return;
+    setFormError("");
+    setIsSubmitting(true);
+    try {
+      await resendVerification(pendingVerificationEmail);
+      const nextAttempts = verificationSendAttempts + 1;
+      setVerificationSendAttempts(nextAttempts);
+      setResendCooldown(10);
+      setFormMessage(
+        nextAttempts >= maxVerificationSendAttempts
+          ? "Llegaste al límite de envíos. Esperá 30 minutos para pedir otro correo."
+          : "Te reenviamos el correo de verificación."
+      );
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "TOO_MANY_ATTEMPTS") {
+        setVerificationSendAttempts(maxVerificationSendAttempts);
+      }
+      setFormError(
+        error instanceof ApiError && error.code === "TOO_MANY_ATTEMPTS"
+          ? "Llegaste al límite de envíos. Esperá 30 minutos para pedir otro correo."
+          : "No pudimos reenviar el correo de verificación."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -143,12 +195,6 @@ export function AuthPage({ brand, route }: AuthPageProps) {
               >
                 Volver al inicio
               </Link>
-              <Link
-                to="/dashboard"
-                className="hidden rounded-md border border-[var(--color-border-strong)] px-4 py-2 text-sm font-medium sm:inline-flex"
-              >
-                Ver dashboard
-              </Link>
             </div>
           </header>
 
@@ -176,6 +222,24 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                     <div className="rounded-md border border-[#b9d8bf] bg-[#eef8ee] p-3 text-sm text-[#28633a]">
                       {formMessage || "Correo verificado. Ya podés iniciar sesión."}
                     </div>
+                  )}
+                  {pendingVerificationEmail && (
+                    <button
+                      type="button"
+                      disabled={
+                        isSubmitting ||
+                        resendCooldown > 0 ||
+                        verificationSendAttempts >= maxVerificationSendAttempts
+                      }
+                      onClick={() => void handleResendVerification()}
+                      className="text-sm font-semibold text-[var(--color-ink)] underline-offset-4 hover:underline disabled:opacity-60"
+                    >
+                      {verificationSendAttempts >= maxVerificationSendAttempts
+                        ? "Límite alcanzado. Esperá 30 minutos"
+                        : resendCooldown > 0
+                        ? `Podés reenviar en ${resendCooldown}s`
+                        : "Reenviar correo de verificación"}
+                    </button>
                   )}
                   {config.fields.map((field) => (
                     <label key={field.id} className="block">

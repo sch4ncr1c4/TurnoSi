@@ -48,6 +48,7 @@ export function resetRateLimitsForTests() {
 }
 
 export const authRateLimit = createRateLimit("auth", 20, 15 * 60 * 1000);
+export const authCodeRateLimit = createRateLimit("auth-code", 5, 30 * 60 * 1000);
 export const authenticatedRateLimit = createRateLimit("authenticated", 100, 60 * 1000, true);
 export const publicBookingRateLimit = createRateLimit("booking", 10, 60 * 1000);
 export const publicSlotsRateLimit = createRateLimit("slots", 120, 60 * 1000);

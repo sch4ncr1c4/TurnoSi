@@ -8,7 +8,7 @@ import { AppError } from "../../lib/app-error.js";
 import { clearAuthCookies } from "../../lib/cookies.js";
 import { ok } from "../../lib/http.js";
 import { hashPassword, verifyPassword } from "../../lib/password.js";
-import { authRateLimit } from "../../middlewares/rate-limit.js";
+import { authCodeRateLimit, authRateLimit } from "../../middlewares/rate-limit.js";
 import { requireAuth } from "../../middlewares/require-auth.js";
 import { auditLog } from "../audit/audit.service.js";
 import {
@@ -28,6 +28,8 @@ import {
 } from "./auth-password-reset.service.js";
 import {
   createEmailVerification,
+  createPendingRegistrationVerification,
+  resendPendingRegistrationVerification,
   verifyEmailToken
 } from "./email-verification.service.js";
 
@@ -45,6 +47,26 @@ authRouter.post("/register", authRateLimit, async (request, response) => {
     throw new AppError(409, "EMAIL_ALREADY_IN_USE", "Email already in use");
   }
 
+  const passwordHash = await hashPassword(data.password);
+  const emailVerificationEnabled = Boolean(env.RESEND_API_KEY && env.EMAIL_FROM);
+
+  if (emailVerificationEnabled) {
+    await createPendingRegistrationVerification({
+      email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      organizationName: data.organization.trim(),
+      passwordHash
+    });
+    response.status(201).json(
+      ok({
+        email,
+        verificationRequired: true
+      })
+    );
+    return;
+  }
+
   const baseSlug = slugifyOrganizationName(data.organization) || "mi-negocio";
   let slug = baseSlug;
   let counter = 1;
@@ -57,8 +79,6 @@ authRouter.post("/register", authRateLimit, async (request, response) => {
     slug = `${baseSlug}-${counter}`;
     counter += 1;
   }
-
-  const passwordHash = await hashPassword(data.password);
 
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
@@ -103,28 +123,11 @@ authRouter.post("/register", authRateLimit, async (request, response) => {
     return { user, organization };
   });
 
-  const emailVerificationEnabled = Boolean(env.RESEND_API_KEY && env.EMAIL_FROM);
-  let verificationUrl: string | undefined;
-  try {
-    verificationUrl = emailVerificationEnabled
-      ? await createEmailVerification(result.user.id, result.user.email)
-      : undefined;
-  } catch (error) {
-    await prisma.organization.delete({
-      where: { id: result.organization.id }
-    });
-    await prisma.user.delete({
-      where: { id: result.user.id }
-    });
-    throw error;
-  }
-  if (!emailVerificationEnabled) {
-    await prisma.user.update({
-      where: { id: result.user.id },
-      data: { emailVerifiedAt: new Date() }
-    });
-    await createSession(request, response, result.user, result.organization.id);
-  }
+  await prisma.user.update({
+    where: { id: result.user.id },
+    data: { emailVerifiedAt: new Date() }
+  });
+  await createSession(request, response, result.user, result.organization.id);
   await auditLog({
     organizationId: result.organization.id,
     userId: result.user.id,
@@ -147,8 +150,7 @@ authRouter.post("/register", authRateLimit, async (request, response) => {
         name: result.organization.name,
         slug: result.organization.slug
       },
-      verificationRequired: emailVerificationEnabled,
-      ...(verificationUrl ? { verificationUrl } : {})
+      verificationRequired: false
     })
   );
 });
@@ -232,14 +234,18 @@ authRouter.post("/login", authRateLimit, async (request, response) => {
   );
 });
 
-authRouter.get("/verify-email", async (request, response) => {
+authRouter.get("/verify-email", authCodeRateLimit, async (request, response) => {
   const token = z.string().min(32).parse(request.query.token);
   await verifyEmailToken(token);
   response.redirect(`${env.WEB_ORIGIN.split(",")[0]}/login?verified=1`);
 });
 
-authRouter.post("/resend-verification", authRateLimit, async (request, response) => {
+authRouter.post("/resend-verification", authCodeRateLimit, async (request, response) => {
   const email = z.string().trim().email().parse(request.body?.email).toLowerCase();
+  if (await resendPendingRegistrationVerification(email)) {
+    response.json(ok({ sent: true }));
+    return;
+  }
   const user = await prisma.user.findUnique({ where: { email } });
   if (user && !user.emailVerifiedAt) {
     await createEmailVerification(user.id, user.email);
@@ -252,7 +258,7 @@ authRouter.post("/refresh", authRateLimit, async (request, response) => {
   response.json(ok({ refreshed: true }));
 });
 
-authRouter.post("/request-password-reset", authRateLimit, async (request, response) => {
+authRouter.post("/request-password-reset", authCodeRateLimit, async (request, response) => {
   const data = requestPasswordResetSchema.parse(request.body);
   const result = await requestPasswordReset(data.email.toLowerCase(), request);
   response.json(ok(result));

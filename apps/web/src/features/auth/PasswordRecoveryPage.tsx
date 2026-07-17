@@ -1,9 +1,11 @@
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
 import { ApiError } from "../../lib/api";
 import { requestPasswordReset, resetPassword } from "./auth.api";
+
+const maxCodeSendAttempts = 5;
 
 export function PasswordRecoveryPage({ brand }: { brand: ReactNode }) {
   const [email, setEmail] = useState("");
@@ -14,18 +16,42 @@ export function PasswordRecoveryPage({ brand }: { brand: ReactNode }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [codeSendAttempts, setCodeSendAttempts] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timeout = window.setTimeout(() => {
+      setResendCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [resendCooldown]);
 
   async function requestCode(event: FormEvent) {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting || codeSendAttempts >= maxCodeSendAttempts) return;
     setSubmitting(true);
     setError("");
     try {
       await requestPasswordReset(email.trim().toLowerCase());
+      const nextAttempts = codeSendAttempts + 1;
+      setCodeSendAttempts(nextAttempts);
       setCodeRequested(true);
-      setMessage("Si la cuenta existe, enviamos un código válido por 3 minutos.");
-    } catch {
-      setError("No pudimos enviar el código. Intentá nuevamente.");
+      setResendCooldown(10);
+      setMessage(
+        nextAttempts >= maxCodeSendAttempts
+          ? "Llegaste al límite de envíos. Esperá 30 minutos para pedir otro código."
+          : "Si la cuenta existe, enviamos un código válido por 3 minutos."
+      );
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.code === "TOO_MANY_ATTEMPTS") {
+        setCodeSendAttempts(maxCodeSendAttempts);
+      }
+      setError(
+        caught instanceof ApiError && caught.code === "TOO_MANY_ATTEMPTS"
+          ? "Llegaste al límite de intentos. Esperá 30 minutos para pedir otro código."
+          : "No pudimos enviar el código. Intentá nuevamente."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -130,6 +156,22 @@ export function PasswordRecoveryPage({ brand }: { brand: ReactNode }) {
                 className="w-full rounded-md bg-[var(--color-ink)] px-4 py-3 text-sm font-semibold text-white"
               >
                 {submitting ? "Actualizando..." : "Cambiar contraseña"}
+              </button>
+              <button
+                type="button"
+                disabled={
+                  submitting ||
+                  resendCooldown > 0 ||
+                  codeSendAttempts >= maxCodeSendAttempts
+                }
+                onClick={(event) => void requestCode(event)}
+                className="w-full rounded-md border border-[var(--color-border-strong)] px-4 py-2.5 text-sm font-semibold text-[var(--color-ink)] disabled:opacity-60"
+              >
+                {codeSendAttempts >= maxCodeSendAttempts
+                  ? "Límite alcanzado. Esperá 30 minutos"
+                  : resendCooldown > 0
+                  ? `Podés reenviar en ${resendCooldown}s`
+                  : "Reenviar código"}
               </button>
             </form>
           ) : null}

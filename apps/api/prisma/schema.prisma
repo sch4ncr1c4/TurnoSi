@@ -421,6 +421,23 @@ model PasswordResetToken {
   @@index([tokenHash])
 }
 
+model PendingRegistrationToken {
+  id               String   @id @default(cuid())
+  email            String
+  firstName        String
+  lastName         String
+  organizationName String
+  passwordHash     String
+  tokenHash        String   @unique
+  expiresAt        DateTime
+  usedAt           DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
 model EmailVerificationToken {
   id        String   @id @default(cuid())
   userId    String

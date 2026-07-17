@@ -12,14 +12,24 @@ export function login(data: LoginFormData) {
 
 export function register(data: RegisterFormData) {
   return apiRequest<
-    AuthResult & {
-      data: AuthResult["data"] & {
+    {
+      success: true;
+      data: Partial<AuthResult["data"]> & {
+        email?: string;
         verificationRequired: boolean;
       };
     }
   >(
     "/api/v1/auth/register",
     { method: "POST", body: JSON.stringify(data) },
+    false
+  );
+}
+
+export function resendVerification(email: string) {
+  return apiRequest<{ success: true; data: { sent: true } }>(
+    "/api/v1/auth/resend-verification",
+    { method: "POST", body: JSON.stringify({ email }) },
     false
   );
 }
