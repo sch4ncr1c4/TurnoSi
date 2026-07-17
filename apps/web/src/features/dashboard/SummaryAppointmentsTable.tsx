@@ -13,6 +13,7 @@ import type { DashboardAppointment } from "./dashboard.data";
 type SummaryAppointmentsTableProps = {
   dateFilterLabel: string;
   getAppointmentStatus: (appointment: DashboardAppointment) => AppointmentStatusLabel;
+  onSelectAppointment: (appointment: DashboardAppointment) => void;
   onRequestStatusChange: (
     appointment: DashboardAppointment,
     currentStatus: AppointmentStatusLabel,
@@ -25,6 +26,7 @@ type SummaryAppointmentsTableProps = {
 export function SummaryAppointmentsTable({
   dateFilterLabel,
   getAppointmentStatus,
+  onSelectAppointment,
   onRequestStatusChange,
   scheduleView,
   visibleAppointments
@@ -70,7 +72,16 @@ export function SummaryAppointmentsTable({
             return (
               <tr
                 key={appointment.id}
-                className={`border-t border-[var(--color-border)] transition-colors ${appointmentRowClassName}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectAppointment({ ...appointment, status })}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelectAppointment({ ...appointment, status });
+                  }
+                }}
+                className={`cursor-pointer border-t border-[var(--color-border)] transition-colors hover:bg-white/55 ${appointmentRowClassName}`}
               >
                 {scheduleView !== "day" && (
                   <td className="px-4 py-5 font-medium">
@@ -127,6 +138,15 @@ export function SummaryAppointmentsTable({
           return (
             <div
               key={appointment.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectAppointment({ ...appointment, status })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectAppointment({ ...appointment, status });
+                }
+              }}
               className={`rounded-lg border border-[var(--color-border)] p-4 ${
                 isActiveDay
                   ? `${rowClassName[status]} ring-1 ring-inset ring-[rgba(253,134,6,0.16)]`
@@ -193,7 +213,10 @@ function StatusButton({
   return (
     <button
       type="button"
-      onClick={() => onRequestStatusChange(appointment, status, !hasStatusActions)}
+      onClick={(event) => {
+        event.stopPropagation();
+        onRequestStatusChange(appointment, status, !hasStatusActions);
+      }}
       className={`rounded-md border px-3 py-1.5 text-xs font-medium ${
         hasStatusActions
           ? "border-[var(--color-border-strong)] text-[var(--color-ink)]"

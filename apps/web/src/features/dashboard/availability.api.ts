@@ -119,7 +119,7 @@ export function saveAvailabilityCatalogItem(item: AvailabilityResource) {
         priceCents: item.price.trim()
           ? Math.round(Number(item.price.replace(/\./g, "").replace(",", ".")) * 100)
           : null,
-        resourceName: item.resource === "Sin asignar" ? "" : item.resource,
+        resourceName: "",
         online: item.online
       })
     }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   buttonMotionClass,
   scheduleOptions,
@@ -5,6 +6,7 @@ import {
   type AppointmentStatusLabel,
   type ScheduleView
 } from "./dashboard.constants";
+import { AppointmentDetailsModal } from "./AppointmentDetailsModal";
 import type { DashboardAppointment } from "./dashboard.data";
 import { SummaryAppointmentsTable } from "./SummaryAppointmentsTable";
 import { SummaryFilters } from "./SummaryFilters";
@@ -32,6 +34,7 @@ type DashboardSummaryViewProps = {
   onSelectDate: (date: Date) => void;
   onSelectDayFilter: (day: string) => void;
   onSelectScheduleView: (view: ScheduleView) => void;
+  onViewAgenda: () => void;
   searchTerm: string;
   scheduleSubtitle: string;
   scheduleTitle: string;
@@ -60,6 +63,7 @@ export function DashboardSummaryView({
   onSelectDate,
   onSelectDayFilter,
   onSelectScheduleView,
+  onViewAgenda,
   searchTerm,
   scheduleSubtitle,
   scheduleTitle,
@@ -69,6 +73,8 @@ export function DashboardSummaryView({
   showAllAppointments,
   visibleAppointments
 }: DashboardSummaryViewProps) {
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<DashboardAppointment | null>(null);
   const confirmedCount = filteredAppointments.filter(
     (appointment) => getAppointmentStatus(appointment) === "Confirmado"
   ).length;
@@ -77,6 +83,7 @@ export function DashboardSummaryView({
   ).length;
 
   return (
+    <>
     <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <article
         id="today"
@@ -145,6 +152,7 @@ export function DashboardSummaryView({
         <SummaryAppointmentsTable
           dateFilterLabel={dateFilterLabel}
           getAppointmentStatus={getAppointmentStatus}
+          onSelectAppointment={setSelectedAppointment}
           onRequestStatusChange={onRequestStatusChange}
           scheduleView={scheduleView}
           visibleAppointments={visibleAppointments}
@@ -182,8 +190,25 @@ export function DashboardSummaryView({
         selectedDate={selectedDate}
         onNextMonth={onNextMonth}
         onPreviousMonth={onPreviousMonth}
+        onSelectAppointment={setSelectedAppointment}
         onSelectDate={onSelectDate}
+        onViewAgenda={onViewAgenda}
       />
     </section>
+    {selectedAppointment && (
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+        onRequestStatusChange={() => {
+          onRequestStatusChange(
+            selectedAppointment,
+            selectedAppointment.status,
+            true
+          );
+          setSelectedAppointment(null);
+        }}
+      />
+    )}
+    </>
   );
 }

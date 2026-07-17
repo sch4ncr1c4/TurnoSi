@@ -237,16 +237,6 @@ export function AvailabilityEditPanel({
               </select>
             </label>
             <TextField
-              label="Recurso asignado (opcional)"
-              placeholder="Ej. Mesa 1, Sillón 2 o Sin asignar"
-              value={resourceDraft?.resource ?? ""}
-              onChange={(value) =>
-                setResourceDraft((current) =>
-                  current ? { ...current, resource: value } : current
-                )
-              }
-            />
-            <TextField
               label="Precio"
               placeholder="Ej. 20000"
               value={resourceDraft?.price ?? ""}

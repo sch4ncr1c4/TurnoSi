@@ -586,6 +586,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
                   onSelectAppointmentFilter={selectAppointmentFilter}
                   onSelectDayFilter={selectDayFilter}
                   onSelectScheduleView={selectScheduleView}
+                  onViewAgenda={() => changeDashboardView("agenda")}
                   onSearchTermChange={setAppointmentSearch}
                   searchTerm={appointmentSearch}
                   scheduleSubtitle={scheduleSubtitle}

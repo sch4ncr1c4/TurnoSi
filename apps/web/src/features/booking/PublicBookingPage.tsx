@@ -46,6 +46,19 @@ function formatPrice(priceCents: number | null) {
   return `$${(priceCents / 100).toLocaleString("es-AR")}`;
 }
 
+function normalizeWhatsappNumber(value: string | null | undefined) {
+  const digits = value?.replace(/\D/g, "") ?? "";
+  if (!digits) return "";
+  if (digits.startsWith("54")) return digits;
+  return `549${digits.replace(/^0+/, "")}`;
+}
+
+function buildWhatsappUrl(phone: string | null | undefined, message: string) {
+  const normalizedPhone = normalizeWhatsappNumber(phone);
+  if (!normalizedPhone) return "";
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+}
+
 function isResourceOnlyBooking(category: string | null) {
   return category?.toLowerCase().includes("cancha") ?? false;
 }
@@ -198,6 +211,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
     );
   }
 
+  const organizationName = data.organization.name;
   const serviceId = selectedServiceId;
   const resourceOnlyBooking = isResourceOnlyBooking(data.organization.category);
   const hasBranchStep = data.branches.length > 1;
@@ -217,7 +231,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
     availableTeam.find((member) => member.id === suggestedAssigneeId) ?? null;
   const date = days.some((day) => day.date === selectedDate) ? selectedDate : "";
   const service = data.services.find((item) => item.id === serviceId);
-  const selectedResourceName = service?.resourceName || service?.name || "";
+  const selectedServiceName = service?.name || "";
   const selectedDay = days.find((day) => day.date === date);
   const selectedSlot = selectedDay?.slots.find((slot) => slot.startsAt === startsAt);
   const publicPhone = selectedBranch?.phone ?? data.organization.phone;
@@ -267,7 +281,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
     try {
       const confirmation = {
         branch: selectedBranch?.name ?? "",
-        service: selectedResourceName || "Cancha",
+        service: selectedServiceName || "Cancha",
         professional:
           selectedAssignee?.name ??
           suggestedAssignee?.name ??
@@ -275,6 +289,22 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         date,
         time: selectedSlot?.time ?? ""
       };
+      const whatsappMessage = [
+        `Hola, solicité un turno en ${organizationName}.`,
+        "",
+        `Nombre: ${result.parsed.name}`,
+        `WhatsApp: ${result.parsed.phone}`,
+        confirmation.branch ? `Sede: ${confirmation.branch}` : "",
+        `${resourceOnlyBooking ? "Cancha" : "Servicio"}: ${confirmation.service}`,
+        `Fecha: ${longDateFormatter.format(new Date(`${date}T00:00:00Z`))}`,
+        `Horario: ${confirmation.time}`,
+        !resourceOnlyBooking && confirmation.professional
+          ? `Profesional: ${confirmation.professional}`
+          : ""
+      ]
+        .filter(Boolean)
+        .join("\n");
+      const whatsappUrl = buildWhatsappUrl(publicWhatsapp || publicPhone, whatsappMessage);
       await createPublicAppointment(organizationSlug, {
         ...result.parsed,
         serviceId,
@@ -283,7 +313,11 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         assigneeId: selectedAssigneeId || undefined
       });
       setErrors({});
-      setStatus("Tu turno quedó confirmado.");
+      setStatus(
+        whatsappUrl
+          ? "Tu turno quedó confirmado. Te llevamos a WhatsApp para avisarle al local."
+          : "Tu turno quedó confirmado."
+      );
       setConfirmedAppointment(confirmation);
       setStep("success");
       void queryClient.invalidateQueries({
@@ -294,6 +328,11 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
           activeBranchId || "main"
         )
       });
+      if (whatsappUrl) {
+        window.setTimeout(() => {
+          window.location.assign(whatsappUrl);
+        }, 800);
+      }
     } catch (error) {
       if (error instanceof ApiError && error.code === "SLOT_UNAVAILABLE") {
         setStartsAt("");
@@ -788,7 +827,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                 )}
                 <SummaryRow
                   label={resourceOnlyBooking ? "Cancha" : "Servicio"}
-                  value={selectedResourceName || "Sin elegir"}
+                  value={selectedServiceName || "Sin elegir"}
                 />
                 {!resourceOnlyBooking && (
                   <SummaryRow
@@ -1054,13 +1093,33 @@ function BookingConfirmForm({
   isSubmitting: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const fields = [
+    {
+      autoComplete: "name",
+      label: "Nombre completo",
+      name: "name",
+      placeholder: "Ej: Cristian Schinocca",
+      type: "text"
+    },
+    {
+      autoComplete: "tel",
+      label: "WhatsApp",
+      name: "phone",
+      placeholder: "Ej: 1123456789",
+      type: "tel"
+    },
+    {
+      autoComplete: "email",
+      label: "Email",
+      name: "email",
+      placeholder: "Ej: cliente@email.com",
+      type: "email"
+    }
+  ];
+
   return (
     <form onSubmit={onSubmit} className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
-      {[
-        ["name", "Nombre", "text"],
-        ["phone", "Teléfono", "tel"],
-        ["email", "Email", "email"]
-      ].map(([name, label, type]) => (
+      {fields.map(({ autoComplete, label, name, placeholder, type }) => (
         <label
           key={name}
           className={`block text-xs font-medium text-[var(--color-muted-strong)] ${
@@ -1069,7 +1128,9 @@ function BookingConfirmForm({
         >
           {label}
           <input
+            autoComplete={autoComplete}
             name={name}
+            placeholder={placeholder}
             type={type}
             className="mt-1.5 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/76 px-3 text-sm text-[var(--color-ink)] outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
           />
