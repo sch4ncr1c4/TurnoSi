@@ -1,5 +1,14 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
 
+if (
+  import.meta.env.PROD &&
+  API_BASE_URL &&
+  (!API_BASE_URL.startsWith("https://") ||
+    /localhost|127\.0\.0\.1|ngrok/i.test(API_BASE_URL))
+) {
+  throw new Error("Unsafe VITE_API_URL for production");
+}
+
 export function getApiUrl(path: string) {
   return `${API_BASE_URL}${path}`;
 }

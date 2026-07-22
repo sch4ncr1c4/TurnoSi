@@ -2,7 +2,15 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button, Card, CardBody, CardHeader, ModalCloseButton, Toast } from "../../components/ui";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  ModalCloseButton,
+  PasswordRequirementField,
+  Toast
+} from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { queryKeys } from "../../lib/query-keys";
 import {
@@ -427,12 +435,11 @@ function PasswordResetModal({
           <ModalCloseButton disabled={isSaving} onClick={onClose} />
         </div>
         <div className="p-4">
-          <Field
+          <PasswordRequirementField
             label="Nueva contraseña"
-            type="password"
             value={password}
-            onChange={onChange}
-            helper="Mínimo 12 caracteres."
+            onChange={(event) => onChange(event.target.value)}
+            autoComplete="new-password"
           />
         </div>
         <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] p-4 sm:flex-row sm:justify-end">
@@ -548,12 +555,11 @@ function TeamModal({
                 onChange={(value) => onChange("username", value)}
                 helper="Sin espacios. Ej: juan.ramos"
               />
-              <Field
+              <PasswordRequirementField
                 label="Contraseña inicial"
-                type="password"
                 value={draft.password}
-                onChange={(value) => onChange("password", value)}
-                helper="Mínimo 12 caracteres. El integrante podrá cambiarla después."
+                onChange={(event) => onChange("password", event.target.value)}
+                autoComplete="new-password"
               />
             </>
           )}

@@ -2,7 +2,14 @@ import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { Button, Card, CardBody, CardHeader, Toast } from "../../components/ui";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  PasswordRequirementField,
+  Toast
+} from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { useSessionQuery } from "../auth/auth.queries";
 import type { AuthResult } from "../auth/auth.types";
@@ -211,14 +218,18 @@ export function AccountAccessSettings({
             value={passwords.currentPassword}
             onChange={(currentPassword) => setPasswords((current) => ({ ...current, currentPassword }))}
           />
-          <AccountField
+          <PasswordRequirementField
             label="Nueva contraseña"
             placeholder="Mínimo 12 caracteres"
-            type="password"
             autoComplete="new-password"
             minLength={12}
             value={passwords.newPassword}
-            onChange={(newPassword) => setPasswords((current) => ({ ...current, newPassword }))}
+            onChange={(event) =>
+              setPasswords((current) => ({
+                ...current,
+                newPassword: event.target.value
+              }))
+            }
           />
           <div className="flex items-center gap-3 md:col-span-2">
             <Button

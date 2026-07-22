@@ -6,6 +6,7 @@ import { AppError } from "../../lib/app-error.js";
 import { requireEditor } from "../../lib/membership.js";
 import { hashPassword } from "../../lib/password.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
+import { assertPlanLimitAvailable } from "../billing/plan-limits.service.js";
 import {
   createTeamMemberSchema,
   resetTeamMemberPasswordSchema,
@@ -161,6 +162,10 @@ teamRouter.post("/", authRateLimit, async (request, response) => {
   if (data.role === "owner" || (tenant.role === "admin" && data.role !== "member")) {
     throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
   }
+  const memberCount = await prisma.membership.count({
+    where: { organizationId: tenant.organizationId }
+  });
+  await assertPlanLimitAvailable(tenant.organizationId, "members", memberCount);
   const branchIds = await resolveMemberBranchIds(tenant.organizationId, data.branchIds);
 
   const passwordHash = await hashPassword(data.password);

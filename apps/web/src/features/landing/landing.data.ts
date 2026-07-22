@@ -80,36 +80,6 @@ export const resourceCards = [
   }
 ] as const;
 
-export const pricingPlans = [
-  {
-    id: "initial",
-    name: "Inicial",
-    price: "$12.000",
-    period: "/mes",
-    description: "Para negocios que empiezan a ordenar sus reservas online.",
-    features: ["1 organización", "Agenda pública", "Hasta 3 miembros"],
-    highlighted: false
-  },
-  {
-    id: "professional",
-    name: "Profesional",
-    price: "$24.000",
-    period: "/mes",
-    description: "Para equipos con operación diaria y volumen real de turnos.",
-    features: ["Miembros ilimitados", "Estados y auditoría", "Soporte prioritario"],
-    highlighted: true
-  },
-  {
-    id: "operation",
-    name: "Operación",
-    price: "$39.000",
-    period: "/mes",
-    description: "Para locales con varias sedes o una agenda más exigente.",
-    features: ["Multi-sede", "Reportes avanzados", "Configuración extendida"],
-    highlighted: false
-  }
-] as const;
-
 export const previewRows = [
   {
     time: "09:00",

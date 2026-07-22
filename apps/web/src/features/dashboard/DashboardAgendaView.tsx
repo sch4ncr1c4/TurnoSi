@@ -188,15 +188,17 @@ export function DashboardAgendaView({
         <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between">
           <button
             type="button"
-            className="flex w-full items-center justify-between rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.72)] px-3 py-1.5 text-left text-xs lg:w-48"
+            className="flex w-full min-w-0 items-center justify-between gap-3 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.72)] px-3 py-1.5 text-left text-xs lg:w-64 xl:w-72"
           >
-            <span>
+            <span className="min-w-0">
               <span className="block text-xs text-[var(--color-muted)]">
                 {scheduleView === "day" ? "Día" : "Semana del"}
               </span>
-              <span className="font-semibold capitalize">{periodLabel}</span>
+              <span className="block truncate whitespace-nowrap font-semibold capitalize">
+                {periodLabel}
+              </span>
             </span>
-            <span className="text-[var(--color-muted)]">⌄</span>
+            <span className="shrink-0 text-[var(--color-muted)]">⌄</span>
           </button>
           <AgendaViewControls
             onNextPeriod={onNextPeriod}
@@ -648,23 +650,7 @@ function AgendaViewControls({
   scheduleView: ScheduleView;
 }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <div className="flex rounded-md border border-[var(--color-border)] text-sm">
-        <button
-          type="button"
-          onClick={onPreviousPeriod}
-          className="px-3 py-2 text-[var(--color-ink)] hover:bg-white/60"
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={onNextPeriod}
-          className="border-l border-[var(--color-border)] px-3 py-2 text-[var(--color-ink)] hover:bg-white/60"
-        >
-          ›
-        </button>
-      </div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
       <div className="flex w-full rounded-md border border-[var(--color-border)] p-1 text-sm sm:w-auto">
         <button
           type="button"
@@ -688,6 +674,22 @@ function AgendaViewControls({
             {option.label}
           </button>
         ))}
+      </div>
+      <div className="flex w-fit rounded-md border border-[var(--color-border)] text-sm">
+        <button
+          type="button"
+          onClick={onPreviousPeriod}
+          className="px-3 py-2 text-[var(--color-ink)] hover:bg-white/60"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          onClick={onNextPeriod}
+          className="border-l border-[var(--color-border)] px-3 py-2 text-[var(--color-ink)] hover:bg-white/60"
+        >
+          ›
+        </button>
       </div>
     </div>
   );

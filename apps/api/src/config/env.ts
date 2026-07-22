@@ -74,9 +74,16 @@ export const env = result.data;
 if (env.NODE_ENV === "production") {
   const productionErrors: string[] = [];
   const origins = env.WEB_ORIGIN.split(",").map((origin) => origin.trim());
+  const placeholderPattern = /replace|example\.com/i;
 
-  if (env.AUTH_SECRET.startsWith("dev-")) {
+  if (env.AUTH_SECRET.startsWith("dev-") || placeholderPattern.test(env.AUTH_SECRET)) {
     productionErrors.push("AUTH_SECRET must be replaced");
+  }
+  if (placeholderPattern.test(env.WEB_ORIGIN)) {
+    productionErrors.push("WEB_ORIGIN must be your real production URL");
+  }
+  if (env.API_PUBLIC_URL && placeholderPattern.test(env.API_PUBLIC_URL)) {
+    productionErrors.push("API_PUBLIC_URL must be your real production URL");
   }
   if (origins.some((origin) => !origin.startsWith("https://"))) {
     productionErrors.push("WEB_ORIGIN must contain only HTTPS origins");
@@ -93,11 +100,23 @@ if (env.NODE_ENV === "production") {
   if (!env.MERCADOPAGO_WEBHOOK_SECRET) {
     productionErrors.push("MERCADOPAGO_WEBHOOK_SECRET is required");
   }
+  if (
+    env.MERCADOPAGO_WEBHOOK_SECRET &&
+    placeholderPattern.test(env.MERCADOPAGO_WEBHOOK_SECRET)
+  ) {
+    productionErrors.push("MERCADOPAGO_WEBHOOK_SECRET must be replaced");
+  }
   if (env.MERCADOPAGO_TEST_PAYER_EMAIL) {
     productionErrors.push("MERCADOPAGO_TEST_PAYER_EMAIL is forbidden");
   }
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
     productionErrors.push("RESEND_API_KEY and EMAIL_FROM are required");
+  }
+  if (
+    (env.RESEND_API_KEY && placeholderPattern.test(env.RESEND_API_KEY)) ||
+    (env.EMAIL_FROM && placeholderPattern.test(env.EMAIL_FROM))
+  ) {
+    productionErrors.push("RESEND_API_KEY and EMAIL_FROM must be production values");
   }
   if (productionErrors.length > 0) {
     throw new Error(`Unsafe production environment: ${productionErrors.join("; ")}`);

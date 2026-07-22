@@ -2,6 +2,7 @@ import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
+import { PasswordRequirementField } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { requestPasswordReset, resetPassword } from "./auth.api";
 
@@ -139,18 +140,13 @@ export function PasswordRecoveryPage({ brand }: { brand: ReactNode }) {
                   className="mt-2 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 font-mono tracking-[0.3em] outline-none focus:border-[var(--color-accent)]"
                 />
               </label>
-              <label className="block text-sm font-medium">
-                Contraseña nueva
-                <input
-                  type="password"
-                  minLength={12}
-                  required
-                  autoComplete="new-password"
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none focus:border-[var(--color-accent)]"
-                />
-              </label>
+              <PasswordRequirementField
+                label="Contraseña nueva"
+                required
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
               <button
                 disabled={submitting}
                 className="w-full rounded-md bg-[var(--color-ink)] px-4 py-3 text-sm font-semibold text-white"

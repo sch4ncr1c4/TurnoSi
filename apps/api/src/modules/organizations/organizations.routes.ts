@@ -13,6 +13,7 @@ import { authRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
 import { serveGalleryImage, serveLogo } from "../../lib/logo.js";
 import { appointmentsRouter } from "../appointments/appointments.routes.js";
+import { assertPlanLimitAvailable } from "../billing/plan-limits.service.js";
 import { customersRouter } from "../customers/customers.routes.js";
 import { servicesRouter } from "../services/services.routes.js";
 import { cancelMercadoPagoSubscription } from "../billing/mercadopago-subscription.service.js";
@@ -99,6 +100,10 @@ organizationsRouter.post("/current/branches", authRateLimit, async (request, res
     throw new AppError(403, "FORBIDDEN", "Insufficient permissions");
   }
   const data = branchSchema.parse(request.body);
+  const branchCount = await prisma.branch.count({
+    where: { organizationId: tenant.organizationId, isActive: true }
+  });
+  await assertPlanLimitAvailable(tenant.organizationId, "branches", branchCount);
   const baseSlug = slugify(data.name) || "sede";
   const branch = await prisma.branch.create({
     data: {

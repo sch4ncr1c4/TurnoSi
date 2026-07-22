@@ -9,36 +9,7 @@ import {
   startFreeTrial,
   type BillingPlan
 } from "../billing/billing.api";
-
-const plans: {
-  id: BillingPlan;
-  name: string;
-  price: string;
-  description: string;
-  highlight: string;
-}[] = [
-  {
-    id: "initial",
-    name: "Inicial",
-    price: "$15",
-    description: "Agenda pública y hasta 3 miembros.",
-    highlight: "Para empezar"
-  },
-  {
-    id: "professional",
-    name: "Profesional",
-    price: "$24.000",
-    description: "Equipo ilimitado y soporte prioritario.",
-    highlight: "Más elegido"
-  },
-  {
-    id: "operation",
-    name: "Operación",
-    price: "$39.000",
-    description: "Para operaciones y agendas más exigentes.",
-    highlight: "Alto volumen"
-  }
-];
+import { billingPlans } from "../billing/billing.plans";
 
 const statusLabels = {
   pending: "Pendiente de autorización",
@@ -65,8 +36,8 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
   const subscription = subscriptionQuery.data;
   const currentPlanName =
     subscription?.plan === "trial"
-      ? "Prueba gratuita"
-      : plans.find((plan) => plan.id === subscription?.plan)?.name;
+      ? "Prueba Inicial"
+      : billingPlans.find((plan) => plan.id === subscription?.plan)?.name;
   const subscriptionStatusLabel =
     subscription?.status === "authorized" && currentPlanName
       ? `Plan actual: ${currentPlanName}`
@@ -143,7 +114,7 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
                 Elegí cómo querés empezar
               </h3>
               <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
-                Podés probar TurnoSi gratis o activar un plan mensual con Mercado Pago.
+                Podés probar el plan Inicial gratis por 7 días o activar un plan mensual con Mercado Pago.
               </p>
             </div>
           )}
@@ -173,10 +144,10 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
                 <span className="w-fit rounded-full bg-[rgba(253,134,6,0.14)] px-3 py-1 text-xs font-bold text-[var(--color-accent)]">
                   Gratis
                 </span>
-                <h3 className="mt-4 text-lg font-semibold">Prueba gratuita</h3>
+                <h3 className="mt-4 text-lg font-semibold">Prueba Inicial</h3>
                 <p className="mt-3 font-mono text-3xl font-semibold">$0</p>
                 <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
-                  Acceso completo durante 7 días. Sin Mercado Pago ni tarjeta.
+                  El plan Inicial gratis durante 7 días. Sin Mercado Pago ni tarjeta.
                 </p>
                 <Button
                   type="button"
@@ -191,7 +162,7 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
                 </Button>
               </article>
             )}
-            {plans.map((plan) => {
+            {billingPlans.map((plan) => {
               const current =
                 subscription?.plan === plan.id &&
                 subscription.status === "authorized";
@@ -206,12 +177,12 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
                 >
                   <span
                     className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
-                      plan.id === "professional"
+                      plan.recommended
                         ? "bg-[var(--color-accent)] text-white"
                         : "bg-[rgba(32,24,54,0.07)] text-[var(--color-muted-strong)]"
                     }`}
                   >
-                    {plan.id === "professional" ? "Recomendado" : plan.highlight}
+                    {plan.recommended ? "Recomendado" : plan.highlight}
                   </span>
                   <h3 className="mt-4 text-lg font-semibold">{plan.name}</h3>
                   <p className="mt-3 font-mono text-3xl font-semibold">
@@ -223,6 +194,14 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
                   <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
                     {plan.description}
                   </p>
+                  <ul className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-4 text-sm text-[var(--color-muted-strong)]">
+                    {plan.features.slice(0, compact ? 3 : 5).map((feature) => (
+                      <li key={feature} className="flex gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                   <Button
                     type="button"
                     variant={current ? "secondary" : "primary"}

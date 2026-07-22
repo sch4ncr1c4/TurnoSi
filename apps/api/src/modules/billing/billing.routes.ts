@@ -13,16 +13,13 @@ import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { ok } from "../../lib/http.js";
 import { requireEditor } from "../../lib/membership.js";
+import { paidBillingPlans } from "./billing.plans.js";
 import { createSubscriptionSchema } from "./billing.schemas.js";
 
 export const billingRouter = Router();
 export const billingPublicRouter = Router();
 
-const plans = {
-  initial: { name: "Turnosi Inicial", amount: 15 },
-  professional: { name: "Turnosi Profesional", amount: 24_000 },
-  operation: { name: "Turnosi Operación", amount: 39_000 }
-} as const;
+const plans = paidBillingPlans;
 const pendingSubscriptionTtlMs = 30 * 60 * 1000;
 const failedPaymentGraceMs = 3 * 24 * 60 * 60 * 1000;
 
@@ -399,7 +396,7 @@ billingRouter.post("/subscription", async (request, response) => {
   const selectedPlan = plans[plan];
   const subscription = await mercadoPagoClient().create({
     body: {
-      reason: selectedPlan.name,
+      reason: selectedPlan.mercadoPagoName,
       external_reference: `${tenant.organizationId}:${plan}`,
       payer_email: billingEmail,
       back_url: `${env.WEB_ORIGIN.split(",")[0]}/dashboard?subscription=return`,
@@ -407,7 +404,7 @@ billingRouter.post("/subscription", async (request, response) => {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: selectedPlan.amount,
+        transaction_amount: selectedPlan.monthlyAmountArs,
         currency_id: "ARS"
       }
     }

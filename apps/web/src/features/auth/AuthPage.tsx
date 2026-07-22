@@ -2,6 +2,7 @@ import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
+import { PasswordRequirementField } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { parseFormData } from "../../utils/validation";
 import { login, register, resendVerification } from "./auth.api";
@@ -241,46 +242,71 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                         : "Reenviar correo de verificación"}
                     </button>
                   )}
-                  {config.fields.map((field) => (
-                    <label key={field.id} className="block">
-                      <span className="mb-2 block text-sm font-medium text-[var(--color-ink)]">
-                        {field.label}
-                      </span>
-                      <input
-                        id={field.id}
-                        name={field.id}
-                        type={field.type}
-                        placeholder={field.placeholder}
-                        autoComplete={
-                          field.id === "firstName"
-                            ? "given-name"
-                            : field.id === "lastName"
-                              ? "family-name"
-                              : field.id === "email" && isLogin
-                                ? "username"
-                              : field.type === "password"
-                                ? isLogin
-                                  ? "current-password"
-                                  : "new-password"
-                                : field.type === "email"
-                                  ? "email"
-                                  : "organization"
-                        }
-                        aria-invalid={Boolean(errors[field.id])}
-                        aria-describedby={errors[field.id] ? `${field.id}-error` : undefined}
-                        className={`w-full rounded-md border bg-[rgba(255,251,244,0.88)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] ${
-                          errors[field.id]
-                            ? "border-[#b42318]"
-                            : "border-[var(--color-border)]"
-                        }`}
-                      />
-                      {errors[field.id] && (
-                        <p id={`${field.id}-error`} className="mt-1 text-xs text-[#b42318]">
-                          {errors[field.id]}
-                        </p>
-                      )}
-                    </label>
-                  ))}
+                  {config.fields.map((field) => {
+                    const autoComplete =
+                      field.id === "firstName"
+                        ? "given-name"
+                        : field.id === "lastName"
+                          ? "family-name"
+                          : field.id === "email" && isLogin
+                            ? "username"
+                            : field.type === "password"
+                              ? isLogin
+                                ? "current-password"
+                                : "new-password"
+                              : field.type === "email"
+                                ? "email"
+                                : "organization";
+                    const error = errors[field.id];
+
+                    if (!isLogin && field.type === "password") {
+                      return (
+                        <div key={field.id}>
+                          <PasswordRequirementField
+                            id={field.id}
+                            name={field.id}
+                            label={field.label}
+                            placeholder={field.placeholder}
+                            autoComplete={autoComplete}
+                            aria-invalid={Boolean(error)}
+                            aria-describedby={error ? `${field.id}-error` : undefined}
+                          />
+                          {error && (
+                            <p id={`${field.id}-error`} className="mt-1 text-xs text-[#b42318]">
+                              {error}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <label key={field.id} className="block">
+                        <span className="mb-2 block text-sm font-medium text-[var(--color-ink)]">
+                          {field.label}
+                        </span>
+                        <input
+                          id={field.id}
+                          name={field.id}
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          autoComplete={autoComplete}
+                          aria-invalid={Boolean(error)}
+                          aria-describedby={error ? `${field.id}-error` : undefined}
+                          className={`w-full rounded-md border bg-[rgba(255,251,244,0.88)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] ${
+                            error
+                              ? "border-[#b42318]"
+                              : "border-[var(--color-border)]"
+                          }`}
+                        />
+                        {error && (
+                          <p id={`${field.id}-error`} className="mt-1 text-xs text-[#b42318]">
+                            {error}
+                          </p>
+                        )}
+                      </label>
+                    );
+                  })}
 
                   {isLogin && (
                     <div className="flex items-center justify-between gap-4 pt-1 text-sm">

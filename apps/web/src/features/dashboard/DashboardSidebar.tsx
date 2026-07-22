@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { logout } from "../auth/auth.api";
 import { useSessionQuery } from "../auth/auth.queries";
 import { getApiUrl } from "../../lib/api";
+import { getBillingPlan } from "../billing/billing.plans";
 import { buttonMotionClass } from "./dashboard.constants";
 import { dashboardSections } from "./dashboard.data";
 import { canOpenBillingPlans, canAccessDashboardView, type DashboardRole } from "./dashboard.permissions";
@@ -20,13 +21,6 @@ type DashboardSidebarProps = {
   onChangeView: (view: DashboardView) => void;
   onOpenBillingPlans: () => void;
 };
-
-const planLabels = {
-  trial: "Prueba gratuita",
-  initial: "Inicial",
-  professional: "Profesional",
-  operation: "Operación"
-} as const;
 
 export function DashboardSidebar({
   activeView,
@@ -61,7 +55,11 @@ export function DashboardSidebar({
   };
   const hasLogo = logoAvailable ?? Boolean(membership?.hasLogo);
   const currentPlan =
-    subscription?.status === "authorized" ? planLabels[subscription.plan] : null;
+    subscription?.status === "authorized"
+      ? subscription.plan === "trial"
+        ? "Prueba Inicial"
+        : getBillingPlan(subscription.plan)?.name
+      : null;
 
   useEffect(() => {
     const handleLogoUpdated = () => {

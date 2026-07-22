@@ -2,10 +2,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { ApiHealthBadge } from "../../components/system/ApiHealthBadge";
+import { billingPlans } from "../billing/billing.plans";
 import {
   featureCards,
   landingMetrics,
-  pricingPlans,
   previewRows,
   resourceCards,
   sectors,
@@ -472,7 +472,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
                 <div className="grid gap-3 border-t border-[var(--color-border)] pt-5 text-sm text-[var(--color-ink)] lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
                   <p>Sin tarjeta de crédito</p>
-                  <p>Prueba gratis por 14 días</p>
+                  <p>Prueba gratis del plan Inicial por 7 días</p>
                   <p>Cancelá cuando quieras</p>
                 </div>
               </div>
@@ -495,11 +495,11 @@ export function LandingPage({ brand }: LandingPageProps) {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
-              {pricingPlans.map((plan) => (
+              {billingPlans.map((plan) => (
                 <article
                   key={plan.name}
                   className={`rounded-lg border p-5 ${
-                    plan.highlighted
+                    plan.recommended
                       ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.06)]"
                       : "border-[var(--color-border)] bg-[rgba(255,251,244,0.76)]"
                   }`}
@@ -511,7 +511,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                         {plan.description}
                       </p>
                     </div>
-                    {plan.highlighted && (
+                    {plan.recommended && (
                       <span className="rounded-md bg-[var(--color-accent)] px-2 py-1 text-xs font-semibold text-[var(--color-button-text)]">
                         Recomendado
                       </span>
@@ -538,7 +538,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <Link
                     to={`/register?plan=${plan.id}`}
                     className={`mt-6 inline-flex w-full items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold ${
-                      plan.highlighted
+                      plan.recommended
                         ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
                         : "border border-[var(--color-border-strong)] text-[var(--color-ink)]"
                     }`}
@@ -655,7 +655,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                       ¿Listo para <span className="text-[var(--color-accent)]">organizar</span> tus turnos?
                     </h3>
                     <p className="mt-2 text-sm text-white/76">
-                      Probá TurnoSi gratis por 14 días. Sin tarjeta de crédito.
+                      Probá el plan Inicial gratis por 7 días. Sin tarjeta de crédito.
                     </p>
                   </div>
                 </div>
@@ -668,7 +668,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                     Comenzar gratis <span className="ml-2" aria-hidden="true">→</span>
                   </a>
                   <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-white/72 lg:justify-end">
-                    <span>14 días gratis</span>
+                    <span>7 días gratis</span>
                     <span>Sin tarjeta</span>
                     <span>Cancelá cuando quieras</span>
                   </div>
@@ -691,7 +691,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   "linear-gradient(215deg, black 0%, black 34%, rgba(0,0,0,0.52) 48%, transparent 70%)"
               }}
             />
-              <div className="grid gap-8 lg:grid-cols-[minmax(260px,0.95fr)_repeat(4,minmax(0,1fr))_220px]">
+              <div className="grid gap-8 lg:grid-cols-[minmax(260px,1.2fr)_repeat(3,minmax(0,1fr))]">
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2">
                     {brand}
@@ -706,18 +706,15 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <ul className="mt-4 space-y-3 text-sm text-white/70">
                     <li><a href="#funciones">Funciones</a></li>
                     <li><a href="#pricing">Precios</a></li>
-                    <li><a href="#resources">Recursos</a></li>
-                    <li><a href="#contact">Contacto</a></li>
+                    <li><a href="/login">Ingresar</a></li>
                   </ul>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-white">Recursos</p>
+                  <p className="text-sm font-semibold text-white">Soporte</p>
                   <ul className="mt-4 space-y-3 text-sm text-white/70">
-                    <li>Centro de ayuda</li>
-                    <li>Documentación</li>
-                    <li>API</li>
-                    <li>Estado del sistema</li>
+                    <li><a href="#contact">Contacto</a></li>
+                    <li><a href="#faq">Preguntas frecuentes</a></li>
                   </ul>
                 </div>
 
@@ -726,41 +723,13 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <ul className="mt-4 space-y-3 text-sm text-white/70">
                     <li>Términos y condiciones</li>
                     <li>Política de privacidad</li>
-                    <li>Cookies</li>
-                    <li>Aviso legal</li>
+                    <li>Cancelaciones</li>
                   </ul>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-white">Empresa</p>
-                  <ul className="mt-4 space-y-3 text-sm text-white/70">
-                    <li>Sobre nosotros</li>
-                    <li>Blog</li>
-                    <li>Novedades</li>
-                    <li>Trabajá con nosotros</li>
-                  </ul>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <div className="rounded-md border border-white/12 px-4 py-3 text-sm text-white/88">
-                    Argentina
-                  </div>
-                  <p className="text-sm leading-6 text-white/72">
-                    Soporte en español<br />
-                    Latinoamérica
-                  </p>
                 </div>
               </div>
 
               <div className="mt-8 border-t border-white/10 pt-5 text-sm text-white/60">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <p>© 2026 TurnoSi. Todos los derechos reservados.</p>
-                  <div className="flex flex-wrap gap-6">
-                    <a href="#">Términos y condiciones</a>
-                    <a href="#">Política de privacidad</a>
-                    <a href="#">Cookies</a>
-                  </div>
-                </div>
+                <p>© 2026 TurnoSi</p>
               </div>
           </section>
         </footer>

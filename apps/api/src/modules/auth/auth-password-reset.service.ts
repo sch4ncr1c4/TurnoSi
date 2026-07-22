@@ -6,6 +6,7 @@ import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { hashToken } from "../../lib/crypto.js";
 import { renderTurnosiEmail } from "../../lib/email-template.js";
+import { logger } from "../../lib/logger.js";
 import { hashPassword, verifyPassword } from "../../lib/password.js";
 
 async function sendResetCode(email: string, code: string) {
@@ -32,6 +33,10 @@ async function sendResetCode(email: string, code: string) {
     })
   });
   if (!response.ok) {
+    logger.error("password reset email failed", {
+      status: response.status,
+      body: await response.text()
+    });
     throw new AppError(502, "EMAIL_DELIVERY_FAILED", "Reset email failed");
   }
 }
@@ -41,20 +46,28 @@ export async function requestPasswordReset(email: string, _request: Request) {
   if (!user) return { sent: true };
 
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-  await prisma.$transaction([
-    prisma.passwordResetToken.updateMany({
+  const token = await prisma.$transaction(async (transaction) => {
+    await transaction.passwordResetToken.updateMany({
       where: { userId: user.id, usedAt: null },
       data: { usedAt: new Date() }
-    }),
-    prisma.passwordResetToken.create({
+    });
+    return transaction.passwordResetToken.create({
       data: {
         userId: user.id,
         tokenHash: hashToken(code),
         expiresAt: new Date(Date.now() + 3 * 60 * 1000)
       }
-    })
-  ]);
-  await sendResetCode(user.email, code);
+    });
+  });
+  try {
+    await sendResetCode(user.email, code);
+  } catch (error) {
+    await prisma.passwordResetToken.update({
+      where: { id: token.id },
+      data: { usedAt: new Date() }
+    });
+    throw error;
+  }
 
   return { sent: true };
 }
