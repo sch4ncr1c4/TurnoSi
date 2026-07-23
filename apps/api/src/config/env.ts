@@ -57,6 +57,8 @@ const envSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.string().min(32).default("dev-only-auth-secret-change-before-prod")
   ),
+  SUPERADMIN_EMAIL: optionalEnv(z.string().email()),
+  SUPERADMIN_PASSWORD_HASH: optionalEnv(z.string().regex(/^[a-f0-9]{64}$/i)),
   AUTH_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().max(60 * 60).default(60 * 15),
   AUTH_REFRESH_TTL_SECONDS: z.coerce.number().int().positive().default(60 * 60 * 24 * 30)
 });
@@ -78,6 +80,9 @@ if (env.NODE_ENV === "production") {
 
   if (env.AUTH_SECRET.startsWith("dev-") || placeholderPattern.test(env.AUTH_SECRET)) {
     productionErrors.push("AUTH_SECRET must be replaced");
+  }
+  if (!env.SUPERADMIN_EMAIL || !env.SUPERADMIN_PASSWORD_HASH) {
+    productionErrors.push("SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD_HASH are required");
   }
   if (placeholderPattern.test(env.WEB_ORIGIN)) {
     productionErrors.push("WEB_ORIGIN must be your real production URL");

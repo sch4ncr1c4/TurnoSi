@@ -16,7 +16,7 @@ import { appointmentsRouter } from "../appointments/appointments.routes.js";
 import { assertPlanLimitAvailable } from "../billing/plan-limits.service.js";
 import { customersRouter } from "../customers/customers.routes.js";
 import { servicesRouter } from "../services/services.routes.js";
-import { cancelMercadoPagoSubscription } from "../billing/mercadopago-subscription.service.js";
+import { deleteOrganizationWithData } from "./delete-organization.service.js";
 import {
   branchParamsSchema,
   branchSchema,
@@ -481,12 +481,7 @@ organizationsRouter.delete("/current", authRateLimit, async (request, response) 
     }),
     prisma.organization.findUnique({
       where: { id: tenant.organizationId },
-      select: {
-        memberships: { select: { userId: true } },
-        subscription: {
-          select: { mercadoPagoPreapprovalId: true, status: true }
-        }
-      }
+      select: { id: true }
     })
   ]);
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
@@ -496,23 +491,7 @@ organizationsRouter.delete("/current", authRateLimit, async (request, response) 
     throw new AppError(404, "NOT_FOUND", "Business not found");
   }
 
-  const preapprovalId = organization.subscription?.mercadoPagoPreapprovalId;
-  if (preapprovalId && organization.subscription?.status !== "canceled") {
-    await cancelMercadoPagoSubscription(preapprovalId);
-  }
-
-  const memberUserIds = organization.memberships.map((member) => member.userId);
-  await prisma.$transaction(async (transaction) => {
-    await transaction.organization.delete({
-      where: { id: tenant.organizationId }
-    });
-    await transaction.user.deleteMany({
-      where: {
-        id: { in: memberUserIds },
-        memberships: { none: {} }
-      }
-    });
-  });
+  await deleteOrganizationWithData(tenant.organizationId);
 
   clearAuthCookies(response);
   response.json(ok({ deleted: true }));

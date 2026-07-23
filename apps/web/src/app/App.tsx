@@ -12,6 +12,7 @@ import { PasswordRecoveryPage } from "../features/auth/PasswordRecoveryPage";
 import { PlansPage } from "../features/billing/PlansPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { PublicBookingPage } from "../features/booking/PublicBookingPage";
+import { SuperAdminPage } from "../features/superadmin/SuperAdminPage";
 import { NotFoundPage } from "../features/NotFoundPage";
 
 export function App() {
@@ -41,6 +42,7 @@ export function App() {
             path={ROUTES.recoverPassword}
             element={<PasswordRecoveryPage brand={<Brand asLink boxed />} />}
           />
+          <Route path={ROUTES.superadmin} element={<SuperAdminPage />} />
           <Route
             path={ROUTES.dashboard}
             element={
