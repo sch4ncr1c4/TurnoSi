@@ -149,7 +149,7 @@ export function AccountAccessSettings({
         >
           <AccountField
             label="Nombre del propietario"
-            placeholder="Ej: Cristian"
+            placeholder="Ej: Laura"
             disabled={!isProfileEditing}
             highlightChanges={highlightChanges}
             savedValue={savedProfile.firstName}

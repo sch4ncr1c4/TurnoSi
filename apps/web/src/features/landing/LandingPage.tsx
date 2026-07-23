@@ -449,7 +449,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                   <div className="mt-5 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/64">
                     {[
-                      ["Cristian Schinocca", "Propietario", "Sede principal", "4 turnos hoy"],
+                      ["Laura Méndez", "Propietaria", "Sede principal", "4 turnos hoy"],
                       ["Laura Ruiz", "Administradora", "Barber Shop Ramos", "3 turnos hoy"],
                       ["Marcos Vega", "Miembro", "Sede principal", "2 turnos hoy"]
                     ].map(([name, role, branch, load]) => (

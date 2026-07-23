@@ -57,7 +57,7 @@ export const previewRows = [
     time: "09:00",
     service: "Corte de pelo",
     customer: "Juan Pérez",
-    responsible: "Cristian Schinocca",
+    responsible: "Laura Méndez",
     status: "Confirmado"
   },
   {
@@ -78,7 +78,7 @@ export const previewRows = [
     time: "17:30",
     service: "Perfilado",
     customer: "Nicolás Silva",
-    responsible: "Cristian Schinocca",
+    responsible: "Laura Méndez",
     status: "Confirmado"
   },
   {

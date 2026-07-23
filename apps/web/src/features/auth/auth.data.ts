@@ -77,7 +77,7 @@ export const authRoutes: readonly AuthRouteConfig[] = [
         id: "firstName",
         label: "Nombre",
         type: "text",
-        placeholder: "Ej. Cristian"
+        placeholder: "Ej. Laura"
       },
       {
         id: "lastName",

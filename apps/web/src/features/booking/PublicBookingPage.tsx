@@ -1132,7 +1132,7 @@ function BookingConfirmForm({
       autoComplete: "name",
       label: "Nombre completo",
       name: "name",
-      placeholder: "Ej: Cristian Schinocca",
+      placeholder: "Ej: Laura Méndez",
       type: "text"
     },
     {
