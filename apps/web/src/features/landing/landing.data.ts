@@ -11,105 +11,75 @@ export const featureCards = [
   {
     title: "Agenda inteligente",
     description:
-      "Visualizá el día, la semana o el mes con lectura rápida y foco en el turno activo.",
+      "Encontrá rápido qué turno sigue, quién atiende y qué estados requieren acción.",
     meta: "Calendario claro",
     tone: "warm"
   },
   {
     title: "Reservas online",
     description:
-      "Tus clientes se agendan solos desde la página pública del local, sin llamadas ni idas y vueltas.",
+      "El cliente elige sede, servicio, profesional y horario desde tu página pública.",
     meta: "Canal público",
     tone: "accent"
   },
   {
     title: "Equipo y roles",
     description:
-      "Organizá miembros por sede y prepará la base para owner, admin y member.",
+      "Asigná personas por sede y limitá qué puede tocar cada rol dentro del negocio.",
     meta: "Acceso por rol",
     tone: "ink"
   },
   {
     title: "Clientes",
     description:
-      "Conservá historial, observaciones y próximos turnos para dar seguimiento sin perder contexto.",
+      "Tené a mano historial, próximos turnos y datos de contacto sin buscar chats.",
     meta: "Ficha completa",
     tone: "soft"
   },
   {
     title: "Recordatorios",
     description:
-      "Reducí ausencias con avisos automáticos y mensajes claros antes del turno.",
+      "Mandá mensajes claros por WhatsApp para confirmar o recordar la reserva.",
     meta: "Menos ausencias",
     tone: "status"
   },
   {
     title: "Reportes y control",
     description:
-      "Leé ocupación, turnos confirmados y actividad reciente sin agregar complejidad innecesaria.",
+      "Leé turnos, ausencias y actividad para decidir horarios, equipo y servicios.",
     meta: "Datos reales",
     tone: "muted"
-  }
-] as const;
-
-export const resourceCards = [
-  {
-    title: "Centro de ayuda",
-    description:
-      "Respuestas claras para resolver dudas frecuentes sin perder tiempo."
-  },
-  {
-    title: "Documentación",
-    description:
-      "Guías para configurar el sistema y entender cada parte de la operación."
-  },
-  {
-    title: "API e integraciones",
-    description:
-      "Conectá TurnoSi con otras herramientas cuando el negocio lo necesite."
-  },
-  {
-    title: "Blog",
-    description:
-      "Consejos y novedades para ordenar mejor la agenda y la atención."
-  },
-  {
-    title: "Estado del sistema",
-    description:
-      "Seguimiento de disponibilidad y cambios importantes en la plataforma."
   }
 ] as const;
 
 export const previewRows = [
   {
     time: "09:00",
-    title: "Color y corte",
-    meta: "Lucia · Box 2"
+    service: "Corte de pelo",
+    customer: "Juan Pérez",
+    responsible: "Cristian Schinocca",
+    status: "Confirmado"
   },
   {
-    time: "11:30",
-    title: "Semipermanente",
-    meta: "Camila · Mesa 1"
+    time: "10:30",
+    service: "Barba completa",
+    customer: "Martín Ramos",
+    responsible: "Lucas Medina",
+    status: "Pagado"
   },
   {
-    time: "18:00",
-    title: "Cancha 5",
-    meta: "Turno confirmado"
-  }
-] as const;
-
-export const landingMetrics = [
-  {
-    value: "18",
-    label: "turnos visibles en el día"
+    time: "12:00",
+    service: "Corte + barba",
+    customer: "Diego Torres",
+    responsible: "Mejor disponibilidad",
+    status: "En espera"
   },
   {
-    value: "6",
-    label: "espacios disponibles"
-  },
-  {
-    value: "3",
-    label: "roles preparados"
+    time: "17:30",
+    service: "Perfilado",
+    customer: "Nicolás Silva",
+    responsible: "Cristian Schinocca",
+    status: "Confirmado"
   }
 ] as const;
 

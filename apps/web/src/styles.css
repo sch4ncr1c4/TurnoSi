@@ -410,6 +410,108 @@ textarea {
   }
 }
 
+.landing-rise {
+  animation: landing-rise 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.landing-delay-1 {
+  animation-delay: 90ms;
+}
+
+.landing-delay-2 {
+  animation-delay: 170ms;
+}
+
+.landing-delay-3 {
+  animation-delay: 250ms;
+}
+
+.landing-feature-card {
+  animation: landing-rise 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.landing-feature-card:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.landing-feature-card:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.landing-feature-card:nth-child(4) {
+  animation-delay: 210ms;
+}
+
+.landing-feature-card:nth-child(5) {
+  animation-delay: 280ms;
+}
+
+.landing-feature-card:nth-child(6) {
+  animation-delay: 350ms;
+}
+
+.landing-product-card {
+  animation: landing-float 7s ease-in-out infinite;
+}
+
+.landing-mockup {
+  transition:
+    transform 260ms ease,
+    box-shadow 260ms ease,
+    border-color 260ms ease;
+}
+
+.landing-feature-card:hover .landing-mockup {
+  border-color: rgba(253, 134, 6, 0.34);
+  box-shadow: 0 18px 48px rgba(32, 24, 54, 0.08);
+  transform: translateY(-3px);
+}
+
+.landing-mockup-row {
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.landing-feature-card:hover .landing-mockup-row {
+  background-color: rgba(255, 255, 255, 0.72);
+}
+
+.landing-feature-card:hover .landing-mockup-row:nth-child(2) {
+  transform: translateX(3px);
+}
+
+.landing-feature-card:hover .landing-mockup-row:nth-child(3) {
+  transform: translateX(6px);
+}
+
+.landing-feature-card:hover .landing-mockup-row:nth-child(4) {
+  transform: translateX(4px);
+}
+
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
 @keyframes auth-progress {
   0% {
     transform: translateX(-110%);
@@ -701,14 +803,19 @@ textarea {
   .booking-gallery,
   .booking-stepper,
   .booking-panel-enter,
-  .booking-success {
+  .booking-success,
+  .landing-rise,
+  .landing-feature-card,
+  .landing-product-card {
     animation: none;
   }
 
   .booking-choice,
   .booking-date-card,
   .booking-time-chip,
-  .booking-step-button {
+  .booking-step-button,
+  .landing-mockup,
+  .landing-mockup-row {
     transition: none;
   }
 

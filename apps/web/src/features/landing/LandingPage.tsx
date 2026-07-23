@@ -4,10 +4,7 @@ import { Link } from "react-router-dom";
 import { ApiHealthBadge } from "../../components/system/ApiHealthBadge";
 import { billingPlans } from "../billing/billing.plans";
 import {
-  featureCards,
-  landingMetrics,
   previewRows,
-  resourceCards,
   sectors,
   trustLogos
 } from "./landing.data";
@@ -191,7 +188,7 @@ export function LandingPage({ brand }: LandingPageProps) {
             }}
           />
           <div className="grid min-h-[unset] w-full min-w-0 gap-6 px-4 py-6 sm:px-7 sm:py-10 lg:min-h-[560px] lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] lg:items-center lg:gap-8 lg:py-16">
-            <div className="order-1 min-w-0 max-w-3xl lg:order-none">
+            <div className="landing-rise order-1 min-w-0 max-w-3xl lg:order-none">
               <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {sectors.map((sector) => (
                   <span
@@ -236,88 +233,96 @@ export function LandingPage({ brand }: LandingPageProps) {
 
             <div
               id="product"
-              className="order-2 min-w-0 overflow-hidden rounded-lg border border-white/14 bg-[rgba(255,251,244,0.96)] text-[var(--color-ink)] lg:order-none"
+              className="landing-product-card landing-rise landing-delay-1 order-2 min-w-0 overflow-hidden rounded-2xl border border-white/14 bg-[#fbf4e6] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] lg:order-none"
             >
-              <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-3 py-3 sm:px-4">
+              <div className="min-h-[420px]">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold">Agenda operativa</p>
-                  <p className="text-xs text-[var(--color-muted)]">
-                    Miércoles 05 · Sede principal
-                  </p>
-                </div>
-                <span className="inline-flex shrink-0 rounded-md bg-[var(--color-status-soft)] px-2 py-1 text-[10px] font-medium text-[var(--color-status)] sm:text-xs">
-                  12 confirmados
-                </span>
-              </div>
+                  <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] px-4 py-4">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                        Vista del producto
+                      </p>
+                      <h2 className="mt-1 text-xl font-semibold">
+                        Agenda de hoy
+                      </h2>
+                      <p className="text-xs text-[var(--color-muted)]">
+                        Miércoles 22 · Sede principal · 09:00 a 20:00
+                      </p>
+                    </div>
+                    <span className="inline-flex shrink-0 rounded-full bg-[rgba(253,134,6,0.14)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)]">
+                      8 confirmados
+                    </span>
+                  </div>
 
-              <div className="md:hidden">
-                <div className="divide-y divide-[var(--color-border)]">
-                  {previewRows.map((row) => (
-                    <div key={`mobile-${row.time + row.title}`} className="px-3 py-2.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold">{row.title}</p>
-                          <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
-                            {row.meta}
-                          </p>
+                  <div className="grid gap-3 p-4">
+                    <div className="min-w-0 space-y-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          ["Turnos", "12"],
+                          ["Disponibles", "6"],
+                          ["Pendientes", "1"]
+                        ].map(([label, value]) => (
+                          <div
+                            key={label}
+                            className="landing-mockup-row rounded-xl border border-[var(--color-border)] bg-white/70 p-3"
+                          >
+                            <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                              {label}
+                            </p>
+                            <p className="mt-1 text-xl font-semibold">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/74">
+                        <div className="grid grid-cols-[58px_minmax(0,1fr)] border-b border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)] sm:grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_86px]">
+                          <span>Hora</span>
+                          <span>Turno</span>
+                          <span className="hidden sm:block">Responsable</span>
+                          <span className="hidden sm:block">Estado</span>
                         </div>
-                        <span className="shrink-0 rounded-md bg-[rgba(253,134,6,0.14)] px-2 py-1 text-[10px] font-medium">
-                          {row.time}
-                        </span>
+                        {previewRows.map((row) => (
+                          <div
+                            key={row.time + row.service}
+                            className="landing-mockup-row grid grid-cols-[58px_minmax(0,1fr)] items-center border-b border-[var(--color-border)] px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_86px]"
+                          >
+                            <span className="font-mono font-semibold text-[var(--color-accent)]">
+                              {row.time}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold">
+                                {row.service}
+                              </span>
+                              <span className="block truncate text-xs text-[var(--color-muted)]">
+                                {row.customer}
+                              </span>
+                            </span>
+                            <span className="hidden truncate text-xs text-[var(--color-muted-strong)] sm:block">
+                              {row.responsible}
+                            </span>
+                            <span className="hidden sm:block">
+                              <span
+                                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                                  row.status === "Pagado"
+                                    ? "bg-[rgba(64,145,91,0.12)] text-[#347548]"
+                                    : row.status === "En espera"
+                                      ? "bg-[rgba(253,134,6,0.14)] text-[var(--color-accent)]"
+                                      : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
+                                }`}
+                              >
+                                {row.status}
+                              </span>
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="hidden md:block">
-                <table className="w-full min-w-[520px] border-collapse text-left text-sm">
-                  <thead className="bg-[rgba(32,24,54,0.04)] text-xs uppercase text-[var(--color-muted)]">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Hora</th>
-                      <th className="px-4 py-3 font-medium">Reserva</th>
-                      <th className="px-4 py-3 font-medium">Responsable</th>
-                      <th className="px-4 py-3 font-medium">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewRows.map((row) => (
-                      <tr
-                        key={row.time + row.title}
-                        className="border-t border-[var(--color-border)]"
-                      >
-                        <td className="px-4 py-4 font-medium">{row.time}</td>
-                        <td className="px-4 py-4">{row.title}</td>
-                        <td className="px-4 py-4 text-[var(--color-muted-strong)]">
-                          {row.meta}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="rounded-md bg-[rgba(253,134,6,0.14)] px-2.5 py-1 text-xs font-medium">
-                            Activo
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="grid grid-cols-3 border-t border-[var(--color-border)]">
-                {landingMetrics.map((metric) => (
-                  <div
-                    key={metric.value}
-                    className="min-w-0 border-b border-[var(--color-border)] px-1 py-2 text-center last:border-b-0 sm:border-r sm:px-4 sm:py-4 sm:last:border-r-0"
-                  >
-                    <p className="text-base font-semibold sm:text-lg">{metric.value}</p>
-                    <p className="mt-1 text-[9px] leading-3 text-[var(--color-muted)] [overflow-wrap:anywhere] sm:text-sm sm:leading-6">
-                      {metric.label}
-                    </p>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
 
-            <div className="hero-trust-band order-3 min-w-0 space-y-4 lg:order-none lg:col-span-2 lg:space-y-6">
+            <div className="hero-trust-band landing-rise landing-delay-2 order-3 min-w-0 space-y-4 lg:order-none lg:col-span-2 lg:space-y-6">
               <div className="hero-trust-divider" />
               <p className="text-center text-xs font-medium text-white/72 sm:text-sm">
                 Más de 500 negocios ya gestionan sus turnos con{" "}
@@ -345,60 +350,104 @@ export function LandingPage({ brand }: LandingPageProps) {
           className="soft-section-divider scroll-mt-24 bg-[rgba(255,251,244,0.72)] px-5 py-12 sm:px-7"
         >
           <div className="mx-auto max-w-7xl">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="inline-flex items-center gap-2 rounded-full border border-[rgba(253,134,6,0.3)] bg-[rgba(253,134,6,0.12)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink)]">
-                <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
+            <div className="landing-rise mx-auto max-w-3xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                 Funciones
               </p>
-              <h2 className="mt-5 text-3xl font-semibold sm:text-4xl lg:text-5xl">
-                Todo lo que necesitás para gestionar{" "}
-                <span className="text-[var(--color-accent)]">tu negocio</span>
+              <h2 className="mt-4 text-3xl font-semibold sm:text-4xl lg:text-5xl">
+                La operación diaria, en una sola vista.
               </h2>
-              <p className="mt-4 text-base leading-8 text-[var(--color-muted-strong)]">
-                TurnoSi centraliza agenda, reservas, equipo y seguimiento en una
-                experiencia clara, profesional y fácil de usar.
+              <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
+                Agenda, reservas, equipo y clientes conectados sin duplicar datos.
               </p>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {featureCards.map((card) => (
-                <article
-                  key={card.title}
-                  className="group rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] p-5 shadow-[0_18px_50px_rgba(32,24,54,0.05)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(32,24,54,0.09)]"
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-semibold ${
-                        card.tone === "accent"
-                          ? "bg-[rgba(253,134,6,0.16)] text-[var(--color-ink)]"
-                          : card.tone === "ink"
-                            ? "bg-[rgba(32,24,54,0.12)] text-[var(--color-ink)]"
-                            : card.tone === "status"
-                              ? "bg-[rgba(86,145,101,0.14)] text-[#3f7a49]"
-                              : card.tone === "soft"
-                                ? "bg-[rgba(67,131,151,0.12)] text-[#2f6678]"
-                                : card.tone === "warm"
-                                  ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-ink)]"
-                                  : "bg-[rgba(100,98,90,0.08)] text-[var(--color-muted-strong)]"
-                      }`}
-                    >
-                      {card.title.slice(0, 1)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-lg font-semibold">{card.title}</p>
-                      <p className="mt-1 text-sm leading-7 text-[var(--color-muted-strong)]">
-                        {card.description}
-                      </p>
+            <div className="mt-10 grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
+              <article className="landing-feature-card overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_10px_30px_rgba(32,24,54,0.035)]">
+                <div className="grid gap-0 md:grid-cols-[0.92fr_1.08fr]">
+                  <div className="border-b border-[var(--color-border)] p-5 md:border-b-0 md:border-r">
+                    <p className="text-xl font-semibold">Agenda y reservas</p>
+                    <p className="mt-3 text-sm leading-7 text-[var(--color-muted-strong)]">
+                      El día se organiza por hora, responsable, sede y estado.
+                      La reserva pública usa esa misma disponibilidad.
+                    </p>
+                    <div className="mt-5 grid gap-2 text-sm text-[var(--color-ink)]">
+                      <p>Agenda diaria, semanal y mensual</p>
+                      <p>Reservas online con WhatsApp</p>
+                      <p>Estados claros para cada turno</p>
                     </div>
                   </div>
+                  <div className="p-4">
+                    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/72">
+                      <div className="grid grid-cols-[64px_minmax(0,1fr)_94px] border-b border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                        <span>Hora</span>
+                        <span>Turno</span>
+                        <span>Estado</span>
+                      </div>
+                      {previewRows.slice(0, 3).map((row) => (
+                        <div
+                          key={row.time}
+                          className="landing-mockup-row grid grid-cols-[64px_minmax(0,1fr)_94px] items-center border-b border-[var(--color-border)] px-3 py-3 text-sm last:border-b-0"
+                        >
+                          <span className="font-semibold text-[var(--color-accent)]">
+                            {row.time}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold">
+                              {row.service}
+                            </span>
+                            <span className="block truncate text-xs text-[var(--color-muted)]">
+                              {row.customer}
+                            </span>
+                          </span>
+                          <span className="text-xs text-[var(--color-muted-strong)]">
+                            {row.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </article>
 
-                  <div className="mt-5 border-t border-[var(--color-border)] pt-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
-                      {card.meta}
-                    </p>
+              <div className="grid gap-4">
+                <article className="landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_30px_rgba(32,24,54,0.03)]">
+                  <p className="text-lg font-semibold">Equipo y permisos</p>
+                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
+                    Cada integrante trabaja en sus sedes y con el acceso que corresponde.
+                  </p>
+                  <div className="mt-4 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/64">
+                    {[
+                      ["Cristian", "Propietario"],
+                      ["Laura", "Administradora"],
+                      ["Marcos", "Miembro"]
+                    ].map(([name, role]) => (
+                      <div key={name} className="landing-mockup-row flex items-center justify-between px-3 py-2.5 text-sm">
+                        <span className="font-semibold">{name}</span>
+                        <span className="text-xs text-[var(--color-muted-strong)]">{role}</span>
+                      </div>
+                    ))}
                   </div>
                 </article>
-              ))}
+
+                <article className="landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_30px_rgba(32,24,54,0.03)]">
+                  <p className="text-lg font-semibold">Clientes y seguimiento</p>
+                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
+                    Historial, próximos turnos y mensajes sin depender del chat.
+                  </p>
+                  <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/64 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">Julieta Fernández</p>
+                        <p className="text-xs text-[var(--color-muted)]">Próximo turno: 10:00</p>
+                      </div>
+                      <span className="rounded-md bg-[rgba(64,145,91,0.12)] px-2 py-1 text-xs font-semibold text-[#347548]">
+                        Confirmado
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </div>
             </div>
           </div>
         </section>
@@ -408,145 +457,172 @@ export function LandingPage({ brand }: LandingPageProps) {
           className="soft-section-divider scroll-mt-24 bg-[rgba(255,251,244,0.76)] px-5 py-12 sm:px-7"
         >
           <div className="mx-auto max-w-7xl">
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="inline-flex items-center gap-2 rounded-full border border-[rgba(253,134,6,0.3)] bg-[rgba(253,134,6,0.12)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink)]">
-                <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-                Recursos
-              </p>
-              <h2 className="mt-5 text-3xl font-semibold sm:text-4xl lg:text-5xl">
-                Recursos para hacer crecer tu negocio con{" "}
-                <span className="text-[var(--color-accent)]">TurnoSi</span>
-              </h2>
-              <p className="mt-4 text-base leading-8 text-[var(--color-muted-strong)]">
-                Encontrá guías, documentación y herramientas para sacarle el
-                máximo provecho a la plataforma.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {resourceCards.map((resource, index) => (
-                <article
-                  key={resource.title}
-                  className="rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.94)] p-5 shadow-[0_18px_50px_rgba(32,24,54,0.04)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(32,24,54,0.08)]"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(253,134,6,0.12)] text-sm font-semibold text-[var(--color-ink)]">
-                    {index + 1}
-                  </div>
-                  <p className="mt-4 text-lg font-semibold">{resource.title}</p>
-                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
-                    {resource.description}
-                  </p>
-                  <button
-                    type="button"
-                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-accent)] transition-transform duration-200 hover:translate-x-1"
-                  >
-                    Explorar
-                    <span aria-hidden="true">→</span>
-                  </button>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-10 rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.94)] px-6 py-6">
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[rgba(32,24,54,0.08)] text-xl text-[var(--color-ink)]">
-                    ↗
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-semibold">
-                      ¿Listo para empezar?
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-7 text-[var(--color-muted-strong)]">
-                      Unite a más de 500 negocios que ya gestionan sus turnos de
-                      forma simple y profesional.
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
+              <div className="landing-rise">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                  Operación real
+                </p>
+                <h2 className="mt-4 text-3xl font-semibold sm:text-4xl lg:text-5xl">
+                  Configurás una vez. Operás todos los días.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
+                  TurnoSi separa configuración y operación para que el equipo no
+                  tenga que tocar datos sensibles mientras atiende.
+                </p>
+                <div className="mt-7 grid gap-3">
+                  {[
+                    "Sedes, servicios y horarios quedan definidos desde configuración.",
+                    "El cliente reserva desde una página pública conectada a esa agenda.",
+                    "El equipo gestiona turnos, estados y clientes desde el dashboard."
+                  ].map((item) => (
+                    <p key={item} className="flex gap-3 text-sm leading-6 text-[var(--color-ink)]">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+                      {item}
                     </p>
-                    <a
-                      href="/register"
-                      className="mt-5 inline-flex items-center rounded-md bg-[var(--color-ink)] px-5 py-3 text-sm font-medium text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-                    >
-                      Comenzar gratis
-                    </a>
-                  </div>
+                  ))}
                 </div>
+              </div>
 
-                <div className="grid gap-3 border-t border-[var(--color-border)] pt-5 text-sm text-[var(--color-ink)] lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-                  <p>Sin tarjeta de crédito</p>
-                  <p>Prueba gratis del plan Inicial por 7 días</p>
-                  <p>Cancelá cuando quieras</p>
+              <div className="landing-rise landing-delay-1 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] shadow-[0_12px_34px_rgba(32,24,54,0.04)]">
+                <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-white/54 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold">Configuración inicial</p>
+                      <p className="text-xs text-[var(--color-muted)]">
+                        La cuenta queda lista para recibir turnos.
+                      </p>
+                    </div>
+                    <span className="rounded-md bg-[rgba(64,145,91,0.12)] px-2 py-1 text-xs font-semibold text-[#347548]">
+                      3/3 listo
+                    </span>
+                </div>
+                <div className="grid gap-0 md:grid-cols-3">
+                    {[
+                      ["Local", "Nombre, rubro, logo y fotos"],
+                      ["Página", "WhatsApp, dirección y URL pública"],
+                      ["Agenda", "Horarios, sedes, equipo y servicios"]
+                    ].map(([title, copy], index) => (
+                      <div
+                        key={title}
+                        className="border-b border-[var(--color-border)] p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+                      >
+                        <span className="text-xs font-semibold text-[var(--color-accent)]">
+                          0{index + 1}
+                        </span>
+                        <p className="text-sm font-semibold">{title}</p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--color-muted-strong)]">
+                          {copy}
+                        </p>
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="pricing" className="scroll-mt-24 px-5 py-10 sm:px-7">
-          <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div>
-              <p className="text-xs font-semibold uppercase text-[var(--color-muted)]">
-                Precios
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold">
-                Planes claros para cada etapa del negocio.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
-                Empezá simple y escalá cuando tu operación necesite más equipo, más control y más visibilidad.
-              </p>
+        <section id="pricing" className="scroll-mt-24 px-5 py-12 sm:px-7">
+          <div className="mx-auto max-w-7xl">
+            <div className="landing-rise mx-auto max-w-3xl text-center">
+                <p className="inline-flex items-center gap-2 rounded-full border border-[rgba(253,134,6,0.28)] bg-[rgba(253,134,6,0.12)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink)]">
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
+                  Precios
+                </p>
+                <h2 className="mt-5 text-3xl font-semibold sm:text-4xl lg:text-5xl">
+                  Pagás por el tamaño real de tu operación.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
+                  Cada plan tiene límites concretos para evitar abusos y que el
+                  sistema siga siendo estable. La prueba gratis usa el plan Inicial
+                  durante 7 días.
+                </p>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
-              {billingPlans.map((plan) => (
-                <article
-                  key={plan.name}
-                  className={`rounded-lg border p-5 ${
-                    plan.recommended
-                      ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.06)]"
-                      : "border-[var(--color-border)] bg-[rgba(255,251,244,0.76)]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-lg font-semibold">{plan.name}</p>
-                      <p className="mt-3 text-sm leading-7 text-[var(--color-muted-strong)]">
-                        {plan.description}
-                      </p>
-                    </div>
-                    {plan.recommended && (
-                      <span className="rounded-md bg-[var(--color-accent)] px-2 py-1 text-xs font-semibold text-[var(--color-button-text)]">
-                        Recomendado
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-6 flex items-end gap-1">
-                    <p className="font-mono text-3xl font-semibold">{plan.price}</p>
-                    <p className="pb-1 text-sm text-[var(--color-muted)]">
-                      {plan.period}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-4">
-                    {plan.features.map((feature) => (
-                      <p
-                        key={feature}
-                        className="text-sm text-[var(--color-muted-strong)]"
-                      >
-                        {feature}
-                      </p>
-                    ))}
-                  </div>
-                  <Link
-                    to={`/register?plan=${plan.id}`}
-                    className={`mt-6 inline-flex w-full items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold ${
+            <div className="mt-10 grid gap-4 lg:grid-cols-3">
+                {billingPlans.map((plan) => (
+                  <article
+                    key={plan.name}
+                    className={`landing-feature-card relative flex min-h-[430px] flex-col overflow-hidden rounded-2xl border p-5 ${
                       plan.recommended
-                        ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
-                        : "border border-[var(--color-border-strong)] text-[var(--color-ink)]"
+                        ? "border-[var(--color-ink)] bg-[linear-gradient(180deg,rgba(32,24,54,0.96),rgba(32,24,54,0.91))] text-white shadow-[0_16px_42px_rgba(32,24,54,0.16)]"
+                        : "border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
                     }`}
                   >
-                    Elegir {plan.name}
-                  </Link>
-                </article>
-              ))}
+                    {plan.recommended && (
+                      <span className="absolute right-4 top-4 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-white">
+                        Más elegido
+                      </span>
+                    )}
+                    <h3 className="text-2xl font-semibold">{plan.name}</h3>
+                    <p
+                      className={`mt-3 min-h-14 text-sm leading-7 ${
+                        plan.recommended ? "text-white/68" : "text-[var(--color-muted-strong)]"
+                      }`}
+                    >
+                      {plan.description}
+                    </p>
+
+                    <div className="mt-5 flex items-end gap-1">
+                      <p className="text-4xl font-semibold">
+                        {plan.id === "initial" ? "$15.000" : plan.price}
+                      </p>
+                      <p
+                        className={`pb-1 text-sm ${
+                          plan.recommended ? "text-white/58" : "text-[var(--color-muted)]"
+                        }`}
+                      >
+                        {plan.period}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`mt-5 space-y-2 border-t pt-5 ${
+                        plan.recommended ? "border-white/12" : "border-[var(--color-border)]"
+                      }`}
+                    >
+                      {plan.features.map((feature) => (
+                        <p
+                          key={feature}
+                          className={`flex gap-2 text-sm leading-6 ${
+                            plan.recommended ? "text-white/76" : "text-[var(--color-muted-strong)]"
+                          }`}
+                        >
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+                          {feature}
+                        </p>
+                      ))}
+                    </div>
+
+                    <Link
+                      to={`/register?plan=${plan.id}`}
+                      className={`mt-auto inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
+                        plan.recommended
+                          ? "bg-[var(--color-accent)] text-white shadow-[0_16px_36px_rgba(253,134,6,0.22)]"
+                          : "border border-[var(--color-border-strong)] bg-white/60 text-[var(--color-ink)] hover:bg-white"
+                      }`}
+                    >
+                      {plan.recommended ? "Empezar con Profesional" : `Elegir ${plan.name}`}
+                    </Link>
+                  </article>
+                ))}
+            </div>
+
+            <div className="landing-rise landing-delay-2 mt-8 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)]">
+              <div className="grid gap-0 text-sm md:grid-cols-4">
+                {[
+                  ["Prueba gratis", "7 días del plan Inicial"],
+                  ["Pagos", "Suscripción mensual con Mercado Pago"],
+                  ["Cambio de plan", "Podés mejorar cuando el negocio crece"],
+                  ["Cancelación", "Sin permanencia mínima"]
+                ].map(([title, copy]) => (
+                  <div
+                    key={title}
+                    className="border-b border-[var(--color-border)] p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+                  >
+                    <p className="font-semibold">{title}</p>
+                    <p className="mt-1 text-[var(--color-muted-strong)]">{copy}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
