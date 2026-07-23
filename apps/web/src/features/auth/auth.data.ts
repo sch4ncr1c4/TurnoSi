@@ -24,20 +24,20 @@ export const authRoutes: readonly AuthRouteConfig[] = [
   {
     path: "/login",
     eyebrow: "Acceso a la cuenta",
-    title: "Iniciá sesión y retomá la agenda de tu negocio.",
+    title: "Iniciá sesión y retomá tu operación.",
     description:
-      "Entrá a tu organización para gestionar turnos, revisar disponibilidad y mantener el día ordenado.",
+      "Gestioná turnos, equipo y disponibilidad desde tu panel.",
     submitLabel: "Ingresar",
     alternateLabel: "¿Todavía no tenés cuenta?",
     alternateHref: "/register",
     alternateCta: "Crear cuenta",
-    sideTitle: "Todo tu equipo, sus horarios y reservas en un mismo lugar.",
+    sideTitle: "Tu operación diaria en un solo lugar.",
     sideCopy:
-      "Pensado para manicura, peluquerías, barberías, consultorios y canchas que necesitan una operación clara y profesional.",
+      "Agenda, clientes, sedes y equipo conectados para trabajar con más orden.",
     sideItems: [
       "Agenda diaria y disponibilidad",
       "Organizaciones con datos aislados",
-      "Roles owner, admin y member"
+      "Roles: propietario, administrador y miembro"
     ],
     fields: [
       {
@@ -57,16 +57,16 @@ export const authRoutes: readonly AuthRouteConfig[] = [
   {
     path: "/register",
     eyebrow: "Crear cuenta",
-    title: "Empezá con una base simple para organizar reservas.",
+    title: "Creá tu cuenta y configurá tu negocio.",
     description:
-      "Creá tu cuenta y dejá listo el espacio inicial para administrar turnos por fecha, hora y responsable.",
+      "Empezá con tu organización lista para recibir reservas.",
     submitLabel: "Crear cuenta",
     alternateLabel: "¿Ya tenés cuenta?",
     alternateHref: "/login",
     alternateCta: "Iniciar sesión",
-    sideTitle: "Un sistema adaptable a distintos rubros y formas de trabajo.",
+    sideTitle: "Prepará tu negocio para recibir turnos.",
     sideCopy:
-      "Podés usarlo para negocios de belleza, servicios por cita o reservas de espacios, con una experiencia consistente desde mobile.",
+      "Configurá datos básicos, horarios y equipo desde una experiencia guiada.",
     sideItems: [
       "Creá la organización inicial",
       "Configurá equipo y horarios",

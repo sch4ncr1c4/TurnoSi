@@ -56,6 +56,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [verificationSendAttempts, setVerificationSendAttempts] = useState(0);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -152,14 +153,14 @@ export function AuthPage({ brand, route }: AuthPageProps) {
 
   return (
     <PageLayout>
-      <div className="grid min-h-screen lg:grid-cols-[minmax(360px,0.82fr)_minmax(0,1.18fr)]">
-        <aside className="dot-pattern-corner dot-pattern-bottom-left flex flex-col justify-between bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:px-8">
+      <div className="grid min-h-screen lg:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
+        <aside className="dot-pattern-corner dot-pattern-bottom-left flex flex-col bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:px-8">
           <div>
             <div className="[&_*]:text-[var(--color-button-text)]">
               {brand}
             </div>
 
-            <div className="mt-12 max-w-xl">
+            <div className="mt-8 max-w-lg">
               <p className="text-xs font-semibold uppercase text-white/52">
                 {config.eyebrow}
               </p>
@@ -172,7 +173,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
             </div>
           </div>
 
-          <div className="mt-10 border-t border-white/12 pt-5">
+          <div className="mt-8 border-t border-white/12 pt-5">
             <div className="space-y-3">
               {config.sideItems.map((item) => (
                 <div
@@ -199,8 +200,8 @@ export function AuthPage({ brand, route }: AuthPageProps) {
             </div>
           </header>
 
-          <div className="flex flex-1 items-center justify-center px-5 py-8 sm:px-7">
-            <div className="w-full max-w-[520px]">
+          <div className="flex flex-1 items-center justify-center px-5 py-8 sm:px-7 lg:py-10">
+            <div className="w-full max-w-[500px] lg:-translate-y-4">
               <div className="border-b border-[var(--color-border)] pb-6">
                 <p className="text-xs font-semibold uppercase text-[var(--color-muted)]">
                   {config.eyebrow}
@@ -243,6 +244,47 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                     </button>
                   )}
                   {config.fields.map((field) => {
+                    if (!isLogin && field.id === "lastName") return null;
+
+                    if (!isLogin && field.id === "firstName") {
+                      const lastNameField = config.fields.find((item) => item.id === "lastName");
+                      const nameFields = lastNameField ? [field, lastNameField] : [field];
+
+                      return (
+                        <div key={field.id} className="grid gap-4 sm:grid-cols-2">
+                          {nameFields.map((nameField) => {
+                            const nameError = errors[nameField.id];
+                            return (
+                              <label key={nameField.id} className="block">
+                                <span className="mb-2 block text-sm font-medium text-[var(--color-ink)]">
+                                  {nameField.label}
+                                </span>
+                                <input
+                                  id={nameField.id}
+                                  name={nameField.id}
+                                  type={nameField.type}
+                                  placeholder={nameField.placeholder}
+                                  autoComplete={nameField.id === "firstName" ? "given-name" : "family-name"}
+                                  aria-invalid={Boolean(nameError)}
+                                  aria-describedby={nameError ? `${nameField.id}-error` : undefined}
+                                  className={`w-full rounded-md border bg-[rgba(255,251,244,0.88)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] ${
+                                    nameError
+                                      ? "border-[#b42318]"
+                                      : "border-[var(--color-border)]"
+                                  }`}
+                                />
+                                {nameError && (
+                                  <p id={`${nameField.id}-error`} className="mt-1 text-xs text-[#b42318]">
+                                    {nameError}
+                                  </p>
+                                )}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+
                     const autoComplete =
                       field.id === "firstName"
                         ? "given-name"
@@ -285,20 +327,33 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                         <span className="mb-2 block text-sm font-medium text-[var(--color-ink)]">
                           {field.label}
                         </span>
-                        <input
-                          id={field.id}
-                          name={field.id}
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          autoComplete={autoComplete}
-                          aria-invalid={Boolean(error)}
-                          aria-describedby={error ? `${field.id}-error` : undefined}
-                          className={`w-full rounded-md border bg-[rgba(255,251,244,0.88)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] ${
-                            error
-                              ? "border-[#b42318]"
-                              : "border-[var(--color-border)]"
-                          }`}
-                        />
+                        <span className="relative block">
+                          <input
+                            id={field.id}
+                            name={field.id}
+                            type={field.type === "password" && showLoginPassword ? "text" : field.type}
+                            placeholder={field.placeholder}
+                            autoComplete={autoComplete}
+                            aria-invalid={Boolean(error)}
+                            aria-describedby={error ? `${field.id}-error` : undefined}
+                            className={`w-full rounded-md border bg-[rgba(255,251,244,0.88)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] ${
+                              field.type === "password" ? "pr-20" : ""
+                            } ${
+                              error
+                                ? "border-[#b42318]"
+                                : "border-[var(--color-border)]"
+                            }`}
+                          />
+                          {field.type === "password" && (
+                            <button
+                              type="button"
+                              onClick={() => setShowLoginPassword((current) => !current)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.06)]"
+                            >
+                              {showLoginPassword ? "Ocultar" : "Mostrar"}
+                            </button>
+                          )}
+                        </span>
                         {error && (
                           <p id={`${field.id}-error`} className="mt-1 text-xs text-[#b42318]">
                             {error}
@@ -312,6 +367,8 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                     <div className="flex items-center justify-between gap-4 pt-1 text-sm">
                       <label className="flex items-center gap-2 text-[var(--color-muted-strong)]">
                         <input
+                          name="rememberMe"
+                          value="true"
                           type="checkbox"
                           className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-accent)]"
                         />

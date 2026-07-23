@@ -35,10 +35,10 @@ export function ApiHealthBadge() {
 
   const label =
     state === "checking"
-      ? "Conectando API"
+      ? "Conectando reservas"
       : state === "online"
-        ? "API online"
-        : "API offline";
+        ? "Reservas online"
+        : "Reservas sin conexión";
 
   return (
     <span

@@ -134,33 +134,32 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
             </label>
           ) : null}
 
-          <div
-            className={`${compact ? "mt-4" : "mt-6"} grid justify-items-center gap-4 sm:grid-cols-2 ${
-              subscription?.trialStartedAt ? "xl:grid-cols-3" : "xl:grid-cols-4"
-            }`}
-          >
+          <div className={`${compact ? "mt-5" : "mt-8"} grid justify-items-center gap-4 lg:grid-cols-3`}>
             {!subscription?.trialStartedAt && (
-              <article className={`${compact ? "min-h-[230px] p-4" : "min-h-[260px] p-5"} flex w-full max-w-[280px] flex-col rounded-2xl border border-[var(--color-accent)] bg-[linear-gradient(135deg,rgba(253,134,6,0.12),rgba(255,251,244,0.9))] shadow-[0_18px_48px_rgba(253,134,6,0.1)]`}>
-                <span className="w-fit rounded-full bg-[rgba(253,134,6,0.14)] px-3 py-1 text-xs font-bold text-[var(--color-accent)]">
-                  Gratis
-                </span>
-                <h3 className="mt-4 text-lg font-semibold">Prueba Inicial</h3>
-                <p className="mt-3 font-mono text-3xl font-semibold">$0</p>
-                <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
-                  El plan Inicial gratis durante 7 días. Sin Mercado Pago ni tarjeta.
-                </p>
-                <Button
-                  type="button"
-                  variant="accent"
-                  disabled={selectedPlan !== null}
-                  onClick={() => void activateTrial()}
-                  className="mt-auto w-full"
-                >
-                  {selectedPlan === "trial"
-                    ? "Activando..."
-                    : "Probar gratis 7 días"}
-                </Button>
-              </article>
+              <div className="lg:col-span-3">
+                <article className="mx-auto flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                      Prueba gratis
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold">7 días del plan Inicial</h3>
+                    <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                      Sin Mercado Pago ni tarjeta. Después podés elegir un plan mensual.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="accent"
+                    disabled={selectedPlan !== null}
+                    onClick={() => void activateTrial()}
+                    className="w-full sm:w-auto"
+                  >
+                    {selectedPlan === "trial"
+                      ? "Activando..."
+                      : "Probar gratis"}
+                  </Button>
+                </article>
+              </div>
             )}
             {billingPlans.map((plan) => {
               const current =
@@ -169,32 +168,53 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
               return (
                 <article
                   key={plan.id}
-                  className={`${compact ? "min-h-[230px] p-4" : "min-h-[260px] p-5"} flex w-full max-w-[280px] flex-col rounded-2xl border transition hover:-translate-y-0.5 hover:shadow-[0_18px_46px_rgba(32,24,54,0.08)] ${
-                    current
-                      ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.05)]"
-                      : "border-[var(--color-border)] bg-white/62"
+                  className={`${compact ? "min-h-[390px] p-5" : "min-h-[430px] p-5"} relative flex w-full max-w-[330px] flex-col overflow-hidden rounded-2xl border transition hover:-translate-y-0.5 ${
+                    plan.recommended
+                      ? "border-[var(--color-ink)] bg-[linear-gradient(180deg,rgba(32,24,54,0.96),rgba(32,24,54,0.91))] text-white shadow-[0_16px_42px_rgba(32,24,54,0.16)]"
+                      : "border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
                   }`}
                 >
-                  <span
-                    className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
+                  {plan.recommended && (
+                    <span className="absolute right-4 top-4 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-white">
+                      Más elegido
+                    </span>
+                  )}
+                  {current && (
+                    <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold ${
                       plan.recommended
-                        ? "bg-[var(--color-accent)] text-white"
-                        : "bg-[rgba(32,24,54,0.07)] text-[var(--color-muted-strong)]"
+                        ? "bg-white/12 text-white"
+                        : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
+                    }`}>
+                      Plan actual
+                    </span>
+                  )}
+                  <h3 className={`${current ? "mt-10" : "mt-0"} text-2xl font-semibold`}>{plan.name}</h3>
+                  <p
+                    className={`mt-3 min-h-14 text-sm leading-7 ${
+                      plan.recommended ? "text-white/68" : "text-[var(--color-muted-strong)]"
                     }`}
                   >
-                    {plan.recommended ? "Recomendado" : plan.highlight}
-                  </span>
-                  <h3 className="mt-4 text-lg font-semibold">{plan.name}</h3>
-                  <p className="mt-3 font-mono text-3xl font-semibold">
-                    {plan.price}
-                    <span className="font-sans text-xs font-normal text-[var(--color-muted)]">
-                      {" "}/ mes
-                    </span>
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
                     {plan.description}
                   </p>
-                  <ul className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-4 text-sm text-[var(--color-muted-strong)]">
+
+                  <p className="mt-5 text-4xl font-semibold">
+                    {plan.id === "initial" ? "$15.000" : plan.price}
+                    <span
+                      className={`text-sm font-normal ${
+                        plan.recommended ? "text-white/58" : "text-[var(--color-muted)]"
+                      }`}
+                    >
+                      {" "}{plan.period}
+                    </span>
+                  </p>
+
+                  <ul
+                    className={`mt-5 space-y-2 border-t pt-5 text-sm ${
+                      plan.recommended
+                        ? "border-white/12 text-white/76"
+                        : "border-[var(--color-border)] text-[var(--color-muted-strong)]"
+                    }`}
+                  >
                     {plan.features.slice(0, compact ? 3 : 5).map((feature) => (
                       <li key={feature} className="flex gap-2">
                         <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
@@ -204,14 +224,14 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
                   </ul>
                   <Button
                     type="button"
-                    variant={current ? "secondary" : "primary"}
+                    variant={current ? "secondary" : plan.recommended ? "accent" : "secondary"}
                     disabled={
                       current ||
                       selectedPlan !== null ||
                       !effectivePayerEmail.trim()
                     }
                     onClick={() => void subscribe(plan.id)}
-                    className="mt-auto w-full"
+                    className={`mt-auto w-full ${plan.recommended && !current ? "shadow-[0_16px_36px_rgba(253,134,6,0.22)]" : ""}`}
                   >
                     {current
                       ? "Plan actual"

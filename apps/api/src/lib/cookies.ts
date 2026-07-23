@@ -24,15 +24,18 @@ function appendCookie(response: Response, cookie: string) {
   response.setHeader("Set-Cookie", [...cookies, cookie]);
 }
 
-export function setAuthCookie(response: Response, token: string) {
+export function setAuthCookie(response: Response, token: string, persist = true) {
   const isProduction = env.NODE_ENV === "production";
   const cookie = [
     `${authCookieName}=${encodeURIComponent(token)}`,
     "Path=/",
     "HttpOnly",
-    "SameSite=Lax",
-    `Max-Age=${env.AUTH_ACCESS_TTL_SECONDS}`
+    "SameSite=Lax"
   ];
+
+  if (persist) {
+    cookie.push(`Max-Age=${env.AUTH_ACCESS_TTL_SECONDS}`);
+  }
 
   if (isProduction) {
     cookie.push("Secure");
@@ -41,14 +44,16 @@ export function setAuthCookie(response: Response, token: string) {
   appendCookie(response, cookie.join("; "));
 }
 
-export function setRefreshCookie(response: Response, token: string) {
+export function setRefreshCookie(response: Response, token: string, persist = true) {
   const cookie = [
     `${refreshCookieName}=${encodeURIComponent(token)}`,
     "Path=/api/v1/auth",
     "HttpOnly",
-    "SameSite=Strict",
-    `Max-Age=${env.AUTH_REFRESH_TTL_SECONDS}`
+    "SameSite=Strict"
   ];
+  if (persist) {
+    cookie.push(`Max-Age=${env.AUTH_REFRESH_TTL_SECONDS}`);
+  }
   if (env.NODE_ENV === "production") cookie.push("Secure");
   appendCookie(response, cookie.join("; "));
 }

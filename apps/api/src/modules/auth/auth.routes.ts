@@ -203,7 +203,9 @@ authRouter.post("/login", authRateLimit, async (request, response) => {
     request,
     response,
     user,
-    primaryMembership?.organizationId ?? null
+    primaryMembership?.organizationId ?? null,
+    undefined,
+    data.rememberMe
   );
   await auditLog({
     organizationId: primaryMembership?.organizationId ?? undefined,

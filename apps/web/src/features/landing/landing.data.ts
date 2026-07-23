@@ -80,14 +80,12 @@ export const previewRows = [
     customer: "Nicolás Silva",
     responsible: "Cristian Schinocca",
     status: "Confirmado"
+  },
+  {
+    time: "19:00",
+    service: "Color y corte",
+    customer: "Sofía Acosta",
+    responsible: "Laura Ruiz",
+    status: "Confirmado"
   }
-] as const;
-
-export const trustLogos = [
-  "Estudio Norte",
-  "Club Once",
-  "Salon Distrito",
-  "Cancha Sur",
-  "Studio Lumen",
-  "Barber Lab"
 ] as const;

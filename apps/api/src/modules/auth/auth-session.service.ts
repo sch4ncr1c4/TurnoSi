@@ -8,6 +8,8 @@ import { createSecret, hashToken, tokenMatches } from "../../lib/crypto.js";
 import { parseCookies, getRefreshCookieName, setAuthCookie, setRefreshCookie } from "../../lib/cookies.js";
 import { signAuthToken } from "../../lib/token.js";
 
+const sessionRefreshTtlSeconds = 60 * 60 * 12;
+
 function requestMetadata(request: Request) {
   return {
     userAgent: request.get("user-agent")?.slice(0, 500) ?? null,
@@ -20,15 +22,17 @@ export async function createSession(
   response: Response,
   user: { id: string; email: string },
   organizationId: string | null,
-  familyId = randomUUID()
+  familyId = randomUUID(),
+  rememberMe = true
 ) {
   const secret = createSecret();
+  const refreshTtlSeconds = rememberMe ? env.AUTH_REFRESH_TTL_SECONDS : sessionRefreshTtlSeconds;
   const session = await prisma.authSession.create({
     data: {
       userId: user.id,
       familyId,
       tokenHash: hashToken(secret),
-      expiresAt: new Date(Date.now() + env.AUTH_REFRESH_TTL_SECONDS * 1000),
+      expiresAt: new Date(Date.now() + refreshTtlSeconds * 1000),
       ...requestMetadata(request)
     }
   });
@@ -38,8 +42,8 @@ export async function createSession(
     email: user.email,
     organizationId,
     sessionId: session.id
-  }));
-  setRefreshCookie(response, `${session.id}.${secret}`);
+  }), rememberMe);
+  setRefreshCookie(response, `${session.id}.${secret}.${rememberMe ? "1" : "0"}`, rememberMe);
 }
 
 export function getRefreshToken(request: Request) {
@@ -48,10 +52,11 @@ export function getRefreshToken(request: Request) {
 
 export async function rotateSession(request: Request, response: Response) {
   const token = getRefreshToken(request);
-  const [sessionId, secret, extra] = token?.split(".") ?? [];
+  const [sessionId, secret, rememberFlag, extra] = token?.split(".") ?? [];
   if (!sessionId || !secret || extra) {
     throw new AppError(401, "INVALID_REFRESH_TOKEN", "Invalid refresh token");
   }
+  const rememberMe = rememberFlag !== "0";
 
   const session = await prisma.authSession.findUnique({
     where: { id: sessionId },
@@ -94,7 +99,7 @@ export async function rotateSession(request: Request, response: Response) {
         userId: session.userId,
         familyId: session.familyId,
         tokenHash: hashToken(newSecret),
-        expiresAt: new Date(Date.now() + env.AUTH_REFRESH_TTL_SECONDS * 1000),
+        expiresAt: new Date(Date.now() + (rememberMe ? env.AUTH_REFRESH_TTL_SECONDS : sessionRefreshTtlSeconds) * 1000),
         ...requestMetadata(request)
       }
     });
@@ -111,8 +116,8 @@ export async function rotateSession(request: Request, response: Response) {
     email: session.user.email,
     organizationId,
     sessionId: newSession.id
-  }));
-  setRefreshCookie(response, `${newSession.id}.${newSecret}`);
+  }), rememberMe);
+  setRefreshCookie(response, `${newSession.id}.${newSecret}.${rememberMe ? "1" : "0"}`, rememberMe);
 }
 
 export async function revokeSession(request: Request) {

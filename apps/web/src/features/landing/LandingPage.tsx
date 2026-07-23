@@ -5,8 +5,7 @@ import { ApiHealthBadge } from "../../components/system/ApiHealthBadge";
 import { billingPlans } from "../billing/billing.plans";
 import {
   previewRows,
-  sectors,
-  trustLogos
+  sectors
 } from "./landing.data";
 
 type LandingPageProps = {
@@ -36,8 +35,6 @@ const navigationLinks = [
   }
 ];
 
-const marqueeLanes = [0, 1, 2, 3] as const;
-
 export function LandingPage({ brand }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -53,6 +50,27 @@ export function LandingPage({ brand }: LandingPageProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const elements = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-scroll-reveal]")
+    );
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("landing-scroll-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -12% 0px", threshold: 0.16 }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+
   function closeMenu() {
     setIsMenuOpen(false);
   }
@@ -66,9 +84,9 @@ export function LandingPage({ brand }: LandingPageProps) {
       >
         <div className="px-5 py-3 sm:px-7">
           <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">{brand}</div>
+            <div className="min-w-0 [&_img]:h-14 sm:[&_img]:h-16">{brand}</div>
 
-            <nav className="hidden items-center gap-6 whitespace-nowrap text-sm text-white/66 min-[949px]:flex">
+            <nav className="hidden items-center gap-6 whitespace-nowrap text-sm font-medium text-white/78 min-[949px]:flex">
               {navigationLinks.map((link) => (
                 <a
                   key={link.href}
@@ -84,7 +102,7 @@ export function LandingPage({ brand }: LandingPageProps) {
             <div className="hidden items-center justify-end gap-2 min-[949px]:flex">
               <a
                 href="/login"
-                className="group relative px-2 py-2 text-sm font-medium text-white/72 transition-colors duration-200 hover:text-[var(--color-accent)]"
+                className="group relative px-2 py-2 text-sm font-semibold text-white/82 transition-colors duration-200 hover:text-[var(--color-accent)]"
               >
                 Ingresar
                 <span className="absolute bottom-0 left-2 h-0.5 w-[calc(100%-1rem)] origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
@@ -176,18 +194,18 @@ export function LandingPage({ brand }: LandingPageProps) {
         <section id="inicio" className="relative scroll-mt-24 overflow-hidden rounded-b-[28px] border-b border-[var(--color-border)] bg-[var(--color-ink)] text-[var(--color-button-text)]">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 left-0 h-64 w-80 opacity-45 sm:h-80 sm:w-[34rem]"
+            className="landing-hero-pattern pointer-events-none absolute bottom-0 left-0 h-64 w-80 opacity-24 sm:h-80 sm:w-[34rem]"
             style={{
               backgroundImage:
-                "radial-gradient(rgba(255,250,244,0.42) 1.35px, transparent 1.35px)",
-              backgroundSize: "12px 12px",
+                "radial-gradient(rgba(255,250,244,0.28) 1px, transparent 1px)",
+              backgroundSize: "14px 14px",
               maskImage:
                 "linear-gradient(35deg, black 0%, black 34%, rgba(0,0,0,0.55) 48%, transparent 70%)",
               WebkitMaskImage:
                 "linear-gradient(35deg, black 0%, black 34%, rgba(0,0,0,0.55) 48%, transparent 70%)"
             }}
           />
-          <div className="grid min-h-[unset] w-full min-w-0 gap-6 px-4 py-6 sm:px-7 sm:py-10 lg:min-h-[560px] lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] lg:items-center lg:gap-8 lg:py-16">
+          <div className="grid min-h-[unset] w-full min-w-0 gap-6 px-4 py-6 sm:px-7 sm:py-10 lg:min-h-[560px] lg:grid-cols-[minmax(0,0.88fr)_minmax(460px,1.12fr)] lg:items-center lg:gap-8 lg:py-16">
             <div className="landing-rise order-1 min-w-0 max-w-3xl lg:order-none">
               <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {sectors.map((sector) => (
@@ -203,28 +221,27 @@ export function LandingPage({ brand }: LandingPageProps) {
 
               <p className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold uppercase text-white/54 sm:mt-8 sm:text-xs">
                 <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-                La forma más fácil de gestionar turnos
+                Reservas online
               </p>
               <h1 className="mt-3 max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] sm:text-5xl lg:max-w-4xl lg:text-6xl">
                 Gestioná tus turnos de forma{" "}
                 <span className="text-[var(--color-accent)]">simple</span>.
               </h1>
               <p className="mt-4 max-w-full text-sm leading-7 text-white/70 sm:mt-5 sm:max-w-2xl sm:text-base sm:leading-8">
-                Una plataforma para negocios que trabajan por horario y necesitan
-                controlar turnos, disponibilidad, equipo y cuenta sin depender de
-                planillas ni conversaciones dispersas.
+                Organizá reservas, horarios, equipo y clientes desde un panel
+                claro, conectado con tu página pública.
               </p>
 
               <div className="mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-row">
                 <a
-                  href="/dashboard"
-                  className="inline-flex w-full min-w-0 items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 sm:w-auto"
+                  href="#funciones"
+                  className="landing-cta inline-flex w-full min-w-0 items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 sm:w-auto"
                 >
-                  Explorar dashboard
+                  Ver cómo funciona
                 </a>
                 <a
                   href="/register"
-                  className="inline-flex w-full min-w-0 items-center justify-center rounded-md border border-white/22 px-5 py-3 text-center text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-lg active:translate-y-0 sm:w-auto"
+                  className="landing-link inline-flex w-full min-w-0 items-center justify-center rounded-md border border-white/22 px-5 py-3 text-center text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-lg active:translate-y-0 sm:w-auto"
                 >
                   Crear cuenta
                 </a>
@@ -233,9 +250,9 @@ export function LandingPage({ brand }: LandingPageProps) {
 
             <div
               id="product"
-              className="landing-product-card landing-rise landing-delay-1 order-2 min-w-0 overflow-hidden rounded-2xl border border-white/14 bg-[#fbf4e6] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] lg:order-none"
+              className="landing-rise landing-delay-1 order-2 min-w-0 lg:order-none"
             >
-              <div className="min-h-[420px]">
+              <div className="landing-product-card min-h-[420px] overflow-hidden rounded-2xl border border-white/14 bg-[#fbf4e6] text-[var(--color-ink)] shadow-[0_18px_54px_rgba(0,0,0,0.18)]">
                 <div className="min-w-0">
                   <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] px-4 py-4">
                     <div className="min-w-0">
@@ -321,27 +338,6 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </div>
               </div>
             </div>
-
-            <div className="hero-trust-band landing-rise landing-delay-2 order-3 min-w-0 space-y-4 lg:order-none lg:col-span-2 lg:space-y-6">
-              <div className="hero-trust-divider" />
-              <p className="text-center text-xs font-medium text-white/72 sm:text-sm">
-                Más de 500 negocios ya gestionan sus turnos con{" "}
-                <span className="text-[var(--color-accent)]">TurnoSi</span>
-              </p>
-              <div className="hero-logo-marquee mx-auto max-w-4xl pt-2">
-                <div className="hero-logo-track">
-                  {marqueeLanes.map((lane) => (
-                    <div key={lane} className="hero-logo-lane" aria-hidden={lane > 0}>
-                      {trustLogos.map((logo) => (
-                        <div key={`${lane}-${logo}`} className="hero-logo-item">
-                          <span className="hero-logo-pill">{logo}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -362,45 +358,73 @@ export function LandingPage({ brand }: LandingPageProps) {
               </p>
             </div>
 
-            <div className="mt-10 grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
-              <article className="landing-feature-card overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_10px_30px_rgba(32,24,54,0.035)]">
-                <div className="grid gap-0 md:grid-cols-[0.92fr_1.08fr]">
-                  <div className="border-b border-[var(--color-border)] p-5 md:border-b-0 md:border-r">
-                    <p className="text-xl font-semibold">Agenda y reservas</p>
+            <div className="mt-10 grid gap-4">
+              <article data-scroll-reveal className="landing-scroll-reveal landing-feature-card overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] shadow-[0_10px_28px_rgba(32,24,54,0.03)]">
+                <div className="grid gap-0 lg:grid-cols-[0.34fr_0.66fr]">
+                  <div className="border-b border-[var(--color-border)] p-5 lg:border-b-0 lg:border-r">
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                      Agenda y reservas
+                    </span>
+                    <h3 className="mt-3 text-2xl font-semibold">
+                      Turnos, horarios y responsables en una vista clara.
+                    </h3>
                     <p className="mt-3 text-sm leading-7 text-[var(--color-muted-strong)]">
-                      El día se organiza por hora, responsable, sede y estado.
-                      La reserva pública usa esa misma disponibilidad.
+                      La agenda se alimenta de las reservas online y te deja ver rápido qué sigue, quién atiende y qué estado tiene cada turno.
                     </p>
-                    <div className="mt-5 grid gap-2 text-sm text-[var(--color-ink)]">
-                      <p>Agenda diaria, semanal y mensual</p>
-                      <p>Reservas online con WhatsApp</p>
-                      <p>Estados claros para cada turno</p>
+                    <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3 lg:grid-cols-1">
+                      {[
+                        ["12", "turnos del día"],
+                        ["6", "espacios disponibles"],
+                        ["2", "sedes activas"]
+                      ].map(([value, label]) => (
+                        <div key={label} className="rounded-xl border border-[var(--color-border)] bg-white/60 px-4 py-3">
+                          <p className="font-mono text-xl font-semibold">{value}</p>
+                          <p className="mt-1 text-xs text-[var(--color-muted-strong)]">{label}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="p-4">
+
+                  <div className="p-4 sm:p-5">
+                    <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">Resumen del día</p>
+                        <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
+                          Miércoles 22 · Sede principal · 09:00 a 20:00
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[rgba(253,134,6,0.1)] px-3 py-1 text-xs font-semibold text-[var(--color-accent)]">
+                        Reservas online
+                      </span>
+                    </div>
                     <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/72">
-                      <div className="grid grid-cols-[64px_minmax(0,1fr)_94px] border-b border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                      <div className="grid grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_112px] border-b border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)] sm:grid-cols-[78px_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_112px]">
                         <span>Hora</span>
-                        <span>Turno</span>
+                        <span>Servicio</span>
+                        <span>Cliente</span>
+                        <span className="hidden sm:block">Responsable</span>
                         <span>Estado</span>
                       </div>
-                      {previewRows.slice(0, 3).map((row) => (
+                      {previewRows.slice(0, 5).map((row) => (
                         <div
-                          key={row.time}
-                          className="landing-mockup-row grid grid-cols-[64px_minmax(0,1fr)_94px] items-center border-b border-[var(--color-border)] px-3 py-3 text-sm last:border-b-0"
+                          key={`${row.time}-${row.customer}`}
+                          className="landing-mockup-row grid grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_112px] items-center border-b border-[var(--color-border)] px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[78px_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_112px]"
                         >
-                          <span className="font-semibold text-[var(--color-accent)]">
-                            {row.time}
+                          <span className="font-semibold text-[var(--color-accent)]">{row.time}</span>
+                          <span className="min-w-0 truncate font-semibold">{row.service}</span>
+                          <span className="min-w-0 truncate text-[var(--color-muted-strong)]">{row.customer}</span>
+                          <span className="hidden min-w-0 truncate text-[var(--color-muted-strong)] sm:block">
+                            {row.responsible}
                           </span>
-                          <span className="min-w-0">
-                            <span className="block truncate font-semibold">
-                              {row.service}
-                            </span>
-                            <span className="block truncate text-xs text-[var(--color-muted)]">
-                              {row.customer}
-                            </span>
-                          </span>
-                          <span className="text-xs text-[var(--color-muted-strong)]">
+                          <span
+                            className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                              row.status === "Pagado"
+                                ? "bg-[rgba(64,145,91,0.12)] text-[#347548]"
+                                : row.status === "En espera"
+                                  ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-accent)]"
+                                  : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
+                            }`}
+                          >
                             {row.status}
                           </span>
                         </div>
@@ -410,41 +434,76 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </div>
               </article>
 
-              <div className="grid gap-4">
-                <article className="landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_30px_rgba(32,24,54,0.03)]">
-                  <p className="text-lg font-semibold">Equipo y permisos</p>
-                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
-                    Cada integrante trabaja en sus sedes y con el acceso que corresponde.
-                  </p>
-                  <div className="mt-4 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/64">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <article data-scroll-reveal className="landing-scroll-reveal landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_28px_rgba(32,24,54,0.025)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                        Equipo y permisos
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold">Quién atiende y qué puede gestionar.</h3>
+                    </div>
+                    <span className="rounded-full bg-[rgba(32,24,54,0.06)] px-3 py-1 text-xs font-semibold text-[var(--color-muted-strong)]">
+                      3 roles
+                    </span>
+                  </div>
+                  <div className="mt-5 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/64">
                     {[
-                      ["Cristian", "Propietario"],
-                      ["Laura", "Administradora"],
-                      ["Marcos", "Miembro"]
-                    ].map(([name, role]) => (
-                      <div key={name} className="landing-mockup-row flex items-center justify-between px-3 py-2.5 text-sm">
-                        <span className="font-semibold">{name}</span>
-                        <span className="text-xs text-[var(--color-muted-strong)]">{role}</span>
+                      ["Cristian Schinocca", "Propietario", "Sede principal", "4 turnos hoy"],
+                      ["Laura Ruiz", "Administradora", "Barber Shop Ramos", "3 turnos hoy"],
+                      ["Marcos Vega", "Miembro", "Sede principal", "2 turnos hoy"]
+                    ].map(([name, role, branch, load]) => (
+                      <div key={name} className="landing-mockup-row grid gap-2 px-3 py-3 text-sm sm:grid-cols-[1fr_0.8fr_0.7fr] sm:items-center">
+                        <div>
+                          <p className="font-semibold">{name}</p>
+                          <p className="mt-0.5 text-xs text-[var(--color-muted)]">{branch}</p>
+                        </div>
+                        <span className="text-xs font-semibold text-[var(--color-muted-strong)]">{role}</span>
+                        <span className="text-xs text-[var(--color-muted-strong)]">{load}</span>
                       </div>
                     ))}
                   </div>
                 </article>
 
-                <article className="landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_30px_rgba(32,24,54,0.03)]">
-                  <p className="text-lg font-semibold">Clientes y seguimiento</p>
-                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
-                    Historial, próximos turnos y mensajes sin depender del chat.
-                  </p>
-                  <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/64 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">Julieta Fernández</p>
-                        <p className="text-xs text-[var(--color-muted)]">Próximo turno: 10:00</p>
-                      </div>
-                      <span className="rounded-md bg-[rgba(64,145,91,0.12)] px-2 py-1 text-xs font-semibold text-[#347548]">
-                        Confirmado
-                      </span>
+                <article data-scroll-reveal className="landing-scroll-reveal landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_28px_rgba(32,24,54,0.025)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                        Clientes y seguimiento
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold">Historial útil para atender mejor.</h3>
                     </div>
+                    <span className="rounded-full bg-[rgba(32,24,54,0.06)] px-3 py-1 text-xs font-semibold text-[var(--color-muted-strong)]">
+                      Fichas
+                    </span>
+                  </div>
+                  <div className="mt-5 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/64">
+                    {[
+                      ["Julieta Fernández", "Próximo turno 10:00", "Corte de pelo", "Confirmado"],
+                      ["Martín Ramos", "Próximo turno 10:30", "Barba completa", "Pagado"],
+                      ["Diego Torres", "Próximo turno 12:00", "Corte + barba", "En espera"]
+                    ].map(([name, next, lastService, status]) => (
+                      <div key={name} className="landing-mockup-row grid gap-3 px-3 py-3 text-sm sm:grid-cols-[1fr_1fr_auto] sm:items-center">
+                        <div>
+                          <p className="font-semibold">{name}</p>
+                          <p className="mt-0.5 text-xs text-[var(--color-muted)]">{next}</p>
+                        </div>
+                        <p className="text-xs text-[var(--color-muted-strong)]">
+                          Último servicio: <span className="font-semibold text-[var(--color-ink)]">{lastService}</span>
+                        </p>
+                        <span
+                          className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                            status === "Pagado"
+                              ? "bg-[rgba(64,145,91,0.12)] text-[#347548]"
+                              : status === "En espera"
+                                ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-accent)]"
+                                : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </article>
               </div>
@@ -454,16 +513,16 @@ export function LandingPage({ brand }: LandingPageProps) {
 
         <section
           id="resources"
-          className="soft-section-divider scroll-mt-24 bg-[rgba(255,251,244,0.76)] px-5 py-12 sm:px-7"
+          className="soft-section-divider scroll-mt-24 bg-[rgba(255,251,244,0.76)] px-5 py-10 sm:px-7"
         >
           <div className="mx-auto max-w-7xl">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
-              <div className="landing-rise">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-center">
+              <div data-scroll-reveal className="landing-scroll-reveal landing-rise">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                   Operación real
                 </p>
                 <h2 className="mt-4 text-3xl font-semibold sm:text-4xl lg:text-5xl">
-                  Configurás una vez. Operás todos los días.
+                  Configurás una vez. Después, solo gestionás.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
                   TurnoSi separa configuración y operación para que el equipo no
@@ -483,7 +542,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </div>
               </div>
 
-              <div className="landing-rise landing-delay-1 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] shadow-[0_12px_34px_rgba(32,24,54,0.04)]">
+              <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-delay-1 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.94)] shadow-[0_10px_28px_rgba(32,24,54,0.035)]">
                 <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-white/54 px-4 py-3">
                     <div>
                       <p className="text-sm font-semibold">Configuración inicial</p>
@@ -495,7 +554,8 @@ export function LandingPage({ brand }: LandingPageProps) {
                       3/3 listo
                     </span>
                 </div>
-                <div className="grid gap-0 md:grid-cols-3">
+                <div className="relative grid gap-0 md:grid-cols-3">
+                    <span className="pointer-events-none absolute left-[16%] right-[16%] top-8 hidden h-px bg-gradient-to-r from-transparent via-[rgba(253,134,6,0.32)] to-transparent md:block" />
                     {[
                       ["Local", "Nombre, rubro, logo y fotos"],
                       ["Página", "WhatsApp, dirección y URL pública"],
@@ -503,12 +563,12 @@ export function LandingPage({ brand }: LandingPageProps) {
                     ].map(([title, copy], index) => (
                       <div
                         key={title}
-                        className="border-b border-[var(--color-border)] p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+                        className="relative border-b border-[var(--color-border)] p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
                       >
-                        <span className="text-xs font-semibold text-[var(--color-accent)]">
-                          0{index + 1}
+                        <span className="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(253,134,6,0.24)] bg-[rgba(253,134,6,0.1)] font-mono text-xs font-semibold text-[var(--color-accent)]">
+                          {index + 1}
                         </span>
-                        <p className="text-sm font-semibold">{title}</p>
+                        <p className="mt-4 text-base font-semibold">{title}</p>
                         <p className="mt-1 text-xs leading-5 text-[var(--color-muted-strong)]">
                           {copy}
                         </p>
@@ -522,7 +582,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
         <section id="pricing" className="scroll-mt-24 px-5 py-12 sm:px-7">
           <div className="mx-auto max-w-7xl">
-            <div className="landing-rise mx-auto max-w-3xl text-center">
+            <div data-scroll-reveal className="landing-scroll-reveal landing-rise mx-auto max-w-3xl text-center">
                 <p className="inline-flex items-center gap-2 rounded-full border border-[rgba(253,134,6,0.28)] bg-[rgba(253,134,6,0.12)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink)]">
                   <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
                   Precios
@@ -541,7 +601,8 @@ export function LandingPage({ brand }: LandingPageProps) {
                 {billingPlans.map((plan) => (
                   <article
                     key={plan.name}
-                    className={`landing-feature-card relative flex min-h-[430px] flex-col overflow-hidden rounded-2xl border p-5 ${
+                    data-scroll-reveal
+                    className={`landing-scroll-reveal landing-feature-card relative flex min-h-[430px] flex-col overflow-hidden rounded-2xl border p-5 ${
                       plan.recommended
                         ? "border-[var(--color-ink)] bg-[linear-gradient(180deg,rgba(32,24,54,0.96),rgba(32,24,54,0.91))] text-white shadow-[0_16px_42px_rgba(32,24,54,0.16)]"
                         : "border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
@@ -594,7 +655,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
                     <Link
                       to={`/register?plan=${plan.id}`}
-                      className={`mt-auto inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
+                      className={`landing-cta mt-auto inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
                         plan.recommended
                           ? "bg-[var(--color-accent)] text-white shadow-[0_16px_36px_rgba(253,134,6,0.22)]"
                           : "border border-[var(--color-border-strong)] bg-white/60 text-[var(--color-ink)] hover:bg-white"
@@ -606,7 +667,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 ))}
             </div>
 
-            <div className="landing-rise landing-delay-2 mt-8 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)]">
+            <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-delay-3 mt-8 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)]">
               <div className="grid gap-0 text-sm md:grid-cols-4">
                 {[
                   ["Prueba gratis", "7 días del plan Inicial"],
@@ -629,146 +690,88 @@ export function LandingPage({ brand }: LandingPageProps) {
 
         <footer className="bg-[var(--color-page)]">
           <div className="mx-auto max-w-7xl">
-            <section id="contact" className="scroll-mt-24 w-full rounded-[28px] border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] px-6 py-8 shadow-[0_20px_60px_rgba(32,24,54,0.08)] sm:px-8 lg:px-10">
-            <div className="grid gap-6 text-center lg:grid-cols-[minmax(260px,0.95fr)_repeat(3,minmax(0,1fr))] lg:gap-6 lg:text-left">
-                <div className="space-y-5 lg:pr-8 lg:text-center xl:text-left">
-                  <p className="inline-flex items-center gap-2 rounded-full border border-[rgba(253,134,6,0.28)] bg-[rgba(253,134,6,0.12)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink)]">
-                    <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
+            <section data-scroll-reveal id="contact" className="landing-scroll-reveal scroll-mt-24 w-full rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] px-6 py-8 shadow-[0_12px_34px_rgba(32,24,54,0.045)] sm:px-8 lg:px-10">
+              <div className="grid gap-8 lg:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.4fr)] lg:items-start">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                     Contacto
                   </p>
-                  <h2 className="text-3xl font-semibold sm:text-4xl">
-                    ¿Tenés preguntas?
+                  <h2 className="mt-4 text-3xl font-semibold sm:text-4xl">
+                    ¿Necesitás ayuda?
                   </h2>
-                  <p className="max-w-sm text-sm leading-7 text-[var(--color-muted-strong)]">
-                    Estamos para ayudarte a que saques el máximo provecho de TurnoSi.
+                  <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--color-muted-strong)]">
+                    Si necesitás ayuda para configurar TurnoSi o elegir un plan,
+                    escribinos.
                   </p>
-                  <ul className="space-y-3 text-sm text-[var(--color-ink)]">
-                    <li className="flex items-center justify-center gap-2 lg:justify-start">
-                      <span className="text-[var(--color-accent)]">◌</span>
-                      Respondemos en menos de 24 horas
-                    </li>
-                    <li className="flex items-center justify-center gap-2 lg:justify-start">
-                      <span className="text-[var(--color-accent)]">◌</span>
-                      Soporte real de personas
-                    </li>
-                    <li className="flex items-center justify-center gap-2 lg:justify-start">
-                      <span className="text-[var(--color-accent)]">◌</span>
-                      Te ayudamos a crecer
-                    </li>
-                  </ul>
                 </div>
 
-                <article className="border border-[var(--color-border)] bg-white p-6 text-center shadow-[0_14px_40px_rgba(32,24,54,0.05)] lg:px-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(253,134,6,0.14)] text-2xl text-[var(--color-accent)]">
-                    ✉
-                  </div>
-                  <h3 className="mt-6 text-2xl font-semibold">Email</h3>
-                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
-                    Escribinos y te respondemos a la brevedad.
-                  </p>
-                  <a className="mt-6 inline-flex text-sm font-semibold text-[var(--color-accent)]" href="mailto:hola@turnosi.com">
-                    hola@turnosi.com
-                  </a>
-                  <div className="mt-8 border-t border-[var(--color-border)] pt-5">
-                    <a href="mailto:hola@turnosi.com" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-accent)]">
-                      Enviar email <span aria-hidden="true">→</span>
+                <div className="grid gap-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/58 md:grid-cols-3">
+                  {[
+                    ["Email", "hola@turnosi.com", "mailto:hola@turnosi.com", "Escribir"],
+                    ["Soporte", "Preguntas frecuentes", "#resources", "Ver ayuda"],
+                    ["Comercial", "Planes y multi-sede", "/register", "Hablar con ventas"]
+                  ].map(([title, label, href, action]) => (
+                    <a
+                      key={title}
+                      href={href}
+                      className="landing-mockup-row border-b border-[var(--color-border)] p-5 transition-colors hover:bg-white/72 md:border-b-0 md:border-r md:last:border-r-0"
+                    >
+                      <p className="text-sm font-semibold">{title}</p>
+                      <p className="mt-2 text-sm text-[var(--color-muted-strong)]">
+                        {label}
+                      </p>
+                      <span className="mt-5 inline-flex text-sm font-semibold text-[var(--color-accent)]">
+                        {action} <span className="ml-1" aria-hidden="true">→</span>
+                      </span>
                     </a>
-                  </div>
-                </article>
-
-                <article className="border border-[var(--color-border)] bg-white p-6 text-center shadow-[0_14px_40px_rgba(32,24,54,0.05)] lg:px-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(124,92,255,0.12)] text-2xl text-[#6f5bd6]">
-                    ◔
-                  </div>
-                  <h3 className="mt-6 text-2xl font-semibold">Soporte</h3>
-                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
-                    Visitá nuestro centro de ayuda y encontrá respuestas rápido.
-                  </p>
-                  <div className="mt-5 space-y-3 text-sm text-[var(--color-ink)]">
-                    <p>Centro de ayuda</p>
-                    <p>Documentación</p>
-                    <p>Preguntas frecuentes</p>
-                  </div>
-                  <div className="mt-8 border-t border-[var(--color-border)] pt-5">
-                    <a href="#resources" className="inline-flex items-center gap-2 text-sm font-medium text-[#6f5bd6]">
-                      Ir al centro de ayuda <span aria-hidden="true">→</span>
-                    </a>
-                  </div>
-                </article>
-
-                <article className="border border-[var(--color-border)] bg-white p-6 text-center shadow-[0_14px_40px_rgba(32,24,54,0.05)] lg:px-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(86,145,101,0.12)] text-2xl text-[#3f7a49]">
-                    ⌂
-                  </div>
-                  <h3 className="mt-6 text-2xl font-semibold">Comercial</h3>
-                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted-strong)]">
-                    ¿Tenés un equipo grande o necesitás algo a medida?
-                  </p>
-                  <div className="mt-5 space-y-3 text-sm text-[var(--color-ink)]">
-                    <p>Planes para equipos</p>
-                    <p>Multi-sede</p>
-                    <p>Alianzas y partners</p>
-                  </div>
-                  <div className="mt-8 border-t border-[var(--color-border)] pt-5">
-                    <a href="/register" className="inline-flex items-center gap-2 text-sm font-medium text-[#3f7a49]">
-                      Hablar con ventas <span aria-hidden="true">→</span>
-                    </a>
-                  </div>
-                </article>
+                  ))}
+                </div>
               </div>
             </section>
           </div>
 
           <div className="mx-auto max-w-7xl">
-            <section className="mt-8 w-full rounded-t-[28px] border border-white/12 bg-[var(--color-ink)] px-6 py-6 text-[var(--color-button-text)] shadow-[0_22px_60px_rgba(32,24,54,0.28)] sm:px-8">
-              <div className="flex flex-col gap-5 text-center lg:flex-row lg:items-center lg:justify-between lg:text-left">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/14 bg-white/6 text-2xl text-[var(--color-accent)]">
-                    ✓
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-semibold sm:text-3xl">
-                      ¿Listo para <span className="text-[var(--color-accent)]">organizar</span> tus turnos?
-                    </h3>
-                    <p className="mt-2 text-sm text-white/76">
-                      Probá el plan Inicial gratis por 7 días. Sin tarjeta de crédito.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 lg:items-end">
-                  <a
-                    href="/register"
-                    className="inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                  >
-                    Comenzar gratis <span className="ml-2" aria-hidden="true">→</span>
-                  </a>
-                  <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-white/72 lg:justify-end">
+            <section data-scroll-reveal className="landing-scroll-reveal mt-8 w-full rounded-t-2xl border border-white/12 bg-[var(--color-ink)] px-6 py-6 text-[var(--color-button-text)] shadow-[0_16px_42px_rgba(32,24,54,0.2)] sm:px-8">
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                <div>
+                  <h3 className="text-2xl font-semibold sm:text-3xl">
+                    Empezá a organizar tus turnos hoy.
+                  </h3>
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/70">
                     <span>7 días gratis</span>
                     <span>Sin tarjeta</span>
                     <span>Cancelá cuando quieras</span>
                   </div>
                 </div>
+
+                <div className="lg:text-right">
+                  <a
+                    href="/register"
+                    className="landing-cta inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                  >
+                    Comenzar gratis <span className="ml-2" aria-hidden="true">→</span>
+                  </a>
+                </div>
               </div>
             </section>
           </div>
 
-          <section className="soft-section-divider soft-section-divider-dark relative w-full overflow-hidden rounded-b-[28px] bg-[var(--color-ink)] px-6 py-8 text-[var(--color-button-text)] sm:px-8">
+          <section data-scroll-reveal className="landing-scroll-reveal soft-section-divider soft-section-divider-dark relative w-full overflow-hidden rounded-b-[28px] bg-[var(--color-ink)] px-6 pb-6 pt-8 text-[var(--color-button-text)] sm:px-8">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 right-0 h-56 w-72 opacity-30 sm:h-72 sm:w-[30rem]"
+              className="pointer-events-none absolute bottom-0 right-0 h-56 w-72 opacity-14 sm:h-72 sm:w-[30rem]"
               style={{
                 backgroundImage:
-                  "radial-gradient(rgba(255,250,244,0.34) 1.25px, transparent 1.25px)",
-                backgroundSize: "12px 12px",
+                  "radial-gradient(rgba(255,250,244,0.22) 1px, transparent 1px)",
+                backgroundSize: "14px 14px",
                 maskImage:
                   "linear-gradient(215deg, black 0%, black 34%, rgba(0,0,0,0.52) 48%, transparent 70%)",
                 WebkitMaskImage:
                   "linear-gradient(215deg, black 0%, black 34%, rgba(0,0,0,0.52) 48%, transparent 70%)"
               }}
             />
-              <div className="grid gap-8 lg:grid-cols-[minmax(260px,1.2fr)_repeat(3,minmax(0,1fr))]">
-                <div className="space-y-4">
+              <div className="grid gap-10 lg:grid-cols-[minmax(260px,1.35fr)_repeat(3,minmax(0,1fr))] lg:gap-14">
+                <div className="space-y-5">
                   <div className="inline-flex items-center gap-2">
                     {brand}
                   </div>
@@ -779,7 +782,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
                 <div>
                   <p className="text-sm font-semibold text-white">Producto</p>
-                  <ul className="mt-4 space-y-3 text-sm text-white/70">
+                  <ul className="mt-5 space-y-3 text-sm text-white/70">
                     <li><a href="#funciones">Funciones</a></li>
                     <li><a href="#pricing">Precios</a></li>
                     <li><a href="/login">Ingresar</a></li>
@@ -788,7 +791,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
                 <div>
                   <p className="text-sm font-semibold text-white">Soporte</p>
-                  <ul className="mt-4 space-y-3 text-sm text-white/70">
+                  <ul className="mt-5 space-y-3 text-sm text-white/70">
                     <li><a href="#contact">Contacto</a></li>
                     <li><a href="#faq">Preguntas frecuentes</a></li>
                   </ul>
@@ -796,15 +799,14 @@ export function LandingPage({ brand }: LandingPageProps) {
 
                 <div>
                   <p className="text-sm font-semibold text-white">Legal</p>
-                  <ul className="mt-4 space-y-3 text-sm text-white/70">
+                  <ul className="mt-5 space-y-3 text-sm text-white/70">
                     <li>Términos y condiciones</li>
                     <li>Política de privacidad</li>
-                    <li>Cancelaciones</li>
                   </ul>
                 </div>
               </div>
 
-              <div className="mt-8 border-t border-white/10 pt-5 text-sm text-white/60">
+              <div className="mt-6 border-t border-white/10 pt-4 text-sm text-white/60">
                 <p>© 2026 TurnoSi</p>
               </div>
           </section>

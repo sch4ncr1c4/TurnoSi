@@ -46,6 +46,32 @@ function formatPrice(priceCents: number | null) {
   return `$${(priceCents / 100).toLocaleString("es-AR")}`;
 }
 
+function formatPublicPhone(value: string | null | undefined) {
+  const digits = value?.replace(/\D/g, "") ?? "";
+  if (!digits) return "";
+  if (digits.startsWith("549") && digits.length > 5) {
+    return `+54 9 ${digits.slice(3)}`;
+  }
+  if (digits.startsWith("54") && digits.length > 4) {
+    return `+54 ${digits.slice(2)}`;
+  }
+  return digits.replace(/^0+/, "");
+}
+
+function getValidText(value: string | null | undefined) {
+  const text = value?.trim() ?? "";
+  if (!text || ["null", "undefined", "-", "."].includes(text.toLowerCase())) {
+    return "";
+  }
+  return text;
+}
+
+function getUsefulDescription(value: string | null | undefined, fallback: string) {
+  const text = getValidText(value);
+  if (!text || text.toLowerCase() === fallback.trim().toLowerCase()) return "";
+  return text;
+}
+
 function normalizeWhatsappNumber(value: string | null | undefined) {
   const digits = value?.replace(/\D/g, "") ?? "";
   if (!digits) return "";
@@ -236,6 +262,9 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
   const selectedSlot = selectedDay?.slots.find((slot) => slot.startsAt === startsAt);
   const publicPhone = selectedBranch?.phone ?? data.organization.phone;
   const publicWhatsapp = selectedBranch?.whatsapp ?? data.organization.whatsapp;
+  const formattedPublicPhone = formatPublicPhone(publicPhone);
+  const formattedPublicWhatsapp = formatPublicPhone(publicWhatsapp);
+  const publicDescription = getValidText(data.organization.description);
   const galleryFocusBySlot = new Map(
     data.organization.galleryFocus.map((item) => [item.slot, item])
   );
@@ -351,10 +380,9 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
   return (
     <PageLayout>
       <main className="booking-page mx-auto w-full max-w-7xl px-3 py-4 sm:px-5 sm:py-8">
-        <section className="booking-hero mb-6 grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(390px,1fr)] lg:items-stretch">
+        <section className="booking-hero mb-4 grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,0.74fr)_minmax(460px,1fr)] lg:items-stretch">
           <div className="booking-hero-copy flex min-w-0 flex-col justify-between">
-            <div>
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               {data.organization.hasLogo ? (
                 <img
                   src={getPublicLogoUrl(
@@ -362,24 +390,23 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                     data.organization.logoVersion
                   )}
                   alt={data.organization.name}
-                  className="h-20 w-20 rounded-xl border border-[var(--color-border)] bg-white object-cover shadow-[0_16px_36px_rgba(32,24,54,0.12)]"
+                  className="h-16 w-16 rounded-xl border border-[var(--color-border)] bg-white object-cover shadow-[0_10px_24px_rgba(32,24,54,0.1)] sm:h-[72px] sm:w-[72px]"
                 />
               ) : null}
               <div className="min-w-0">
                 <p className="booking-kicker text-xs font-semibold uppercase text-[var(--color-accent)]">
                   Reserva online
                 </p>
-                <h1 className="mt-2 text-4xl font-semibold leading-tight text-[var(--color-ink)] sm:text-5xl">
+                <h1 className="mt-1.5 text-3xl font-semibold leading-tight text-[var(--color-ink)] sm:text-4xl">
                   {data.organization.name}
                 </h1>
-                <p className="mt-3 max-w-xl text-base leading-7 text-[var(--color-muted-strong)]">
-                  Elegí servicio, profesional y horario disponible en pocos pasos.
+                <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-muted-strong)]">
+                  Reservá en pocos pasos: servicio, profesional, fecha y tus datos.
                 </p>
               </div>
             </div>
-            </div>
 
-            <div className="booking-venue-panel mt-6">
+            <div className="booking-venue-panel mt-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                   Local
@@ -390,33 +417,33 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                     .join(" · ") || "Turnos online"}
                 </p>
               </div>
-              <div className="booking-venue-details mt-4">
-                {data.organization.description && (
-                  <p className="booking-venue-description">{data.organization.description}</p>
+              <div className="booking-venue-details mt-3">
+                {publicDescription && (
+                  <p className="booking-venue-description">{publicDescription}</p>
                 )}
                 {publicLocation && (
                   <p className="booking-venue-row">
                     <span>Dirección</span>
-                    {publicLocation}
+                    <strong>{publicLocation}</strong>
                   </p>
                 )}
                 {publicPhone && (
                   <p className="booking-venue-row">
                     <span>Teléfono</span>
-                    {publicPhone}
+                    <strong>{formattedPublicPhone || publicPhone}</strong>
                   </p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className={`booking-gallery grid gap-3 ${galleryImageSlots.length > 1 ? "sm:grid-cols-[minmax(0,1fr)_220px]" : ""}`}>
+          <div className={`booking-gallery grid gap-3 ${galleryImageSlots.length > 1 ? "sm:grid-cols-[minmax(0,1fr)_260px]" : ""}`}>
             {galleryImageSlots.length > 0 ? (
               galleryImageSlots.map((slot, index) => (
                 <div
                   key={slot}
                   className={`booking-gallery-frame overflow-hidden border border-[rgba(255,255,255,0.46)] bg-[rgba(32,24,54,0.08)] ${
-                    index === 0 ? "min-h-[300px]" : "min-h-[300px]"
+                    index === 0 ? "min-h-[360px]" : "min-h-[360px]"
                   }`}
                 >
                   <img
@@ -440,12 +467,12 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                 </div>
               ))
             ) : (
-              <div className="booking-gallery-empty grid min-h-[300px] place-items-center p-8 text-center text-white">
+              <div className="booking-gallery-empty grid min-h-[190px] place-items-center p-6 text-center text-white">
                 <div>
                   <p className="text-sm uppercase tracking-[0.18em] text-white/62">
                     {data.organization.name}
                   </p>
-                  <p className="mt-3 text-2xl font-semibold">
+                  <p className="mt-3 text-xl font-semibold">
                     Tu próxima visita empieza acá
                   </p>
                 </div>
@@ -455,9 +482,9 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         </section>
 
         {activeStep !== "success" && (
-          <nav className="booking-stepper mb-4 p-2 sm:mb-5 sm:p-3">
+          <nav className="booking-stepper mb-4 p-2 sm:p-3" aria-label="Pasos de reserva">
             <ol
-              className="grid sm:flex sm:items-center"
+              className="grid gap-1 sm:flex sm:items-center sm:gap-0"
               style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
             >
               {steps.map((item, index) => {
@@ -469,7 +496,8 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                       type="button"
                       disabled={!completed}
                       onClick={() => setStep(item.id)}
-                      className={`booking-step-button flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-1 py-1.5 text-center text-[10px] sm:flex-row sm:gap-2 sm:px-2 sm:text-sm ${
+                      aria-current={active ? "step" : undefined}
+                      className={`booking-step-button flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center text-[10px] sm:flex-row sm:gap-2 sm:px-2 sm:text-sm ${
                         active
                           ? "font-semibold text-[var(--color-ink)]"
                           : completed
@@ -480,13 +508,18 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                       <span
                         className={`grid h-7 w-7 place-items-center rounded-full text-xs font-semibold ${
                           active || completed
-                            ? "bg-[var(--color-ink)] text-white"
+                            ? "bg-[var(--color-ink)] text-white shadow-[0_8px_18px_rgba(32,24,54,0.16)]"
                             : "border border-[var(--color-border-strong)]"
                         }`}
                       >
                         {completed ? "✓" : index + 1}
                       </span>
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate">
+                        <span className="hidden text-[10px] uppercase tracking-[0.08em] opacity-60 sm:block">
+                          Paso {index + 1}
+                        </span>
+                        {item.label}
+                      </span>
                     </button>
                     {index < steps.length - 1 && (
                       <span className="hidden h-px flex-1 bg-[linear-gradient(90deg,rgba(32,24,54,0.18),rgba(253,134,6,0.26),rgba(32,24,54,0.12))] sm:block" />
@@ -538,7 +571,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
             </p>
           </section>
         ) : (
-          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="booking-panel-enter">
               {activeStep === "branch" && (
                 <StepCard
@@ -613,44 +646,63 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                   }
                 >
                   <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
-                    {data.services.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedServiceId(item.id);
-                          setSelectedAssigneeId("");
-                          setSelectedDate("");
-                          setStartsAt("");
-                        }}
-                        className={`booking-choice rounded-xl border p-4 text-left ${
-                          item.id === serviceId
-                            ? "booking-choice-selected border-[var(--color-ink)]"
-                            : "border-[var(--color-border)] bg-white/55 hover:border-[var(--color-border-strong)]"
-                        }`}
-                      >
-                        <span className="flex items-start justify-between gap-3">
-                          <strong className="text-lg">
-                            {resourceOnlyBooking ? item.resourceName || item.name : item.name}
-                          </strong>
-                          <span className="shrink-0 text-sm font-semibold">
-                            {formatPrice(item.priceCents)}
+                    {data.services.map((item) => {
+                      const serviceDisplayName = resourceOnlyBooking
+                        ? item.resourceName || item.name
+                        : item.name;
+                      const usefulDescription = getUsefulDescription(
+                        item.description,
+                        serviceDisplayName
+                      );
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedServiceId(item.id);
+                            setSelectedAssigneeId("");
+                            setSelectedDate("");
+                            setStartsAt("");
+                          }}
+                          className={`booking-choice rounded-xl border p-4 text-left ${
+                            item.id === serviceId
+                              ? "booking-choice-selected border-[var(--color-ink)]"
+                              : "border-[var(--color-border)] bg-white/55 hover:border-[var(--color-border-strong)]"
+                          }`}
+                        >
+                          <span className="flex items-start justify-between gap-3">
+                            <strong className="text-lg">
+                              {serviceDisplayName}
+                            </strong>
+                            <span className="shrink-0 text-sm font-semibold">
+                              {formatPrice(item.priceCents)}
+                            </span>
                           </span>
-                        </span>
-                        <span className="mt-2 block text-sm text-[var(--color-muted-strong)]">
-                          {resourceOnlyBooking
-                            ? item.description || item.name
-                            : item.description || `${item.durationMinutes} minutos`}
-                        </span>
-                        <span className="mt-3 block text-xs font-medium text-[var(--color-muted)]">
-                          Duración: {item.durationMinutes} min
-                        </span>
-                      </button>
-                    ))}
+                          {usefulDescription && (
+                            <span className="mt-2 block text-sm text-[var(--color-muted-strong)]">
+                              {usefulDescription}
+                            </span>
+                          )}
+                          <span className="mt-3 block text-xs font-medium text-[var(--color-muted)]">
+                            {item.durationMinutes} min · Precio confirmado al elegir
+                          </span>
+                        </button>
+                      );
+                    })}
                     {data.services.length === 0 && (
-                      <p className="text-sm text-[var(--color-muted)]">
-                        No hay servicios disponibles.
-                      </p>
+                      <div className="rounded-xl border border-dashed border-[var(--color-border-strong)] bg-white/55 p-5 text-center sm:col-span-2">
+                        <p className="text-base font-semibold text-[var(--color-ink)]">
+                          Todavía no hay servicios para reservar
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
+                          El local aún no publicó servicios online. Contactalo para consultar disponibilidad.
+                        </p>
+                        {(formattedPublicWhatsapp || formattedPublicPhone) && (
+                          <p className="mt-3 text-sm font-semibold text-[var(--color-accent)]">
+                            {formattedPublicWhatsapp || formattedPublicPhone}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                   <StepActions
@@ -817,10 +869,10 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
               )}
             </div>
 
-            <aside className="space-y-4 lg:sticky lg:top-5 lg:self-start">
-              <div className="booking-summary p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-                  Resumen de tu reserva
+            <aside className="lg:sticky lg:top-5 lg:self-start">
+              <div className="booking-summary p-4 sm:p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                  Tu reserva
                 </p>
                 {hasBranchStep && (
                   <SummaryRow label="Sede" value={selectedBranch?.name ?? "Sin elegir"} />
@@ -848,37 +900,28 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                   }
                 />
                 <SummaryRow label="Horario" value={selectedSlot?.time ?? "Sin elegir"} />
-                <div className="mt-5 border-t border-[var(--color-border)] pt-5">
+                <div className="mt-4 border-t border-[var(--color-border)] pt-4">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-sm text-[var(--color-muted-strong)]">Total</span>
-                    <strong className="text-3xl font-semibold text-[var(--color-ink)]">
-                      {formatPrice(service?.priceCents ?? null)}
+                    <span className="text-sm text-[var(--color-muted-strong)]">Precio</span>
+                    <strong className="text-2xl font-semibold text-[var(--color-ink)]">
+                      {service ? formatPrice(service.priceCents) : "A confirmar"}
                     </strong>
                   </div>
+                  <p className="mt-1 text-xs text-[var(--color-muted)]">
+                    Se confirma al elegir un servicio.
+                  </p>
                 </div>
                 {status && (
                   <p className="mt-4 rounded-xl border border-[var(--color-border)] bg-[rgba(32,24,54,0.04)] p-3 text-sm text-[var(--color-muted-strong)]">
                     {status}
                   </p>
                 )}
+                <div className="mt-4 border-t border-white/12 pt-4 text-xs leading-5 text-white/62">
+                  {formattedPublicWhatsapp || formattedPublicPhone
+                    ? `Ayuda: ${formattedPublicWhatsapp || formattedPublicPhone}`
+                    : "Contactá al local si necesitás modificar tu reserva."}
+                </div>
               </div>
-
-              <InfoCard
-                title="Recordatorio"
-                description="Te recordaremos tu turno y dejaremos todo listo para tu visita."
-              />
-              <InfoCard
-                title="Cancelaciones"
-                description="Podés cancelar o reprogramar con anticipación coordinando con el local."
-              />
-              <InfoCard
-                title="¿Necesitás ayuda?"
-                description={
-                  publicWhatsapp
-                    ? `Escribinos por WhatsApp ${publicWhatsapp}.`
-                    : publicPhone ?? "Contactanos directamente con el negocio."
-                }
-              />
             </aside>
           </div>
         )}
@@ -1060,15 +1103,6 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <div className="mt-4 border-t border-[var(--color-border)] pt-4">
       <span className="block text-xs text-[var(--color-muted)]">{label}</span>
       <strong className="mt-1 block text-sm font-medium text-[var(--color-ink)]">{value}</strong>
-    </div>
-  );
-}
-
-function InfoCard({ description, title }: { description: string; title: string }) {
-  return (
-    <div className="booking-info-card p-5">
-      <p className="text-base font-semibold text-[var(--color-ink)]">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">{description}</p>
     </div>
   );
 }
