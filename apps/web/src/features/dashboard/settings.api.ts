@@ -1,4 +1,4 @@
-import { apiRequest } from "../../lib/api";
+import { ApiError, apiRequest, getApiUrl } from "../../lib/api";
 import type {
   OrganizationSettings,
   OrganizationSettingsInput
@@ -29,13 +29,59 @@ export function uploadOrganizationLogo(file: File) {
   );
 }
 
-export function uploadOrganizationGalleryImage(slot: 0 | 1, file: File) {
-  return apiRequest<{ success: true; data: { uploaded: true } }>(
-    `/api/v1/organizations/current/gallery/${slot}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": file.type },
-      body: file
+export type GalleryUploadResult = {
+  uploaded: true;
+  originalBytes: number;
+  optimizedBytes: number;
+  contentType: string;
+};
+
+export function uploadOrganizationGalleryImage(
+  slot: 0 | 1,
+  file: File,
+  onProgress?: (progress: number) => void
+) {
+  return new Promise<{ success: true; data: GalleryUploadResult }>(
+    (resolve, reject) => {
+      const request = new XMLHttpRequest();
+      request.open("PUT", getApiUrl(`/api/v1/organizations/current/gallery/${slot}`));
+      request.withCredentials = true;
+      request.setRequestHeader("Content-Type", file.type);
+
+      request.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+        onProgress?.(Math.min(95, Math.round((event.loaded / event.total) * 95)));
+      };
+
+      request.onload = () => {
+        try {
+          const body = JSON.parse(request.responseText || "{}") as
+            | { success: true; data: GalleryUploadResult }
+            | { success: false; message?: string; code?: string };
+
+          if (request.status >= 200 && request.status < 300 && body.success) {
+            onProgress?.(100);
+            resolve(body);
+            return;
+          }
+
+          reject(
+            new ApiError(
+              body.success === false ? body.message ?? "Request failed" : "Request failed",
+              body.success === false ? body.code ?? "REQUEST_FAILED" : "REQUEST_FAILED",
+              request.status
+            )
+          );
+        } catch {
+          reject(new ApiError("Request failed", "REQUEST_FAILED", request.status));
+        }
+      };
+
+      request.onerror = () => {
+        reject(new ApiError("Network error", "NETWORK_ERROR", request.status));
+      };
+
+      request.send(file);
     }
   );
 }

@@ -491,6 +491,7 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
       description: organization.description,
       phone: organization.phone,
       whatsapp: organization.whatsapp,
+      publicEmail: organization.publicEmail,
       instagram: organization.instagram,
       hasLogo: Boolean(organization.logo),
       logoVersion: organization.logo?.updatedAt.getTime() ?? null,

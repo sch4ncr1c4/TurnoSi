@@ -12,6 +12,7 @@ export type PublicBookingData = {
     description: string | null;
     phone: string | null;
     whatsapp: string | null;
+    publicEmail: string | null;
     instagram: string | null;
     hasLogo: boolean;
     logoVersion: number | null;

@@ -274,7 +274,14 @@ organizationsRouter.put(
       },
       update: { contentType: optimizedImage.contentType, data: optimizedImage.data }
     });
-    response.json(ok({ uploaded: true }));
+    response.json(
+      ok({
+        uploaded: true,
+        originalBytes: request.body.length,
+        optimizedBytes: optimizedImage.data.length,
+        contentType: optimizedImage.contentType
+      })
+    );
   }
 );
 

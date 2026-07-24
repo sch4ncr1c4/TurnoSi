@@ -14,6 +14,7 @@ import {
   completeOnboarding,
   deleteOrganizationGalleryImage,
   deleteCurrentOrganization,
+  type GalleryUploadResult,
   uploadOrganizationGalleryImage,
   uploadOrganizationLogo
 } from "./settings.api";
@@ -37,6 +38,12 @@ function normalizeArgentinaWhatsapp(value: string) {
   if (digits.startsWith("9")) digits = digits.slice(1);
   if (digits.startsWith("0")) digits = digits.slice(1);
   return digits.slice(0, 10);
+}
+
+function formatImageBytes(bytes?: number) {
+  if (!bytes) return "";
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
 const initialLocalSettings = {
@@ -70,6 +77,12 @@ const customBusinessCategory = "__custom__";
 
 type LocalSettings = typeof initialLocalSettings;
 type SettingsTab = "business" | "public" | "account";
+type GalleryUploadState = {
+  originalBytes?: number;
+  optimizedBytes?: number;
+  progress: number;
+  status: "idle" | "ready" | "uploading" | "done";
+};
 
 export function DashboardSettingsView({
   isOnboarding = false,
@@ -90,6 +103,12 @@ export function DashboardSettingsView({
   const [logoPreview, setLogoPreview] = useState("");
   const [galleryFiles, setGalleryFiles] = useState<(File | null)[]>([null, null]);
   const [galleryPreviews, setGalleryPreviews] = useState(["", ""]);
+  const [galleryUploadStates, setGalleryUploadStates] = useState<
+    GalleryUploadState[]
+  >([
+    { progress: 0, status: "idle" },
+    { progress: 0, status: "idle" }
+  ]);
   const [showGallerySettings, setShowGallerySettings] = useState(false);
   const [galleryDeleteSlots, setGalleryDeleteSlots] = useState([false, false]);
   const [galleryFocus, setGalleryFocus] = useState([
@@ -377,7 +396,42 @@ export function DashboardSettingsView({
       }
       for (const [slot, file] of galleryFiles.entries()) {
         if (!file) continue;
-        await uploadOrganizationGalleryImage(slot as 0 | 1, file);
+        setGalleryUploadStates((current) => {
+          const next = [...current];
+          next[slot] = {
+            originalBytes: file.size,
+            progress: 4,
+            status: "uploading"
+          };
+          return next;
+        });
+        const uploadResult = await uploadOrganizationGalleryImage(
+          slot as 0 | 1,
+          file,
+          (progress) => {
+            setGalleryUploadStates((current) => {
+              const next = [...current];
+              next[slot] = {
+                ...next[slot],
+                originalBytes: file.size,
+                progress,
+                status: "uploading"
+              };
+              return next;
+            });
+          }
+        );
+        const optimized = uploadResult.data as GalleryUploadResult;
+        setGalleryUploadStates((current) => {
+          const next = [...current];
+          next[slot] = {
+            originalBytes: optimized.originalBytes,
+            optimizedBytes: optimized.optimizedBytes,
+            progress: 100,
+            status: "done"
+          };
+          return next;
+        });
       }
       if (galleryFiles.some(Boolean)) {
         queryClient.setQueryData<OrganizationSettings>(
@@ -412,6 +466,10 @@ export function DashboardSettingsView({
             : ""
         ]);
       }
+      setGalleryUploadStates([
+        { progress: 0, status: "idle" },
+        { progress: 0, status: "idle" }
+      ]);
       await queryClient.invalidateQueries({
         queryKey: queryKeys.publicBooking(publicSlug)
       });
@@ -548,6 +606,18 @@ export function DashboardSettingsView({
       next[slot] = file;
       return next;
     });
+    setGalleryUploadStates((current) => {
+      const next = [...current];
+      next[slot] = file
+        ? {
+            originalBytes: file.size,
+            optimizedBytes: undefined,
+            progress: 0,
+            status: "ready"
+          }
+        : { progress: 0, status: "idle" };
+      return next;
+    });
     setGalleryDeleteSlots((current) => {
       const next = [...current];
       next[slot] = false;
@@ -610,6 +680,11 @@ export function DashboardSettingsView({
       next[slot] = Boolean(settingsQuery.data?.galleryImageSlots.includes(slot));
       return next;
     });
+    setGalleryUploadStates((current) => {
+      const next = [...current];
+      next[slot] = { progress: 0, status: "idle" };
+      return next;
+    });
     setGalleryFocusPoint(slot, 50, 50, 100);
     setToast("Foto marcada para eliminar. Guardá los cambios para aplicarlo.");
   }
@@ -619,6 +694,10 @@ export function DashboardSettingsView({
     setLogoFile(null);
     setGalleryFiles([null, null]);
     setGalleryDeleteSlots([false, false]);
+    setGalleryUploadStates([
+      { progress: 0, status: "idle" },
+      { progress: 0, status: "idle" }
+    ]);
     setLogoPreview(
       settingsQuery.data?.hasLogo
         ? `${getApiUrl("/api/v1/organizations/current/logo")}?v=${Date.now()}`
@@ -970,6 +1049,18 @@ export function DashboardSettingsView({
                           focusY: 50,
                           zoom: 100
                         };
+                      const uploadState = galleryUploadStates[slot] ?? {
+                        progress: 0,
+                        status: "idle"
+                      };
+                      const uploadLabel =
+                        uploadState.status === "uploading"
+                          ? "Subiendo y optimizando..."
+                          : uploadState.status === "done"
+                            ? `${formatImageBytes(uploadState.optimizedBytes)} optimizada`
+                            : uploadState.status === "ready"
+                              ? `${formatImageBytes(uploadState.originalBytes)} original · se optimiza al guardar`
+                              : "";
                       return (
                         <div
                           key={slot}
@@ -992,8 +1083,36 @@ export function DashboardSettingsView({
                           <div
                             className={`w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(32,24,54,0.05)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)] ${
                               slot === 0 ? "aspect-[16/10]" : "aspect-[4/5]"
-                            }`}
+                            } relative`}
                           >
+                            {uploadLabel && (
+                              <div className="absolute left-3 right-3 top-3 z-10 rounded-xl border border-white/60 bg-white/88 p-2 text-left shadow-[0_12px_26px_rgba(32,24,54,0.12)] backdrop-blur">
+                                <div className="flex items-center justify-between gap-3 text-xs font-semibold text-[var(--color-ink)]">
+                                  <span>{uploadLabel}</span>
+                                  {uploadState.status === "done" &&
+                                    uploadState.originalBytes &&
+                                    uploadState.optimizedBytes && (
+                                      <span className="text-[var(--color-muted-strong)]">
+                                        {Math.round(
+                                          (1 -
+                                            uploadState.optimizedBytes /
+                                              uploadState.originalBytes) *
+                                            100
+                                        )}
+                                        % menos
+                                      </span>
+                                    )}
+                                </div>
+                                {uploadState.status !== "ready" && (
+                                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[rgba(32,24,54,0.1)]">
+                                    <div
+                                      className="h-full rounded-full bg-[var(--color-accent)] transition-all duration-300"
+                                      style={{ width: `${uploadState.progress}%` }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             {galleryPreviews[slot] ? (
                               <img
                                 src={galleryPreviews[slot]}
