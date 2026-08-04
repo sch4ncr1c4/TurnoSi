@@ -643,117 +643,119 @@ publicBookingRouter.post(
               "Selected slot is no longer available"
             );
           }
-      const assignedUserId =
-        context.teamMembers.length === 0
-          ? null
-          : data.assigneeId
-            ? assigneeHasCapacity(
-                candidates,
-                {
-                  userId: data.assigneeId,
-                  hourlyCapacity:
-                    context.teamMembers.find((member) => member.userId === data.assigneeId)
-                      ?.hourlyCapacity ?? 0
-                },
-                startsAt,
-                endsAt,
-                context.organization.timezone,
-                context
-              )
-              ? data.assigneeId
-              : null
-            : [...context.teamMembers]
-                .sort((first, second) => {
-                  const firstLoad = candidates.filter(
-                    (appointment) =>
-                      appointment.assignedUserId === first.userId &&
-                      localHourInTimezone(
-                        appointment.startsAt,
-                        context.organization.timezone
-                      ) ===
-                        localHourInTimezone(
-                          startsAt,
-                          context.organization.timezone
-                        )
-                  ).length;
-                  const secondLoad = candidates.filter(
-                    (appointment) =>
-                      appointment.assignedUserId === second.userId &&
-                      localHourInTimezone(
-                        appointment.startsAt,
-                        context.organization.timezone
-                      ) ===
-                        localHourInTimezone(
-                          startsAt,
-                          context.organization.timezone
-                        )
-                  ).length;
-                  return firstLoad - secondLoad || first.name.localeCompare(second.name);
-                })
-                .find((member) =>
-                  assigneeHasCapacity(
+          const assignedUserId =
+            context.teamMembers.length === 0
+              ? null
+              : data.assigneeId
+                ? assigneeHasCapacity(
                     candidates,
-                    member,
+                    {
+                      userId: data.assigneeId,
+                      hourlyCapacity:
+                        context.teamMembers.find((member) => member.userId === data.assigneeId)
+                          ?.hourlyCapacity ?? 0
+                    },
                     startsAt,
                     endsAt,
                     context.organization.timezone,
                     context
                   )
-                )?.userId ?? null;
-      if (
-        context.teamMembers.length > 0 &&
-        !assignedUserId
-      ) {
-        throw new AppError(
-          409,
-          "SLOT_UNAVAILABLE",
-          "Selected slot is no longer available"
-        );
-      }
-      const email = data.email.toLowerCase();
-      const existing = await transaction.customer.findFirst({
-        where: {
-          organizationId: context.organization.id,
-          deletedAt: null,
-          OR: [{ email }, { phone: data.phone }]
-        }
-      });
-      if (existing?.blockedAt) {
-        throw new AppError(
-          403,
-          "BOOKING_NOT_ALLOWED",
-          "Online booking is not available for this customer"
-        );
-      }
-      const customer = existing
-        ? await transaction.customer.update({
-            where: { id: existing.id },
-            data: { firstName, lastName: lastNameParts.join(" ") || null, fullName: data.name, phone: data.phone }
-          })
-        : await transaction.customer.create({
-            data: {
+                  ? data.assigneeId
+                  : null
+                : [...context.teamMembers]
+                    .sort((first, second) => {
+                      const firstLoad = candidates.filter(
+                        (appointment) =>
+                          appointment.assignedUserId === first.userId &&
+                          localHourInTimezone(
+                            appointment.startsAt,
+                            context.organization.timezone
+                          ) ===
+                            localHourInTimezone(
+                              startsAt,
+                              context.organization.timezone
+                            )
+                      ).length;
+                      const secondLoad = candidates.filter(
+                        (appointment) =>
+                          appointment.assignedUserId === second.userId &&
+                          localHourInTimezone(
+                            appointment.startsAt,
+                            context.organization.timezone
+                          ) ===
+                            localHourInTimezone(
+                              startsAt,
+                              context.organization.timezone
+                            )
+                      ).length;
+                      return firstLoad - secondLoad || first.name.localeCompare(second.name);
+                    })
+                    .find((member) =>
+                      assigneeHasCapacity(
+                        candidates,
+                        member,
+                        startsAt,
+                        endsAt,
+                        context.organization.timezone,
+                        context
+                      )
+                    )?.userId ?? null;
+          if (context.teamMembers.length > 0 && !assignedUserId) {
+            throw new AppError(
+              409,
+              "SLOT_UNAVAILABLE",
+              "Selected slot is no longer available"
+            );
+          }
+          const email = data.email.toLowerCase();
+          const existing = await transaction.customer.findFirst({
+            where: {
               organizationId: context.organization.id,
-              firstName,
-              lastName: lastNameParts.join(" ") || null,
-              fullName: data.name,
-              email,
-              phone: data.phone
+              deletedAt: null,
+              OR: [{ email }, { phone: data.phone }]
             }
           });
+          if (existing?.blockedAt) {
+            throw new AppError(
+              403,
+              "BOOKING_NOT_ALLOWED",
+              "Online booking is not available for this customer"
+            );
+          }
+          const customer = existing
+            ? await transaction.customer.update({
+                where: { id: existing.id },
+                data: {
+                  firstName,
+                  lastName: lastNameParts.join(" ") || null,
+                  fullName: data.name,
+                  phone: data.phone
+                }
+              })
+            : await transaction.customer.create({
+                data: {
+                  organizationId: context.organization.id,
+                  firstName,
+                  lastName: lastNameParts.join(" ") || null,
+                  fullName: data.name,
+                  email,
+                  phone: data.phone
+                }
+              });
           return transaction.appointment.create({
-        data: {
-          organizationId: context.organization.id,
-          branchId: context.branch.id,
-          customerId: customer.id,
-          serviceId: context.service.id,
-          resourceId: context.resourceId,
-          assignedUserId,
-          channel: "web",
-          title: context.service.name,
-          startsAt,
-          endsAt,
-          status: "confirmed"
-        }
+            data: {
+              organizationId: context.organization.id,
+              branchId: context.branch.id,
+              customerId: customer.id,
+              serviceId: context.service.id,
+              resourceId: context.resourceId,
+              assignedUserId,
+              channel: "web",
+              title: context.service.name,
+              startsAt,
+              endsAt,
+              status: "confirmed"
+            }
           });
         }, { isolationLevel: "Serializable" });
         break;
