@@ -14,6 +14,10 @@ export type PublicBookingData = {
     whatsapp: string | null;
     publicEmail: string | null;
     instagram: string | null;
+    deposit: {
+      enabled: boolean;
+      amountCents: number | null;
+    };
     hasLogo: boolean;
     logoVersion: number | null;
     galleryImageSlots: number[];
@@ -98,7 +102,15 @@ export function createPublicAppointment(
     assigneeId?: string;
   }
 ) {
-  return apiRequest(
+  return apiRequest<{
+    success: true;
+    data: {
+      id: string;
+      startsAt: string;
+      status: "confirmed" | "pending_payment";
+      checkoutUrl?: string;
+    };
+  }>(
     `/api/v1/public/booking/${slug}/appointments`,
     { method: "POST", body: JSON.stringify(data) },
     false

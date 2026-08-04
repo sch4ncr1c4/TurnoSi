@@ -1,9 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { Router } from "express";
+import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 
+import { env } from "../../config/env.js";
 import { serveGalleryImage, serveLogo } from "../../lib/logo.js";
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
+import { decryptSecret } from "../../lib/crypto.js";
 import { ok } from "../../lib/http.js";
 import { zonedTimeToUtc } from "../../lib/timezone.js";
 import {
@@ -23,6 +26,157 @@ import {
 import { hasActiveSubscription } from "../billing/subscription-access.service.js";
 
 export const publicBookingRouter = Router();
+
+const DEPOSIT_PAYMENT_HOLD_MINUTES = 15;
+
+function normalizeAppointmentPaymentStatus(status?: string) {
+  if (status === "approved") return "approved" as const;
+  if (status === "rejected") return "rejected" as const;
+  if (status === "cancelled" || status === "canceled") return "cancelled" as const;
+  if (status === "refunded") return "refunded" as const;
+  if (status === "charged_back") return "charged_back" as const;
+  if (status === "pending" || status === "in_process" || status === "authorized") {
+    return "pending" as const;
+  }
+  return "unknown" as const;
+}
+
+function marketplaceOrigin() {
+  return env.WEB_ORIGIN.split(",")[0];
+}
+
+function publicApiOrigin() {
+  return env.API_PUBLIC_URL ?? marketplaceOrigin();
+}
+
+function merchantPreferenceClient(accessTokenEncrypted: string) {
+  const accessToken = decryptSecret(accessTokenEncrypted, env.AUTH_SECRET);
+  return new Preference(new MercadoPagoConfig({ accessToken }));
+}
+
+function merchantPaymentClient(accessTokenEncrypted: string) {
+  const accessToken = decryptSecret(accessTokenEncrypted, env.AUTH_SECRET);
+  return new Payment(new MercadoPagoConfig({ accessToken }));
+}
+
+function depositPaymentHoldCutoff() {
+  return new Date(Date.now() - DEPOSIT_PAYMENT_HOLD_MINUTES * 60_000);
+}
+
+function activeAppointmentConflictWhere(
+  holdCutoff: Date
+): Prisma.AppointmentWhereInput {
+  return {
+    OR: [
+      { status: "confirmed" },
+      {
+        status: "pending",
+        OR: [
+          { depositPayment: { is: null } },
+          {
+            depositPayment: {
+              is: {
+                status: "pending",
+                createdAt: { gte: holdCutoff }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  };
+}
+
+async function expireStaleDepositHolds(organizationId: string) {
+  const holdCutoff = depositPaymentHoldCutoff();
+
+  await prisma.appointment.updateMany({
+    where: {
+      organizationId,
+      deletedAt: null,
+      status: "pending",
+      depositPayment: {
+        is: {
+          status: "pending",
+          createdAt: { lt: holdCutoff }
+        }
+      }
+    },
+    data: { deletedAt: new Date() }
+  });
+
+  await prisma.appointmentDepositPayment.updateMany({
+    where: {
+      organizationId,
+      status: "pending",
+      createdAt: { lt: holdCutoff }
+    },
+    data: {
+      status: "cancelled",
+      statusDetail: "hold_expired"
+    }
+  });
+}
+
+async function syncAppointmentDepositPayment(organizationId: string, paymentId: string) {
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { mercadoPagoAccessTokenEncrypted: true }
+  });
+  if (!organization?.mercadoPagoAccessTokenEncrypted) return;
+
+  const payment = await merchantPaymentClient(
+    organization.mercadoPagoAccessTokenEncrypted
+  ).get({ id: paymentId });
+  const depositId = String(payment.external_reference ?? "").replace(
+    "booking-deposit:",
+    ""
+  );
+  if (!depositId) return;
+
+  const status = normalizeAppointmentPaymentStatus(payment.status);
+  await prisma.$transaction(async (transaction) => {
+    const deposit = await transaction.appointmentDepositPayment.findFirst({
+      where: { id: depositId, organizationId },
+      select: { id: true, appointmentId: true }
+    });
+    if (!deposit) return;
+
+    await transaction.appointmentDepositPayment.update({
+      where: { id: deposit.id },
+      data: {
+        mercadoPagoPaymentId: paymentId,
+        status,
+        statusDetail: payment.status_detail ?? null,
+        paidAt: payment.date_approved ? new Date(payment.date_approved) : null,
+        raw: payment as object
+      }
+    });
+
+    if (status === "approved") {
+      await transaction.appointment.update({
+        where: { id: deposit.appointmentId },
+        data: { status: "confirmed" }
+      });
+    }
+  });
+}
+
+publicBookingRouter.post("/webhooks/mercadopago", async (request, response) => {
+  const organizationId = String(request.query.organizationId ?? "");
+  const dataId =
+    String(request.query["data.id"] ?? "") ||
+    String((request.body as { data?: { id?: string } }).data?.id ?? "");
+  const type = String(request.query.type ?? request.body?.type ?? "");
+
+  if (!organizationId || !dataId || type !== "payment") {
+    response.sendStatus(200);
+    return;
+  }
+
+  await syncAppointmentDepositPayment(organizationId, dataId);
+  response.sendStatus(200);
+});
 
 function isResourceOnlyBookingCategory(category: string | null) {
   return category?.toLowerCase().includes("cancha") ?? false;
@@ -253,6 +407,7 @@ async function calculateSlots(
     serviceId,
     branchId
   );
+  await expireStaleDepositHolds(organization.id);
   const selectedAssignee = selectedAssigneeId
     ? teamMembers.find((member) => member.userId === selectedAssigneeId) ?? null
     : null;
@@ -270,6 +425,7 @@ async function calculateSlots(
     1440,
     organization.timezone
   );
+  const activeConflictWhere = activeAppointmentConflictWhere(depositPaymentHoldCutoff());
 
   const [availabilityRules, availabilityExceptions, appointments] =
     await Promise.all([
@@ -299,10 +455,12 @@ async function calculateSlots(
           deletedAt: null,
           startsAt: { lt: new Date(dayEnd.getTime() + 180 * 60_000) },
           endsAt: { gt: new Date(dayStart.getTime() - 180 * 60_000) },
-          status: { in: ["pending", "confirmed"] },
-          ...(resourceId
-            ? { OR: [{ serviceId: service.id }, { resourceId }] }
-            : { serviceId: service.id })
+          AND: [
+            activeConflictWhere,
+            resourceId
+              ? { OR: [{ serviceId: service.id }, { resourceId }] }
+              : { serviceId: service.id }
+          ]
         },
         select: {
           serviceId: true,
@@ -493,6 +651,14 @@ publicBookingRouter.get("/:organizationSlug", async (request, response) => {
       whatsapp: organization.whatsapp,
       publicEmail: organization.publicEmail,
       instagram: organization.instagram,
+      deposit: {
+        enabled: Boolean(
+          organization.depositEnabled &&
+          organization.depositAmountCents &&
+          organization.mercadoPagoAccessTokenEncrypted
+        ),
+        amountCents: organization.depositAmountCents
+      },
       hasLogo: Boolean(organization.logo),
       logoVersion: organization.logo?.updatedAt.getTime() ?? null,
       galleryImageSlots: organization.galleryImages.map((image) => image.slot).sort()
@@ -590,6 +756,12 @@ publicBookingRouter.post(
     const startsAt = new Date(data.startsAt);
     const endsAt = new Date(startsAt.getTime() + context.service.durationMinutes * 60_000);
     const [firstName, ...lastNameParts] = data.name.trim().split(/\s+/);
+    const depositRequired = Boolean(
+      context.organization.depositEnabled &&
+      context.organization.depositAmountCents &&
+      context.organization.mercadoPagoAccessTokenEncrypted
+    );
+    const activeConflictWhere = activeAppointmentConflictWhere(depositPaymentHoldCutoff());
     let appointment = null;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
@@ -612,15 +784,17 @@ publicBookingRouter.post(
                       (context.service.bufferBeforeMinutes + 180) * 60_000
                   )
                 },
-                status: { in: ["pending", "confirmed"] },
-                ...(context.resourceId
-                  ? {
-                      OR: [
-                        { serviceId: context.service.id },
-                        { resourceId: context.resourceId }
-                      ]
-                    }
-                  : { serviceId: context.service.id })
+                AND: [
+                  activeConflictWhere,
+                  context.resourceId
+                    ? {
+                        OR: [
+                          { serviceId: context.service.id },
+                          { resourceId: context.resourceId }
+                        ]
+                      }
+                    : { serviceId: context.service.id }
+                ]
               },
               select: {
                 serviceId: true,
@@ -754,8 +928,19 @@ publicBookingRouter.post(
               title: context.service.name,
               startsAt,
               endsAt,
-              status: "confirmed"
-            }
+              status: depositRequired ? "pending" : "confirmed",
+              ...(depositRequired
+                ? {
+                    depositPayment: {
+                      create: {
+                        organizationId: context.organization.id,
+                        amountCents: context.organization.depositAmountCents!
+                      }
+                    }
+                  }
+                : {})
+            },
+            include: { depositPayment: true }
           });
         }, { isolationLevel: "Serializable" });
         break;
@@ -773,6 +958,71 @@ publicBookingRouter.post(
     if (!appointment) {
       throw new AppError(409, "SLOT_UNAVAILABLE", "Selected slot is no longer available");
     }
-    response.status(201).json(ok({ id: appointment.id, startsAt: appointment.startsAt }));
+
+    if (
+      appointment.depositPayment &&
+      context.organization.mercadoPagoAccessTokenEncrypted
+    ) {
+      try {
+        const preference = await merchantPreferenceClient(
+          context.organization.mercadoPagoAccessTokenEncrypted
+        ).create({
+          body: {
+            external_reference: `booking-deposit:${appointment.depositPayment.id}`,
+            notification_url: `${publicApiOrigin()}/api/v1/public/booking/webhooks/mercadopago?organizationId=${context.organization.id}`,
+            back_urls: {
+              success: `${marketplaceOrigin()}/book/${organizationSlug}?payment=success`,
+              pending: `${marketplaceOrigin()}/book/${organizationSlug}?payment=pending`,
+              failure: `${marketplaceOrigin()}/book/${organizationSlug}?payment=failure`
+            },
+            items: [
+              {
+                id: context.service.id,
+                title: `Seña - ${context.service.name}`,
+                quantity: 1,
+                unit_price: appointment.depositPayment.amountCents / 100,
+                currency_id: "ARS"
+              }
+            ]
+          }
+        });
+        const checkoutUrl = preference.init_point ?? preference.sandbox_init_point;
+        if (!preference.id || !checkoutUrl) {
+          throw new Error("Mercado Pago did not return a checkout URL");
+        }
+        await prisma.appointmentDepositPayment.update({
+          where: { id: appointment.depositPayment.id },
+          data: {
+            mercadoPagoPreferenceId: preference.id,
+            checkoutUrl
+          }
+        });
+        response.status(201).json(
+          ok({
+            id: appointment.id,
+            startsAt: appointment.startsAt,
+            status: "pending_payment",
+            checkoutUrl
+          })
+        );
+        return;
+      } catch (error) {
+        await prisma.$transaction([
+          prisma.appointment.update({
+            where: { id: appointment.id },
+            data: { deletedAt: new Date() }
+          }),
+          prisma.appointmentDepositPayment.update({
+            where: { id: appointment.depositPayment.id },
+            data: { status: "unknown" }
+          })
+        ]);
+        throw error;
+      }
+    }
+
+    response.status(201).json(
+      ok({ id: appointment.id, startsAt: appointment.startsAt, status: "confirmed" })
+    );
   }
 );

@@ -56,7 +56,11 @@ const initialLocalSettings = {
   city: "",
   province: "",
   instagram: "",
-  description: ""
+  description: "",
+  mercadoPagoAccessToken: "",
+  mercadoPagoConnected: false,
+  depositEnabled: false,
+  depositAmount: ""
 };
 
 const businessCategories = [
@@ -161,7 +165,11 @@ export function DashboardSettingsView({
           city: organization.city,
           province: organization.province,
           instagram: organization.instagram,
-          description: organization.description
+          description: organization.description,
+          mercadoPagoAccessToken: "",
+          mercadoPagoConnected: organization.mercadoPagoConnected,
+          depositEnabled: organization.depositEnabled,
+          depositAmount: centsToMoney(organization.depositAmountCents)
         };
         // The form edits a local draft and persists only explicit saves.
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -240,7 +248,19 @@ export function DashboardSettingsView({
   }, []);
 
 
-  function updateSetting(field: keyof LocalSettings, value: string) {
+function moneyToCents(value: string) {
+  const normalized = value.replace(/[^\d,.-]/g, "").replace(",", ".");
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return Math.round(amount * 100);
+}
+
+function centsToMoney(value: number | null) {
+  if (!value) return "";
+  return String(value / 100);
+}
+
+  function updateSetting<K extends keyof LocalSettings>(field: K, value: LocalSettings[K]) {
     setSettings((current) => ({ ...current, [field]: value }));
   }
 
@@ -305,6 +325,19 @@ export function DashboardSettingsView({
           : {}),
         ...(settings.description !== savedSettings.description
           ? { description: settings.description }
+          : {}),
+        ...(settings.mercadoPagoAccessToken.trim()
+          ? { mercadoPagoAccessToken: settings.mercadoPagoAccessToken.trim() }
+          : {}),
+        ...(settings.mercadoPagoConnected !== savedSettings.mercadoPagoConnected &&
+        !settings.mercadoPagoConnected
+          ? { mercadoPagoDisconnect: true }
+          : {}),
+        ...(settings.depositEnabled !== savedSettings.depositEnabled
+          ? { depositEnabled: settings.depositEnabled }
+          : {}),
+        ...(moneyToCents(settings.depositAmount) !== moneyToCents(savedSettings.depositAmount)
+          ? { depositAmountCents: moneyToCents(settings.depositAmount) }
           : {})
     };
 
@@ -337,12 +370,18 @@ export function DashboardSettingsView({
                   name: settings.businessName,
                   category: settings.category,
                   phone: settings.phone,
+                  whatsapp: settings.whatsapp,
                   publicEmail: settings.email,
                   address: settings.address,
                   city: settings.city,
                   province: settings.province,
                   instagram: settings.instagram,
                   description: settings.description,
+                  mercadoPagoConnected:
+                    Boolean(settings.mercadoPagoAccessToken.trim()) ||
+                    settings.mercadoPagoConnected,
+                  depositEnabled: settings.depositEnabled,
+                  depositAmountCents: moneyToCents(settings.depositAmount),
                   galleryFocus,
                   onboardingCompleted: current.onboardingCompleted
                 }
@@ -478,7 +517,14 @@ export function DashboardSettingsView({
           queryKey: queryKeys.publicBooking(organizationSlug)
         });
       }
-      const nextSavedSettings = settings;
+      const nextSavedSettings = {
+        ...settings,
+        mercadoPagoAccessToken: "",
+        mercadoPagoConnected:
+          Boolean(settings.mercadoPagoAccessToken.trim()) ||
+          settings.mercadoPagoConnected
+      };
+      setSettings(nextSavedSettings);
       setSavedSettings(nextSavedSettings);
       setMessage("");
       setToast("✓ Cambios guardados.");
@@ -1214,6 +1260,84 @@ export function DashboardSettingsView({
               value={settings.email}
               onChange={(value) => updateSetting("email", value)}
             />
+            <div className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-white/50 p-4 md:col-span-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-base font-semibold">Seña online</h3>
+                  <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                    Tus clientes pagan una seña con Mercado Pago antes de confirmar el turno.
+                  </p>
+                </div>
+                <span
+                  className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                    settings.mercadoPagoConnected
+                      ? "bg-[#e5f4e8] text-[#1f6b35]"
+                      : "bg-[rgba(32,24,54,0.08)] text-[var(--color-muted-strong)]"
+                  }`}
+                >
+                  {settings.mercadoPagoConnected ? "Mercado Pago conectado" : "Sin conectar"}
+                </span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="grid gap-1.5 text-sm md:col-span-2">
+                  <span className="font-semibold text-[var(--color-muted-strong)]">
+                    Access Token del local
+                  </span>
+                  <input
+                    readOnly={!canEditSettings}
+                    value={settings.mercadoPagoAccessToken}
+                    onChange={(event) =>
+                      updateSetting("mercadoPagoAccessToken", event.target.value)
+                    }
+                    placeholder={
+                      settings.mercadoPagoConnected
+                        ? "Pegá uno nuevo solo si querés reemplazarlo"
+                        : "APP_USR-..."
+                    }
+                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none read-only:cursor-not-allowed read-only:bg-[rgba(32,24,54,0.035)] focus:border-[var(--color-accent)]"
+                    type="password"
+                    autoComplete="off"
+                  />
+                  <span className="text-xs text-[var(--color-muted)]">
+                    Se guarda cifrado. No se vuelve a mostrar por seguridad.
+                  </span>
+                </label>
+                <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-white/65 px-3 py-2 text-sm font-semibold">
+                  Cobrar seña
+                  <input
+                    type="checkbox"
+                    disabled={!canEditSettings}
+                    checked={settings.depositEnabled}
+                    onChange={(event) =>
+                      updateSetting("depositEnabled", event.target.checked)
+                    }
+                    className="h-5 w-5 accent-[var(--color-accent)]"
+                  />
+                </label>
+                <SettingsField
+                  label="Monto de seña"
+                  prefix="$"
+                  placeholder="Ej: 5000"
+                  readOnly={!canEditSettings}
+                  highlightChanges={showUnsavedState}
+                  savedValue={savedSettings.depositAmount}
+                  value={settings.depositAmount}
+                  onChange={(value) => updateSetting("depositAmount", value)}
+                />
+              </div>
+              {canEditSettings && settings.mercadoPagoConnected && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateSetting("mercadoPagoConnected", false);
+                    updateSetting("depositEnabled", false);
+                  }}
+                  className="w-fit rounded-lg border border-[#e7b9b2] bg-[#fff5f3] px-3 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5]"
+                >
+                  Desconectar Mercado Pago
+                </button>
+              )}
+            </div>
             <SettingsField
               className="md:col-span-2"
               label="Dirección"

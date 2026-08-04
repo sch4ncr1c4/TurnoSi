@@ -1,8 +1,10 @@
 import express, { Router } from "express";
 
 import { prisma } from "../../database/prisma.js";
+import { env } from "../../config/env.js";
 import { AppError } from "../../lib/app-error.js";
 import { clearAuthCookies } from "../../lib/cookies.js";
+import { encryptSecret } from "../../lib/crypto.js";
 import { ok } from "../../lib/http.js";
 import { optimizeImage } from "../../lib/image-optimizer.js";
 import { verifyPassword } from "../../lib/password.js";
@@ -348,6 +350,9 @@ organizationsRouter.get("/current/settings", async (request, response) => {
     province: organization.province ?? "",
     instagram: organization.instagram ?? "",
     description: organization.description ?? "",
+    mercadoPagoConnected: Boolean(organization.mercadoPagoAccessTokenEncrypted),
+    depositEnabled: organization.depositEnabled,
+    depositAmountCents: organization.depositAmountCents,
     onboardingCompleted: Boolean(organization.onboardingCompletedAt),
     hasLogo: Boolean(organization.logo),
     logoVersion: organization.logo?.updatedAt.getTime() ?? null,
@@ -378,11 +383,42 @@ organizationsRouter.patch("/current/settings", authRateLimit, async (request, re
     return;
   }
 
-  const { galleryFocus, ...organizationData } = data;
+  const {
+    galleryFocus,
+    mercadoPagoAccessToken,
+    mercadoPagoDisconnect,
+    depositEnabled,
+    depositAmountCents,
+    ...organizationData
+  } = data;
+  const paymentSettings: {
+    mercadoPagoAccessTokenEncrypted?: string | null;
+    depositEnabled?: boolean;
+    depositAmountCents?: number | null;
+  } = {};
+
+  if (mercadoPagoAccessToken) {
+    paymentSettings.mercadoPagoAccessTokenEncrypted = encryptSecret(
+      mercadoPagoAccessToken,
+      env.AUTH_SECRET
+    );
+  }
+  if (mercadoPagoDisconnect) {
+    paymentSettings.mercadoPagoAccessTokenEncrypted = null;
+    paymentSettings.depositEnabled = false;
+  }
+  if (depositEnabled !== undefined) {
+    paymentSettings.depositEnabled = depositEnabled;
+  }
+  if (depositAmountCents !== undefined) {
+    paymentSettings.depositAmountCents = depositAmountCents;
+  }
+
   const organization = await prisma.organization.update({
     where: { id: tenant.organizationId },
     data: {
       ...organizationData,
+      ...paymentSettings,
       ...(organizationData.publicEmail !== undefined
         ? { publicEmail: organizationData.publicEmail || null }
         : {})

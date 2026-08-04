@@ -52,6 +52,16 @@ enum SubscriptionPaymentStatus {
   unknown
 }
 
+enum AppointmentPaymentStatus {
+  pending
+  approved
+  rejected
+  cancelled
+  refunded
+  charged_back
+  unknown
+}
+
 model User {
   id                     String                  @id @default(cuid())
   username               String?                 @unique
@@ -111,6 +121,9 @@ model Organization {
   countryCode            String                  @default("AR")
   instagram              String?
   description            String?
+  mercadoPagoAccessTokenEncrypted String?
+  depositEnabled         Boolean                 @default(false)
+  depositAmountCents     Int?
   onboardingCompletedAt  DateTime?
   memberships            Membership[]
   branches               Branch[]
@@ -126,6 +139,7 @@ model Organization {
   galleryImages          OrganizationGalleryImage[]
   subscription           OrganizationSubscription?
   subscriptionPayments   OrganizationSubscriptionPayment[]
+  appointmentDepositPayments AppointmentDepositPayment[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
 }
@@ -372,6 +386,7 @@ model Appointment {
   resource       Resource?         @relation(fields: [resourceId], references: [id], onDelete: SetNull)
   createdBy      User?             @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   assignedUser   User?             @relation("AppointmentAssignedTo", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  depositPayment AppointmentDepositPayment?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -381,6 +396,28 @@ model Appointment {
   @@index([organizationId, serviceId, startsAt])
   @@index([organizationId, resourceId, startsAt])
   @@index([organizationId, assignedUserId, startsAt])
+}
+
+model AppointmentDepositPayment {
+  id                         String                   @id @default(cuid())
+  organizationId             String
+  appointmentId              String                   @unique
+  mercadoPagoPreferenceId    String?                  @unique
+  mercadoPagoPaymentId       String?                  @unique
+  status                     AppointmentPaymentStatus @default(pending)
+  amountCents                Int
+  currencyId                 String                   @default("ARS")
+  checkoutUrl                String?
+  statusDetail               String?
+  paidAt                     DateTime?
+  raw                        Json?
+  organization               Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appointment                Appointment              @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  createdAt                  DateTime                 @default(now())
+  updatedAt                  DateTime                 @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([status])
 }
 
 model AvailabilityRule {

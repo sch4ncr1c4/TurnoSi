@@ -259,6 +259,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
   const date = days.some((day) => day.date === selectedDate) ? selectedDate : "";
   const service = data.services.find((item) => item.id === serviceId);
   const selectedServiceName = service?.name || "";
+  const deposit = data.organization.deposit;
   const selectedDay = days.find((day) => day.date === date);
   const selectedSlot = selectedDay?.slots.find((slot) => slot.startsAt === startsAt);
   const publicPhone = selectedBranch?.phone ?? data.organization.phone;
@@ -336,13 +337,18 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         .filter(Boolean)
         .join("\n");
       const whatsappUrl = buildWhatsappUrl(publicWhatsapp || publicPhone, whatsappMessage);
-      await createPublicAppointment(organizationSlug, {
+      const appointmentResponse = await createPublicAppointment(organizationSlug, {
         ...result.parsed,
         serviceId,
         branchId: activeBranchId || undefined,
         startsAt,
         assigneeId: selectedAssigneeId || undefined
       });
+      if (appointmentResponse.data.checkoutUrl) {
+        setStatus("Reserva iniciada. Te llevamos a Mercado Pago para pagar la seña.");
+        window.location.assign(appointmentResponse.data.checkoutUrl);
+        return;
+      }
       setErrors({});
       setStatus(
         whatsappUrl
@@ -866,11 +872,12 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                   title="Completá tus datos"
                   description="Los usaremos únicamente para identificar y confirmar tu turno."
                 >
-                  <BookingConfirmForm
-                    errors={errors}
-                    isSubmitting={isSubmitting}
-                    onSubmit={confirm}
-                  />
+              <BookingConfirmForm
+                errors={errors}
+                deposit={deposit}
+                isSubmitting={isSubmitting}
+                onSubmit={confirm}
+              />
                   <div className="border-t border-[var(--color-border)] p-4 sm:p-5">
                     <button
                       type="button"
@@ -926,6 +933,17 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                     Se confirma al elegir un servicio.
                   </p>
                 </div>
+                {deposit.enabled && deposit.amountCents ? (
+                  <div className="mt-4 rounded-xl border border-white/12 bg-white/8 p-3">
+                    <span className="text-xs text-white/62">Seña requerida</span>
+                    <strong className="mt-1 block text-lg text-white">
+                      {formatPrice(deposit.amountCents)}
+                    </strong>
+                    <p className="mt-1 text-xs text-white/62">
+                      El turno se confirma cuando Mercado Pago aprueba el pago.
+                    </p>
+                  </div>
+                ) : null}
                 {status && (
                   <p className="mt-4 rounded-xl border border-[var(--color-border)] bg-[rgba(36,36,36,0.04)] p-3 text-sm text-[var(--color-muted-strong)]">
                     {status}
@@ -1134,10 +1152,12 @@ function ConfirmationRow({ label, value }: { label: string; value: string }) {
 }
 
 function BookingConfirmForm({
+  deposit,
   errors,
   isSubmitting,
   onSubmit
 }: {
+  deposit: PublicBookingData["organization"]["deposit"];
   errors: Record<string, string>;
   isSubmitting: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -1188,12 +1208,27 @@ function BookingConfirmForm({
           )}
         </label>
       ))}
+      {deposit.enabled && deposit.amountCents ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white/70 p-3 text-sm text-[var(--color-muted-strong)] sm:col-span-2">
+          Para confirmar el turno vas a pagar una seña de{" "}
+          <strong className="text-[var(--color-ink)]">
+            {formatPrice(deposit.amountCents)}
+          </strong>{" "}
+          por Mercado Pago.
+        </div>
+      ) : null}
       <button
         type="submit"
         disabled={isSubmitting}
         className="mt-1 rounded-md bg-[var(--color-accent)] px-4 py-3 font-semibold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(36,36,36,0.18)] transition hover:-translate-y-0.5 hover:bg-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:col-span-2"
       >
-        {isSubmitting ? "Confirmando..." : "Confirmar turno"}
+        {isSubmitting
+          ? deposit.enabled
+            ? "Preparando pago..."
+            : "Confirmando..."
+          : deposit.enabled
+            ? "Pagar seña y reservar"
+            : "Confirmar turno"}
       </button>
     </form>
   );

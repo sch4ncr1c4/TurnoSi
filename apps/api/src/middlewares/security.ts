@@ -34,7 +34,10 @@ export function verifyRequestOrigin(
   const origin = request.get("origin");
   if (!safeMethods.has(request.method)) {
     if (
-      request.path === "/api/v1/billing/webhooks/mercadopago" &&
+      (
+        request.path === "/api/v1/billing/webhooks/mercadopago" ||
+        request.path === "/api/v1/public/booking/webhooks/mercadopago"
+      ) &&
       !origin
     ) {
       next();

@@ -10,6 +10,9 @@ export type OrganizationSettings = {
   province: string;
   instagram: string;
   description: string;
+  mercadoPagoConnected: boolean;
+  depositEnabled: boolean;
+  depositAmountCents: number | null;
   onboardingCompleted: boolean;
   hasLogo: boolean;
   logoVersion: number | null;
@@ -28,5 +31,8 @@ export type OrganizationSettings = {
 
 export type OrganizationSettingsInput = Partial<Omit<
   OrganizationSettings,
-  "slug" | "onboardingCompleted" | "hasLogo"
->>;
+  "slug" | "onboardingCompleted" | "hasLogo" | "mercadoPagoConnected"
+>> & {
+  mercadoPagoAccessToken?: string;
+  mercadoPagoDisconnect?: boolean;
+};
