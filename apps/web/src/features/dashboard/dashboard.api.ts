@@ -32,6 +32,11 @@ export async function getDashboardAppointments(from: Date, to: Date) {
       assignee: string;
       status: string;
       channel: string;
+      depositPayment: {
+        status: string;
+        amountCents: number;
+        paidAt: string | null;
+      } | null;
     }[];
   }>(`/api/v1/calendar/appointments?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`);
 
@@ -47,6 +52,7 @@ export async function getDashboardAppointments(from: Date, to: Date) {
       assignee: appointment.assignee,
       status: statusLabels[appointment.status] ?? "En espera",
       channel: appointment.channel,
+      depositPayment: appointment.depositPayment,
       attended: appointment.status === "completed"
     };
   });

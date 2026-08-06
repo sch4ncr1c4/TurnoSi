@@ -254,7 +254,9 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         appointment.assignee,
         appointment.channel,
         appointment.time,
-        appointment.day
+        appointment.day,
+        appointment.depositPayment?.status === "approved" ? "seña pagada" : "",
+        appointment.depositPayment?.status === "pending" ? "seña pendiente" : ""
       ]
         .some((value) =>
           (value ?? "").toLowerCase().includes(deferredAppointmentSearch)

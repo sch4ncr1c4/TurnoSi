@@ -142,60 +142,56 @@ export function DashboardCustomersView() {
             </div>
           </div>
 
-          <div className="grid gap-2 bg-[rgba(32,24,54,0.025)] p-2.5 sm:p-3">
+          <div className="grid gap-3 bg-[rgba(32,24,54,0.025)] p-3 sm:p-4">
             {customers.map((customer) => (
               <article
                 key={customer.id}
-                className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.88)] p-3 shadow-[0_8px_24px_rgba(32,24,54,0.04)] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
+                className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.88)] p-4 shadow-[0_10px_28px_rgba(32,24,54,0.04)] xl:grid-cols-[minmax(260px,1.2fr)_minmax(0,1.4fr)_auto] xl:items-center"
               >
-                <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                  <div className="flex min-w-0 gap-2.5">
-                    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${
+                <div className="flex min-w-0 gap-3">
+                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-semibold ${
                       customer.blockedAt
                         ? "bg-[#fde8e5] text-[#9f1f16]"
                         : "bg-[var(--color-ink)] text-[var(--color-button-text)]"
                     }`}>
                       {getInitials(customer.fullName) || "?"}
                     </span>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
-                          {customer.fullName}
-                        </p>
-                        <CustomerStatusBadge blocked={Boolean(customer.blockedAt)} />
-                        <RiskBadge noShowCount={customer.noShowCount} />
-                      </div>
-                      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--color-muted-strong)]">
-                        <span>{customer.phone || "Sin telefono"}</span>
-                        <span>{customer.email || "Sin email"}</span>
-                      </div>
-                      {customer.blockedReason && (
-                        <p className="mt-1.5 rounded-md border border-[#e7b9b2] bg-[#fff3f1] px-2 py-1 text-xs text-[#8f1b13]">
-                          Motivo: {customer.blockedReason}
-                        </p>
-                      )}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-semibold text-[var(--color-ink)]">
+                        {customer.fullName}
+                      </p>
+                      <CustomerStatusBadge blocked={Boolean(customer.blockedAt)} />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 lg:min-w-[150px]">
-                    <div className="rounded-md border border-[var(--color-border)] bg-white/55 px-2.5 py-1.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">
-                        Ausencias
-                      </p>
-                      <p className="mt-0.5 font-mono text-base font-semibold text-[var(--color-ink)]">
-                        {customer.noShowCount}
-                      </p>
-                    </div>
-                    <div className="rounded-md border border-[var(--color-border)] bg-white/55 px-2.5 py-1.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">
-                        Estado
-                      </p>
-                      <p className="mt-0.5 text-xs font-semibold text-[var(--color-ink)]">
-                        {getRiskLabel(customer.noShowCount)}
-                      </p>
+                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--color-muted-strong)]">
+                      <span>{customer.phone || "Sin teléfono"}</span>
+                      <span>{customer.email || "Sin email"}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex lg:justify-self-end">
+
+                <div className="grid gap-3 border-y border-[var(--color-border)] py-3 sm:grid-cols-2 xl:border-y-0 xl:border-l xl:py-0 xl:pl-5">
+                  <CustomerInfoLine
+                    label="Ausencias"
+                    value={`${customer.noShowCount}`}
+                    helper={getRiskLabel(customer.noShowCount)}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                      Seguimiento
+                    </p>
+                    <div className="mt-1">
+                      <RiskBadge noShowCount={customer.noShowCount} />
+                    </div>
+                  </div>
+                  {customer.blockedReason && (
+                    <p className="rounded-md border border-[#e7b9b2] bg-[#fff3f1] px-2 py-1 text-xs text-[#8f1b13] sm:col-span-2">
+                      Motivo: {customer.blockedReason}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex xl:justify-self-end">
                   {customer.blockedAt ? (
                     <Button
                       type="button"
@@ -307,6 +303,30 @@ function CustomerStatusBadge({ blocked }: { blocked: boolean }) {
     >
       {blocked ? "Bloqueado" : "Habilitado"}
     </span>
+  );
+}
+
+function CustomerInfoLine({
+  helper,
+  label,
+  value
+}: {
+  helper: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 font-mono text-sm font-semibold text-[var(--color-ink)]">
+        {value}
+      </p>
+      <p className="mt-0.5 truncate text-xs text-[var(--color-muted-strong)]">
+        {helper}
+      </p>
+    </div>
   );
 }
 

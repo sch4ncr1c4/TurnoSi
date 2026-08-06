@@ -31,13 +31,28 @@ function createPublicSlug(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function normalizeArgentinaWhatsapp(value: string) {
+function normalizeArgentinaPhone(value: string) {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("549")) digits = digits.slice(3);
+  else if (digits.startsWith("54")) digits = digits.slice(2);
+  if (digits.startsWith("9")) digits = digits.slice(1);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  return digits ? `+549${digits.slice(0, 10)}` : "";
+}
+
+function getArgentinaPhoneNumber(value: string) {
   let digits = value.replace(/\D/g, "");
   if (digits.startsWith("549")) digits = digits.slice(3);
   else if (digits.startsWith("54")) digits = digits.slice(2);
   if (digits.startsWith("9")) digits = digits.slice(1);
   if (digits.startsWith("0")) digits = digits.slice(1);
   return digits.slice(0, 10);
+}
+
+function formatArgentinaPhoneSetting(value: string) {
+  const number = getArgentinaPhoneNumber(value);
+  if (!number) return "";
+  return `+54 9 ${number}`;
 }
 
 function formatImageBytes(bytes?: number) {
@@ -158,8 +173,8 @@ export function DashboardSettingsView({
         const loadedSettings = {
           businessName: organization.name,
           category: organization.category,
-          phone: organization.phone,
-          whatsapp: normalizeArgentinaWhatsapp(organization.whatsapp),
+          phone: normalizeArgentinaPhone(organization.phone),
+          whatsapp: normalizeArgentinaPhone(organization.whatsapp),
           email: organization.publicEmail,
           address: organization.address,
           city: organization.city,
@@ -1031,11 +1046,13 @@ function centsToMoney(value: number | null) {
                     }
                     updateSetting("category", event.target.value);
                   }}
-                  className={`h-10 rounded-md border bg-white/70 px-3 outline-none disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] disabled:text-[var(--color-muted-strong)] ${
+                  className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
                     showUnsavedState &&
                     settings.category !== savedSettings.category
                       ? "border-[#d65a50] focus:border-[#d65a50]"
                       : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
+                  } ${
+                    canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
                   }`}
                 >
                   <option value="">Seleccionar rubro</option>
@@ -1060,11 +1077,13 @@ function centsToMoney(value: number | null) {
                 onChange={(event) =>
                   updateSetting("description", event.target.value)
                 }
-                className={`min-h-28 rounded-md border bg-white/70 px-3 py-2 text-sm outline-none placeholder:text-[var(--color-muted)] disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] focus:ring-2 ${
+                className={`min-h-28 rounded-md border px-3 py-2 text-sm outline-none placeholder:text-[var(--color-muted)] disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] focus:ring-2 ${
                   showUnsavedState &&
                   settings.description !== savedSettings.description
                     ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
                     : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
+                } ${
+                  canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
                 }`}
               />
             </label>
@@ -1230,26 +1249,21 @@ function centsToMoney(value: number | null) {
             )}
             {activeTab === "public" && (
               <>
-            <SettingsField
+            <ArgentinaPhoneField
               label="Teléfono"
-              placeholder="Ej: 11 2345 6789"
               readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.phone}
               value={settings.phone}
               onChange={(value) => updateSetting("phone", value)}
             />
-            <SettingsField
+            <ArgentinaPhoneField
               label="WhatsApp"
-              prefix="+54 9"
-              placeholder="Ej: 11 2345 6789"
               readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.whatsapp}
               value={settings.whatsapp}
-              onChange={(value) =>
-                updateSetting("whatsapp", normalizeArgentinaWhatsapp(value))
-              }
+              onChange={(value) => updateSetting("whatsapp", value)}
             />
             <SettingsField
               label="Email público"
@@ -1260,26 +1274,37 @@ function centsToMoney(value: number | null) {
               value={settings.email}
               onChange={(value) => updateSetting("email", value)}
             />
-            <div className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-white/50 p-4 md:col-span-2">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <section className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.78)] md:col-span-2">
+              <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-white/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="text-base font-semibold">Seña online</h3>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                    Cobros
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold">Seña online</h3>
                   <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
-                    Tus clientes pagan una seña con Mercado Pago antes de confirmar el turno.
+                    El cliente paga por Mercado Pago y el dinero entra directo al local.
                   </p>
                 </div>
                 <span
-                  className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                  className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
                     settings.mercadoPagoConnected
                       ? "bg-[#e5f4e8] text-[#1f6b35]"
                       : "bg-[rgba(32,24,54,0.08)] text-[var(--color-muted-strong)]"
                   }`}
                 >
-                  {settings.mercadoPagoConnected ? "Mercado Pago conectado" : "Sin conectar"}
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      settings.mercadoPagoConnected
+                        ? "bg-[#4f9a62]"
+                        : "bg-[rgba(32,24,54,0.25)]"
+                    }`}
+                  />
+                  {settings.mercadoPagoConnected ? "Conectado" : "Sin conectar"}
                 </span>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="grid gap-1.5 text-sm md:col-span-2">
+
+              <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <label className="grid gap-1.5 text-sm">
                   <span className="font-semibold text-[var(--color-muted-strong)]">
                     Access Token del local
                   </span>
@@ -1291,53 +1316,67 @@ function centsToMoney(value: number | null) {
                     }
                     placeholder={
                       settings.mercadoPagoConnected
-                        ? "Pegá uno nuevo solo si querés reemplazarlo"
+                        ? "Pegá un token nuevo para reemplazar el actual"
                         : "APP_USR-..."
                     }
-                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 outline-none read-only:cursor-not-allowed read-only:bg-[rgba(32,24,54,0.035)] focus:border-[var(--color-accent)]"
+                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white/75 px-3 text-sm outline-none read-only:cursor-not-allowed read-only:bg-[rgba(32,24,54,0.035)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                     type="password"
                     autoComplete="off"
                   />
                   <span className="text-xs text-[var(--color-muted)]">
-                    Se guarda cifrado. No se vuelve a mostrar por seguridad.
+                    Se cifra al guardar y nunca se vuelve a mostrar.
                   </span>
                 </label>
-                <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-white/65 px-3 py-2 text-sm font-semibold">
-                  Cobrar seña
-                  <input
-                    type="checkbox"
-                    disabled={!canEditSettings}
-                    checked={settings.depositEnabled}
-                    onChange={(event) =>
-                      updateSetting("depositEnabled", event.target.checked)
-                    }
-                    className="h-5 w-5 accent-[var(--color-accent)]"
+
+                <div className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-white/55 p-3">
+                  <label className="flex items-center justify-between gap-3 text-sm font-semibold">
+                    <span>
+                      Cobrar seña
+                      <span className="mt-0.5 block text-xs font-normal text-[var(--color-muted)]">
+                        Reserva el horario solo si se paga.
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      disabled={!canEditSettings}
+                      checked={settings.depositEnabled}
+                      onChange={(event) =>
+                        updateSetting("depositEnabled", event.target.checked)
+                      }
+                      className="h-5 w-5 accent-[var(--color-accent)]"
+                    />
+                  </label>
+                  <SettingsField
+                    label="Monto de seña"
+                    prefix="$"
+                    placeholder="Ej: 5000"
+                    readOnly={!canEditSettings}
+                    highlightChanges={showUnsavedState}
+                    savedValue={savedSettings.depositAmount}
+                    value={settings.depositAmount}
+                    onChange={(value) => updateSetting("depositAmount", value)}
                   />
-                </label>
-                <SettingsField
-                  label="Monto de seña"
-                  prefix="$"
-                  placeholder="Ej: 5000"
-                  readOnly={!canEditSettings}
-                  highlightChanges={showUnsavedState}
-                  savedValue={savedSettings.depositAmount}
-                  value={settings.depositAmount}
-                  onChange={(value) => updateSetting("depositAmount", value)}
-                />
+                </div>
               </div>
+
               {canEditSettings && settings.mercadoPagoConnected && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateSetting("mercadoPagoConnected", false);
-                    updateSetting("depositEnabled", false);
-                  }}
-                  className="w-fit rounded-lg border border-[#e7b9b2] bg-[#fff5f3] px-3 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5]"
-                >
-                  Desconectar Mercado Pago
-                </button>
+                <div className="flex flex-col gap-2 border-t border-[var(--color-border)] bg-white/35 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-[var(--color-muted)]">
+                    Si desconectás Mercado Pago, se desactiva el cobro de seña.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateSetting("mercadoPagoConnected", false);
+                      updateSetting("depositEnabled", false);
+                    }}
+                    className="w-fit rounded-lg border border-[#e7b9b2] bg-[#fff8f6] px-3 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5]"
+                  >
+                    Desconectar
+                  </button>
+                </div>
               )}
-            </div>
+            </section>
             <SettingsField
               className="md:col-span-2"
               label="Dirección"
@@ -1365,11 +1404,13 @@ function centsToMoney(value: number | null) {
                 disabled={!canEditSettings}
                 value={settings.province}
                 onChange={(event) => updateSetting("province", event.target.value)}
-                className={`h-10 rounded-md border bg-white/70 px-3 outline-none disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] ${
+                className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
                   showUnsavedState &&
                   settings.province !== savedSettings.province
                     ? "border-[#d65a50] focus:border-[#d65a50]"
                     : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
+                } ${
+                  canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
                 }`}
               >
                 <option value="">Seleccionar provincia</option>
@@ -1464,8 +1505,10 @@ function centsToMoney(value: number | null) {
                 {settings.category}
               </p>
               <div className="mt-4 space-y-2 text-sm text-[var(--color-muted-strong)]">
-                <p>{settings.phone}</p>
-                {settings.whatsapp && <p>WhatsApp: +54 9 {settings.whatsapp}</p>}
+                <p>{formatArgentinaPhoneSetting(settings.phone)}</p>
+                {settings.whatsapp && (
+                <p>WhatsApp: {formatArgentinaPhoneSetting(settings.whatsapp)}</p>
+                )}
                 <p>{[settings.address, settings.city, settings.province].filter(Boolean).join(", ")}</p>
                 <p>{settings.instagram}</p>
               </div>
@@ -1573,13 +1616,19 @@ function SettingsField({
   return (
     <label className={`relative grid gap-1.5 text-sm ${className}`}>
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
-      <span className={`flex h-10 min-w-0 overflow-hidden rounded-md border bg-white/70 focus-within:ring-2 ${
+      <span className={`flex h-10 min-w-0 overflow-hidden rounded-md border focus-within:ring-2 ${
         changed
           ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
           : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
+      } ${
+        readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-white/70"
       }`}>
         {prefix && (
-          <span className="shrink-0 border-r border-[var(--color-border)] px-3 py-2 text-[var(--color-muted)]">
+          <span
+            className={`shrink-0 border-r border-[var(--color-border)] px-3 py-2 text-[var(--color-muted)] ${
+              readOnly ? "bg-[rgba(32,24,54,0.035)]" : ""
+            }`}
+          >
             {prefix}
           </span>
         )}
@@ -1590,7 +1639,7 @@ function SettingsField({
           value={value}
           onChange={(event) => onChange?.(event.target.value)}
           className={`min-w-0 flex-1 bg-transparent px-3 outline-none placeholder:text-[var(--color-muted)] ${
-            readOnly ? "cursor-not-allowed bg-[rgba(32,24,54,0.035)] text-[var(--color-muted-strong)]" : ""
+            readOnly ? "cursor-not-allowed text-[var(--color-muted-strong)]" : ""
           }`}
         />
         {actionHref && (
@@ -1598,7 +1647,9 @@ function SettingsField({
             href={actionHref}
             target="_blank"
             rel="noreferrer"
-            className="shrink-0 border-l border-[var(--color-border)] px-3 py-2 font-semibold text-[var(--color-ink)] hover:bg-[rgba(253,134,6,0.1)]"
+            className={`shrink-0 border-l border-[var(--color-border)] px-3 py-2 font-semibold text-[var(--color-ink)] hover:bg-[rgba(253,134,6,0.1)] ${
+              readOnly ? "bg-[rgba(32,24,54,0.035)]" : ""
+            }`}
           >
             Ver página
           </a>
@@ -1616,6 +1667,67 @@ function SettingsField({
           Se genera automáticamente desde el nombre del local.
         </span>
       )}
+    </label>
+  );
+}
+
+function ArgentinaPhoneField({
+  highlightChanges = false,
+  label,
+  onChange,
+  readOnly = false,
+  savedValue,
+  value
+}: {
+  highlightChanges?: boolean;
+  label: string;
+  onChange: (value: string) => void;
+  readOnly?: boolean;
+  savedValue?: string;
+  value: string;
+}) {
+  const localNumber = getArgentinaPhoneNumber(value);
+  const savedLocalNumber = savedValue ? getArgentinaPhoneNumber(savedValue) : undefined;
+  const changed =
+    highlightChanges && savedLocalNumber !== undefined && localNumber !== savedLocalNumber;
+
+  function updatePhone(nextLocalNumber: string) {
+    onChange(normalizeArgentinaPhone(nextLocalNumber));
+  }
+
+  return (
+    <label className="relative grid gap-1.5 text-sm">
+      <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
+      <span
+        className={`flex h-10 min-w-0 overflow-hidden rounded-md border focus-within:ring-2 ${
+          changed
+            ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
+            : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
+        } ${
+          readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-white/70"
+        }`}
+      >
+        <span
+          className={`inline-flex shrink-0 items-center border-r border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-ink)] ${
+            readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-white/60"
+          }`}
+        >
+          +54 9
+        </span>
+        <input
+          readOnly={readOnly}
+          inputMode="numeric"
+          placeholder="11 2345 6789"
+          value={localNumber}
+          onChange={(event) => updatePhone(event.target.value)}
+          className={`min-w-0 flex-1 bg-transparent px-3 outline-none placeholder:text-[var(--color-muted)] ${
+            readOnly
+              ? "cursor-not-allowed text-[var(--color-muted-strong)]"
+              : ""
+          }`}
+          maxLength={13}
+        />
+      </span>
     </label>
   );
 }

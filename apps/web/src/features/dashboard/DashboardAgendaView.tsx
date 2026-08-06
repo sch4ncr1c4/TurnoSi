@@ -69,6 +69,10 @@ function getAgendaHours(appointments: DashboardAppointment[]) {
   });
 }
 
+function sentenceCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 type DashboardAgendaViewProps = {
   appointments: DashboardAppointment[];
   filteredAppointments: DashboardAppointment[];
@@ -129,6 +133,7 @@ export function DashboardAgendaView({
         time: appointment.time,
         title: appointment.service,
         client: appointment.client,
+        depositPaid: appointment.depositPayment?.status === "approved",
         tone
       };
     });
@@ -152,15 +157,14 @@ export function DashboardAgendaView({
       : `58px repeat(${visibleDays.length}, minmax(0,1fr))`;
   const periodLabel =
     scheduleView === "day"
-      ? format(selectedDate, "EEEE dd 'de' MMMM", { locale: es })
-      : `${format(weekStart, "dd", { locale: es })} al ${format(
-          addDays(weekStart, 6),
-          "dd 'de' MMMM",
-          { locale: es }
-        )}`;
+      ? sentenceCase(format(selectedDate, "EEEE dd 'de' MMMM", { locale: es }))
+      : `${format(weekStart, "dd", { locale: es })} al ${format(addDays(weekStart, 6), "dd 'de' MMMM", { locale: es })}`;
   const sortedMatches = [...filteredAppointments].sort((first, second) =>
     (first.startsAt ?? "").localeCompare(second.startsAt ?? "")
   );
+  const emptyMessage = searchTerm.trim()
+    ? "No hay turnos que coincidan con la búsqueda."
+    : "Todavía no hay turnos para este período.";
 
   if (scheduleView === "month") {
     return (
@@ -185,21 +189,17 @@ export function DashboardAgendaView({
     <>
     <section className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
       <article className="min-w-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
-        <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between">
-          <button
-            type="button"
-            className="flex w-full min-w-0 items-center justify-between gap-3 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.72)] px-3 py-1.5 text-left text-xs lg:w-64 xl:w-72"
-          >
+        <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-3 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-left text-xs lg:w-72">
             <span className="min-w-0">
-              <span className="block text-xs text-[var(--color-muted)]">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 {scheduleView === "day" ? "Día" : "Semana del"}
               </span>
-              <span className="block truncate whitespace-nowrap font-semibold capitalize">
+              <span className="mt-0.5 block truncate whitespace-nowrap text-sm font-semibold text-[var(--color-ink)]">
                 {periodLabel}
               </span>
             </span>
-            <span className="shrink-0 text-[var(--color-muted)]">⌄</span>
-          </button>
+          </div>
           <AgendaViewControls
             onNextPeriod={onNextPeriod}
             onToday={onToday}
@@ -210,8 +210,8 @@ export function DashboardAgendaView({
         </div>
         <div className="border-b border-[var(--color-border)] bg-[rgba(240,234,217,0.38)] px-3 py-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <label className="min-w-0 flex-1">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+            <label className="flex min-w-0 flex-1 flex-col gap-1.5 lg:flex-row lg:items-center">
+              <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 Buscar turno
               </span>
               <input
@@ -221,11 +221,20 @@ export function DashboardAgendaView({
                 className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.94)] px-3 text-sm text-[var(--color-ink)] outline-none"
               />
             </label>
-            <div className="rounded-md border border-[var(--color-border)] bg-white/60 px-3 py-2 text-sm text-[var(--color-muted-strong)]">
-              {sortedMatches.length} turnos en esta vista
+            <div className="rounded-lg border border-[var(--color-border)] bg-white/60 px-3 py-2 text-sm text-[var(--color-muted-strong)]">
+              <span className="font-semibold text-[var(--color-ink)]">{sortedMatches.length}</span>{" "}
+              {sortedMatches.length === 1 ? "turno" : "turnos"} en esta vista
             </div>
           </div>
         </div>
+
+        {sortedMatches.length === 0 && (
+          <div className="border-b border-[var(--color-border)] bg-white/42 px-3 py-3">
+            <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[rgba(255,251,244,0.68)] px-4 py-3 text-sm text-[var(--color-muted-strong)]">
+              {emptyMessage}
+            </div>
+          </div>
+        )}
 
         <div className="stable-scrollbar overflow-x-auto">
           <div className={scheduleView === "day" ? "min-w-0" : "min-w-[820px]"}>
@@ -237,7 +246,7 @@ export function DashboardAgendaView({
               {visibleDays.map((day) => (
                 <div
                   key={day.date.toISOString()}
-                  className="flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium"
+                  className="flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium text-[var(--color-muted-strong)]"
                 >
                   <span>{day.label}</span>
                   <span
@@ -296,14 +305,25 @@ export function DashboardAgendaView({
                                     : "w-full"
                                 } ${getAgendaEventClassName(event.tone)}`}
                               >
-                                <span className="text-[10px] font-semibold tabular-nums">
-                                  {event.time}
+                                <span className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-semibold tabular-nums">
+                                    {event.time}
+                                  </span>
+                                  {event.depositPaid && (
+                                    <span
+                                      title="Seña pagada"
+                                      className="inline-flex h-4 shrink-0 items-center gap-1 rounded-full bg-white/70 px-1.5 text-[9px] font-semibold text-[#1f6b35] ring-1 ring-[#b9dfc0]"
+                                    >
+                                      <span className="h-1.5 w-1.5 rounded-full bg-[#4f9a62]" />
+                                      Seña
+                                    </span>
+                                  )}
                                 </span>
-                                <span className="block truncate text-[11px] font-semibold leading-4">
+                                <span className="mt-0.5 block truncate text-[11px] font-semibold leading-4">
                                   {event.title}
                                 </span>
                                 {event.client && (
-                                  <span className="block truncate text-[10px] opacity-75">
+                                  <span className="mt-0.5 block truncate text-[10px] opacity-70">
                                     {event.client}
                                   </span>
                                 )}
@@ -624,6 +644,11 @@ function AgendaMatchesCard({
             <p className="mt-0.5 text-xs text-[var(--color-muted-strong)]">
               {item.client} · {item.assignee}
             </p>
+            {item.depositPayment?.status === "approved" && (
+              <span className="mt-2 inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35]">
+                Seña pagada
+              </span>
+            )}
           </button>
         ))}
         {appointments.length === 0 && (
@@ -651,7 +676,7 @@ function AgendaViewControls({
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-      <div className="flex w-full rounded-md border border-[var(--color-border)] p-1 text-sm sm:w-auto">
+      <div className="flex w-full rounded-lg border border-[var(--color-border)] bg-white/45 p-1 text-sm sm:w-auto">
         <button
           type="button"
           onClick={onToday}
@@ -675,18 +700,20 @@ function AgendaViewControls({
           </button>
         ))}
       </div>
-      <div className="flex w-fit rounded-md border border-[var(--color-border)] text-sm">
+      <div className="flex w-fit overflow-hidden rounded-lg border border-[var(--color-border)] bg-white/45 text-sm">
         <button
           type="button"
           onClick={onPreviousPeriod}
-          className="px-3 py-2 text-[var(--color-ink)] hover:bg-white/60"
+          aria-label="Período anterior"
+          className="px-3 py-2 text-[var(--color-ink)] hover:bg-white/70"
         >
           ‹
         </button>
         <button
           type="button"
           onClick={onNextPeriod}
-          className="border-l border-[var(--color-border)] px-3 py-2 text-[var(--color-ink)] hover:bg-white/60"
+          aria-label="Período siguiente"
+          className="border-l border-[var(--color-border)] px-3 py-2 text-[var(--color-ink)] hover:bg-white/70"
         >
           ›
         </button>

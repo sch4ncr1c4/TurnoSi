@@ -25,6 +25,11 @@ export type DashboardAppointment = {
   assignee: string;
   status: AppointmentStatus;
   channel: string;
+  depositPayment?: {
+    status: string;
+    amountCents: number;
+    paidAt: string | null;
+  } | null;
   attended?: boolean;
 };
 

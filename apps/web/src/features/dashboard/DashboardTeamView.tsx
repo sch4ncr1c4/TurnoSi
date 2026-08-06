@@ -244,88 +244,79 @@ export function DashboardTeamView() {
             </Button>
           </div>
         </CardHeader>
-        <CardBody className="bg-[rgba(32,24,54,0.025)] p-2.5 sm:p-3">
-          <div className="grid gap-2">
+        <CardBody className="bg-[rgba(32,24,54,0.025)] p-3 sm:p-4">
+          <div className="grid gap-3">
             {teamMembers.map((member) => {
               const canEditMember = currentRole === "owner" || member.role !== "owner";
+              const branchesLabel = member.branches.length
+                ? member.branches.map((branch) => branch.name).join(", ")
+                : "Sede principal";
               return (
                 <article
                   key={member.id}
-                  className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_8px_24px_rgba(32,24,54,0.04)]"
+                  className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_10px_28px_rgba(32,24,54,0.04)]"
                 >
-                  <div className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                    <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-xs font-semibold text-[var(--color-button-text)]">
+                  <div className="grid gap-4 p-4 xl:grid-cols-[minmax(260px,1.2fr)_minmax(0,1.6fr)_auto] xl:items-center">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-sm font-semibold text-[var(--color-button-text)]">
                         {memberInitials(member)}
                       </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
+                          <p className="truncate font-semibold text-[var(--color-ink)]">
                             {member.name}
                           </p>
-                          <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-ink)]">
-                            {roleLabel(member.role)}
-                          </span>
+                          <RoleBadge role={member.role} />
                         </div>
-                        <p className="mt-0.5 truncate text-xs text-[var(--color-muted-strong)]">
-                          {member.username ? `Usuario: ${member.username}` : member.email}
+                        <p className="mt-1 truncate text-sm text-[var(--color-muted-strong)]">
+                          {member.username ? `@${member.username}` : member.email}
                         </p>
-                        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--color-muted-strong)]">
-                          <span className="truncate">{member.phone || "Sin telefono"}</span>
-                          <span>
-                            Capacidad:{" "}
-                            <strong className="text-[var(--color-ink)]">
-                              {member.hourlyCapacity} por hora
-                            </strong>
-                          </span>
-                        </div>
-                        <p className="mt-1.5 truncate text-xs text-[var(--color-muted-strong)]">
-                          Sedes:{" "}
-                          <strong className="font-medium text-[var(--color-ink)]">
-                            {member.branches.length
-                              ? member.branches.map((branch) => branch.name).join(", ")
-                              : "Sede principal"}
-                          </strong>
+                        <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                          {member.phone || "Sin teléfono cargado"}
                         </p>
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          <StatusLabel active={member.bookingsEnabled} label="Toma turnos" />
-                          <StatusLabel active={member.visibleInPublicBooking} label="Visible online" />
-                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 lg:min-w-[168px]">
-                      <Metric label="Turnos hoy" value={member.todayAssignedCount} accent />
-                      <Metric label="Próximos" value={member.upcomingAssignedCount} />
+
+                    <div className="grid gap-3 border-y border-[var(--color-border)] py-3 sm:grid-cols-2 xl:border-y-0 xl:border-l xl:py-0 xl:pl-5">
+                      <TeamInfoLine label="Sede" value={branchesLabel} />
+                      <TeamInfoLine label="Capacidad" value={`${member.hourlyCapacity} por hora`} />
+                      <TeamInfoLine label="Hoy" value={`${member.todayAssignedCount} turnos`} />
+                      <TeamInfoLine label="Próximos" value={`${member.upcomingAssignedCount} turnos`} />
                     </div>
-                    </div>
-                    {canEditMember ? (
-                      <div className="flex flex-col gap-2 lg:justify-self-end">
-                        <Button
-                          type="button"
-                          className="h-9 px-3"
-                          onClick={() => setEditingId(member.id)}
-                        >
-                          Editar
-                        </Button>
-                        {member.role !== "owner" && (
+
+                    <div className="flex flex-col gap-3 xl:items-end">
+                      <div className="flex flex-wrap gap-1.5 xl:justify-end">
+                        <StatusLabel active={member.bookingsEnabled} label="Toma turnos" />
+                        <StatusLabel active={member.visibleInPublicBooking} label="Visible online" />
+                      </div>
+                      {canEditMember ? (
+                        <div className="flex flex-wrap gap-2 xl:justify-end">
                           <Button
                             type="button"
                             className="h-9 px-3"
-                            onClick={() => {
-                              setPasswordResetMember(member);
-                              setPasswordDraft("");
-                            }}
+                            onClick={() => setEditingId(member.id)}
                           >
-                            Cambiar contraseña
+                            Editar
                           </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="rounded-md border border-[var(--color-border)] px-3 py-2 text-center text-xs font-semibold text-[var(--color-muted-strong)] lg:justify-self-end">
-                        Solo lectura
-                      </span>
-                    )}
+                          {member.role !== "owner" && (
+                            <Button
+                              type="button"
+                              className="h-9 px-3"
+                              onClick={() => {
+                                setPasswordResetMember(member);
+                                setPasswordDraft("");
+                              }}
+                            >
+                              Cambiar clave
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="rounded-md border border-[var(--color-border)] px-3 py-2 text-center text-xs font-semibold text-[var(--color-muted-strong)]">
+                          Solo lectura
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </article>
               );
@@ -674,6 +665,34 @@ function StatusLabel({ active, label }: { active: boolean; label: string }) {
   );
 }
 
+function RoleBadge({ role }: { role: TeamMember["role"] }) {
+  const isOwner = role === "owner";
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+        isOwner
+          ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-accent)]"
+          : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
+      }`}
+    >
+      {roleLabel(role)}
+    </span>
+  );
+}
+
+function TeamInfoLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 truncate text-sm font-semibold text-[var(--color-ink)]" title={value}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function Field({
   helper,
   label,
@@ -762,28 +781,5 @@ function ToggleField({
         />
       </span>
     </label>
-  );
-}
-
-function Metric({
-  accent = false,
-  label,
-  value
-}: {
-  accent?: boolean;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div
-      className={`rounded-md px-2.5 py-1.5 ${
-        accent ? "bg-[rgba(253,134,6,0.1)]" : "bg-[rgba(32,24,54,0.06)]"
-      }`}
-    >
-      <span className="block text-[10px] uppercase tracking-[0.06em] text-[var(--color-muted-strong)]">
-        {label}
-      </span>
-      <strong className="text-sm text-[var(--color-ink)]">{value}</strong>
-    </div>
   );
 }

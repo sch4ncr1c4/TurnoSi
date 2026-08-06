@@ -27,6 +27,7 @@ calendarRouter.get("/appointments", async (request, response) => {
     include: {
       customer: true,
       service: true,
+      depositPayment: true,
       assignedUser: {
         select: { firstName: true, lastName: true, email: true }
       }
@@ -45,7 +46,14 @@ calendarRouter.get("/appointments", async (request, response) => {
           .filter(Boolean).join(" ") || appointment.assignedUser.email
       : "Sin asignar",
     status: appointment.status,
-    channel: appointment.channel
+    channel: appointment.channel,
+    depositPayment: appointment.depositPayment
+      ? {
+          status: appointment.depositPayment.status,
+          amountCents: appointment.depositPayment.amountCents,
+          paidAt: appointment.depositPayment.paidAt
+        }
+      : null
   }))));
 });
 

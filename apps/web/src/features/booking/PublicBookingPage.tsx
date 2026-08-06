@@ -388,17 +388,84 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
   return (
     <PageLayout>
       <main className="booking-page mx-auto w-full max-w-7xl px-3 py-4 sm:px-5 sm:py-8">
-        <section className="booking-public-hero mb-5">
+        <section className="booking-public-hero mb-5 grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:items-stretch">
+          <div className="booking-business-copy flex min-w-0 flex-col">
+            <div className="flex min-w-0 items-start gap-4">
+              {data.organization.hasLogo ? (
+                <img
+                  src={getPublicLogoUrl(
+                    organizationSlug,
+                    data.organization.logoVersion
+                  )}
+                  alt={data.organization.name}
+                  className="h-20 w-20 shrink-0 rounded-2xl border border-[var(--color-border)] bg-white object-cover sm:h-24 sm:w-24"
+                />
+              ) : null}
+              <div className="min-w-0">
+                <p className="booking-kicker text-xs font-semibold uppercase text-[var(--color-muted)]">
+                  Reserva online
+                </p>
+                <h1 className="mt-1 truncate text-3xl font-semibold leading-tight text-[var(--color-ink)] sm:text-4xl">
+                  {data.organization.name}
+                </h1>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)] sm:text-base">
+                  Reservá en pocos pasos: servicio, profesional, fecha y tus datos.
+                </p>
+              </div>
+            </div>
+
+            <div className="booking-venue-panel mt-5">
+              <div className="booking-venue-details">
+                <p className="font-medium text-[var(--color-ink)]">
+                  {[data.organization.category, selectedBranch?.city ?? data.organization.city]
+                    .filter(Boolean)
+                    .join(" · ") || "Turnos online"}
+                </p>
+                {publicDescription && (
+                  <p className="booking-venue-description">
+                    {publicDescription}
+                  </p>
+                )}
+                {publicLocation && (
+                  <p className="booking-venue-row">
+                    <span>Dirección</span>
+                    <strong>{publicLocation}</strong>
+                  </p>
+                )}
+                {(formattedPublicWhatsapp || formattedPublicPhone) && (
+                  <p className="booking-venue-row">
+                    <span>Contacto</span>
+                    <a
+                      href={`tel:${(publicWhatsapp || publicPhone || "").replace(/\D/g, "")}`}
+                    >
+                      {formattedPublicWhatsapp || formattedPublicPhone}
+                    </a>
+                  </p>
+                )}
+                {publicEmail && (
+                  <p className="booking-venue-row">
+                    <span>Email</span>
+                    <a href={`mailto:${publicEmail}`}>{publicEmail}</a>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <p className="mt-auto hidden pt-5 text-xs text-[var(--color-muted)] lg:block">
+              Los horarios disponibles se calculan en tiempo real según la agenda del local.
+            </p>
+          </div>
+
           <div
             className={`booking-gallery booking-cover-grid ${
-              galleryImageSlots.length > 1 ? "sm:grid-cols-[minmax(0,1.75fr)_minmax(240px,0.95fr)]" : ""
+              galleryImageSlots.length > 1 ? "sm:grid-cols-[minmax(0,1fr)_minmax(220px,0.72fr)]" : ""
             }`}
           >
             {galleryImageSlots.length > 0 ? (
-              galleryImageSlots.map((slot, index) => (
+              galleryImageSlots.slice(0, 2).map((slot, index) => (
                 <div
                   key={slot}
-                  className={`booking-gallery-frame booking-cover-frame overflow-hidden border border-white/60 bg-[rgba(36,36,36,0.08)] ${
+                  className={`booking-gallery-frame booking-cover-frame overflow-hidden border border-[var(--color-border)] bg-[rgba(36,36,36,0.06)] ${
                     index === 0 ? "booking-cover-main" : "booking-cover-side"
                   }`}
                 >
@@ -423,82 +490,17 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                 </div>
               ))
             ) : (
-              <div className="booking-gallery-empty booking-cover-empty grid min-h-[260px] place-items-center p-6 text-center text-white sm:min-h-[330px]">
+              <div className="booking-gallery-empty booking-cover-empty grid min-h-[260px] place-items-center p-6 text-center sm:min-h-[330px]">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.18em] text-white/62">
+                  <p className="text-sm uppercase tracking-[0.18em] text-[var(--color-muted)]">
                     {data.organization.name}
                   </p>
-                  <p className="mt-3 text-xl font-semibold">
+                  <p className="mt-3 text-xl font-semibold text-[var(--color-ink)]">
                     Tu próxima visita empieza acá
                   </p>
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="booking-business-grid grid gap-4 px-1 pt-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
-            <div className="booking-business-copy min-w-0">
-              {data.organization.hasLogo ? (
-                <img
-                  src={getPublicLogoUrl(
-                    organizationSlug,
-                    data.organization.logoVersion
-                  )}
-                  alt={data.organization.name}
-                  className="booking-business-logo h-24 w-24 rounded-2xl border border-[var(--color-border)] bg-white object-cover shadow-[0_16px_38px_rgba(36,36,36,0.12)] sm:h-32 sm:w-32"
-                />
-              ) : null}
-              <p className="booking-kicker mt-3 text-xs font-semibold uppercase text-[var(--color-accent)]">
-                Reserva online
-              </p>
-              <h1 className="mt-2 text-4xl font-semibold leading-tight text-[var(--color-ink)] sm:text-5xl">
-                {data.organization.name}
-              </h1>
-              {publicDescription ? (
-                <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--color-muted-strong)]">
-                  {publicDescription}
-                </p>
-              ) : (
-                <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--color-muted-strong)]">
-                  Elegí servicio, profesional y horario disponible.
-                </p>
-              )}
-            </div>
-
-            <aside className="booking-info-card rounded-2xl p-5">
-              <h2 className="text-2xl font-semibold text-[var(--color-ink)]">
-                Información
-              </h2>
-              <div className="mt-4 space-y-3 text-base text-[var(--color-muted-strong)]">
-                <p className="font-medium text-[var(--color-ink)]">
-                  {[data.organization.category, selectedBranch?.city ?? data.organization.city]
-                    .filter(Boolean)
-                    .join(" · ") || "Turnos online"}
-                </p>
-                {publicLocation && (
-                  <p className="booking-info-row">
-                    <span>Ubicación</span>
-                    <strong>{publicLocation}</strong>
-                  </p>
-                )}
-                {(formattedPublicWhatsapp || formattedPublicPhone) && (
-                  <p className="booking-info-row">
-                    <span>Contacto</span>
-                    <a
-                      href={`tel:${(publicWhatsapp || publicPhone || "").replace(/\D/g, "")}`}
-                    >
-                      {formattedPublicWhatsapp || formattedPublicPhone}
-                    </a>
-                  </p>
-                )}
-                {publicEmail && (
-                  <p className="booking-info-row">
-                    <span>Email</span>
-                    <a href={`mailto:${publicEmail}`}>{publicEmail}</a>
-                  </p>
-                )}
-              </div>
-            </aside>
           </div>
         </section>
 
@@ -893,7 +895,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
 
             <aside className="lg:sticky lg:top-5 lg:self-start">
               <div className="booking-summary p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
                   Tu reserva
                 </p>
                 {hasBranchStep && (
@@ -934,12 +936,12 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                   </p>
                 </div>
                 {deposit.enabled && deposit.amountCents ? (
-                  <div className="mt-4 rounded-xl border border-white/12 bg-white/8 p-3">
-                    <span className="text-xs text-white/62">Seña requerida</span>
-                    <strong className="mt-1 block text-lg text-white">
+                  <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[rgba(36,36,36,0.035)] p-3">
+                    <span className="text-xs text-[var(--color-muted)]">Seña requerida</span>
+                    <strong className="mt-1 block text-lg text-[var(--color-ink)]">
                       {formatPrice(deposit.amountCents)}
                     </strong>
-                    <p className="mt-1 text-xs text-white/62">
+                    <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
                       El turno se confirma cuando Mercado Pago aprueba el pago.
                     </p>
                   </div>
@@ -949,7 +951,7 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
                     {status}
                   </p>
                 )}
-                <div className="mt-4 border-t border-white/12 pt-4 text-xs leading-5 text-white/62">
+                <div className="mt-4 border-t border-[var(--color-border)] pt-4 text-xs leading-5 text-[var(--color-muted)]">
                   {formattedPublicWhatsapp || formattedPublicPhone
                     ? `Ayuda: ${formattedPublicWhatsapp || formattedPublicPhone}`
                     : "Contactá al local si necesitás modificar tu reserva."}
@@ -1038,11 +1040,11 @@ function StepCard({
 }) {
   return (
     <section className="booking-step-card overflow-hidden">
-      <div className="border-b border-[var(--color-border)] bg-white/35 p-4 sm:p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+      <div className="border-b border-[var(--color-border)] bg-white/55 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
           {eyebrow}
         </p>
-        <h2 className="mt-2 text-xl font-semibold">{title}</h2>
+        <h2 className="mt-1.5 text-xl font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-[var(--color-muted-strong)]">{description}</p>
       </div>
       {children}
@@ -1060,12 +1062,12 @@ function StepActions({
   onNext: () => void;
 }) {
   return (
-    <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] p-4 sm:flex-row sm:justify-between sm:p-5">
+    <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] bg-white/35 p-4 sm:flex-row sm:justify-between">
       {onBack ? (
         <button
           type="button"
           onClick={onBack}
-          className="w-full rounded-md px-4 py-2.5 text-sm font-semibold text-[var(--color-muted-strong)] transition hover:bg-white/60 sm:w-auto"
+          className="w-full rounded-md px-4 py-2.5 text-sm font-semibold text-[var(--color-muted-strong)] transition hover:bg-[rgba(36,36,36,0.04)] sm:w-auto"
         >
           ← Atrás
         </button>
@@ -1076,7 +1078,7 @@ function StepActions({
         type="button"
         disabled={nextDisabled}
         onClick={onNext}
-        className="w-full rounded-md bg-[var(--color-ink)] px-5 py-2.5 text-sm font-semibold text-[var(--color-button-text)] shadow-[0_12px_28px_rgba(36,36,36,0.18)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 sm:w-auto"
+        className="w-full rounded-md bg-[var(--color-ink)] px-5 py-2.5 text-sm font-semibold text-[var(--color-button-text)] transition hover:bg-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
       >
         Continuar
       </button>
@@ -1133,9 +1135,9 @@ function ProfessionalOption({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="mt-4 border-t border-[var(--color-border)] pt-4">
-      <span className="block text-xs text-[var(--color-muted)]">{label}</span>
-      <strong className="mt-1 block text-sm font-medium text-[var(--color-ink)]">{value}</strong>
+    <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+      <span className="block text-xs font-medium text-[var(--color-muted)]">{label}</span>
+      <strong className="mt-1 block text-sm font-semibold text-[var(--color-ink)]">{value}</strong>
     </div>
   );
 }

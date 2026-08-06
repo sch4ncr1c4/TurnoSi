@@ -101,6 +101,11 @@ export function SummaryAppointmentsTable({
                   <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
                     {appointment.client} · {appointment.channel}
                   </p>
+                  {appointment.depositPayment?.status === "approved" && (
+                    <span className="mt-2 inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35]">
+                      Seña pagada
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-5 text-[var(--color-muted-strong)]">
                   {appointment.assignee}
@@ -167,6 +172,11 @@ export function SummaryAppointmentsTable({
                   <p className="mt-0.5 text-sm text-[var(--color-muted-strong)]">
                     {appointment.client} · {appointment.channel}
                   </p>
+                  {appointment.depositPayment?.status === "approved" && (
+                    <span className="mt-2 inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35]">
+                      Seña pagada
+                    </span>
+                  )}
                   <p className="mt-1 text-xs text-[var(--color-muted)]">
                     {appointment.assignee}
                   </p>
