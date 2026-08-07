@@ -395,7 +395,7 @@ function getRecommendedAssignee(
     })[0];
 }
 
-async function calculateSlots(
+export async function calculateSlots(
   slug: string,
   serviceId: string,
   dayCount: number,

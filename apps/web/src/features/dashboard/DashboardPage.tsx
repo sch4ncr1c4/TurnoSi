@@ -33,6 +33,7 @@ import { useSessionQuery } from "../auth/auth.queries";
 import type { AuthResult } from "../auth/auth.types";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
+import { ManualAppointmentModal } from "./ManualAppointmentModal";
 import { StatusChangeModal } from "./StatusChangeModal";
 import {
   type AppointmentFilter,
@@ -141,6 +142,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   const [billingError, setBillingError] = useState("");
   const [billingMessage, setBillingMessage] = useState("");
   const [showBillingPlans, setShowBillingPlans] = useState(false);
+  const [showManualAppointment, setShowManualAppointment] = useState(false);
   const [appointmentStatusChanges, setAppointmentStatusChanges] = useState<
     Record<string, AppointmentStatusLabel>
   >({});
@@ -487,6 +489,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           subscription={subscriptionQuery.data}
           role={currentOrganization?.role}
           onOpenBillingPlans={() => setShowBillingPlans(true)}
+          onOpenManualAppointment={() => setShowManualAppointment(true)}
           onChangeView={changeDashboardView}
         />
 
@@ -639,6 +642,16 @@ export function DashboardPage({ brand }: DashboardPageProps) {
             </div>
           </section>
         </div>
+      )}
+      {showManualAppointment && currentOrganization?.slug && (
+        <ManualAppointmentModal
+          organizationSlug={currentOrganization.slug}
+          onClose={() => setShowManualAppointment(false)}
+          onCreated={() => {
+            setShowManualAppointment(false);
+            setActiveView("agenda");
+          }}
+        />
       )}
       {pendingDashboardView && (
         <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">

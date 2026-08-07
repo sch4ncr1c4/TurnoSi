@@ -1343,7 +1343,7 @@ function centsToMoney(value: number | null) {
                       onChange={(event) =>
                         updateSetting("depositEnabled", event.target.checked)
                       }
-                      className="h-5 w-5 accent-[var(--color-accent)]"
+                      className="h-5 w-5 cursor-pointer accent-[var(--color-accent)] disabled:cursor-not-allowed"
                     />
                   </label>
                   <SettingsField

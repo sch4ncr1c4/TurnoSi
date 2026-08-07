@@ -22,3 +22,21 @@ export const calendarAppointmentParamsSchema = z.object({
 export const updateCalendarStatusSchema = z.object({
   status: z.nativeEnum(AppointmentStatus)
 });
+
+export const createManualCalendarAppointmentSchema = z.object({
+  serviceId: z.string().cuid(),
+  branchId: z.string().min(1).optional(),
+  assigneeId: z.string().cuid().optional(),
+  startsAt: z.string().datetime(),
+  customerName: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(8).max(40),
+  email: z
+    .string()
+    .trim()
+    .max(254)
+    .optional()
+    .transform((value) => value || null)
+    .pipe(z.string().email().nullable()),
+  depositPaid: z.boolean().default(false),
+  notes: z.string().trim().max(1000).optional()
+});

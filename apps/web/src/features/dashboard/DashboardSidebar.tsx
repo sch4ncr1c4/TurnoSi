@@ -20,6 +20,7 @@ type DashboardSidebarProps = {
   subscription?: SubscriptionStatus;
   onChangeView: (view: DashboardView) => void;
   onOpenBillingPlans: () => void;
+  onOpenManualAppointment: () => void;
 };
 
 export function DashboardSidebar({
@@ -29,7 +30,8 @@ export function DashboardSidebar({
   role,
   subscription,
   onChangeView,
-  onOpenBillingPlans
+  onOpenBillingPlans,
+  onOpenManualAppointment
 }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -130,6 +132,7 @@ export function DashboardSidebar({
       <button
         type="button"
         disabled={navigationLocked}
+        onClick={onOpenManualAppointment}
         className={`mt-6 w-full shrink-0 rounded-md bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-button-text)] md:mt-5 ${buttonMotionClass}`}
       >
         + Nuevo turno

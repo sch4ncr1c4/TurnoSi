@@ -7,6 +7,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  ModalCloseButton,
   PasswordRequirementField,
   Toast
 } from "../../components/ui";
@@ -31,6 +32,7 @@ export function AccountAccessSettings({
   const [passwordMessage, setPasswordMessage] = useState("");
   const [toast, setToast] = useState("");
   const [isProfileEditing, setIsProfileEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const sessionQuery = useSessionQuery();
@@ -126,14 +128,15 @@ export function AccountAccessSettings({
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-          <h2 className="text-base font-semibold">Cuenta y acceso</h2>
-          <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
-            Estos cambios se guardan independientemente del negocio.
-          </p>
+            <h2 className="text-base font-semibold">Cuenta y acceso</h2>
+            <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+              Estos cambios se guardan independientemente del negocio.
+            </p>
           </div>
           {!isProfileEditing && (
             <Button type="button" onClick={() => setIsProfileEditing(true)}>
@@ -145,7 +148,7 @@ export function AccountAccessSettings({
       <CardBody className="space-y-5 p-4 sm:p-5">
         <form
           onSubmit={saveProfile}
-          className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto] xl:items-end"
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]"
         >
           <AccountField
             label="Nombre del propietario"
@@ -175,76 +178,141 @@ export function AccountAccessSettings({
             value={profile.email}
             onChange={(email) => setProfile((current) => ({ ...current, email }))}
           />
-          {isProfileEditing && <div className="flex flex-col gap-2 md:col-span-2 xl:col-span-1 xl:pl-1">
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                disabled={isSavingProfile}
-                onClick={() => {
-                  setProfile(savedProfile);
-                  setIsProfileEditing(false);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSavingProfile}
-                className="bg-[var(--color-ink)] text-white"
-              >
-                {isSavingProfile ? "Guardando..." : "Guardar cuenta"}
-              </Button>
-            </div>
-            {profileMessage && (
+          {isProfileEditing && (
+            <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] bg-white/35 px-3 py-3 md:col-span-2 xl:col-span-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-[var(--color-muted-strong)]">
-                {profileMessage}
+                Guardá los cambios para actualizar tu acceso.
               </p>
-            )}
-          </div>}
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  disabled={isSavingProfile}
+                  onClick={() => {
+                    setProfile(savedProfile);
+                    setIsProfileEditing(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="bg-[var(--color-ink)] text-white"
+                >
+                  {isSavingProfile ? "Guardando..." : "Guardar cuenta"}
+                </Button>
+              </div>
+              {profileMessage && (
+                <p className="text-sm text-[var(--color-muted-strong)] sm:hidden">
+                  {profileMessage}
+                </p>
+              )}
+            </div>
+          )}
         </form>
 
-        <form noValidate onSubmit={savePassword} className="grid gap-4 border-t border-[var(--color-border)] pt-5 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <p className="text-sm font-semibold">Seguridad</p>
-            <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
-              Cambiar la contraseña cerrará todas las sesiones activas.
-            </p>
-          </div>
-          <AccountField
-            label="Contraseña actual"
-            placeholder="Ingresá tu contraseña actual"
-            type="password"
-            autoComplete="current-password"
-            value={passwords.currentPassword}
-            onChange={(currentPassword) => setPasswords((current) => ({ ...current, currentPassword }))}
-          />
-          <PasswordRequirementField
-            label="Nueva contraseña"
-            placeholder="Mínimo 12 caracteres"
-            autoComplete="new-password"
-            minLength={12}
-            value={passwords.newPassword}
-            onChange={(event) =>
-              setPasswords((current) => ({
-                ...current,
-                newPassword: event.target.value
-              }))
-            }
-          />
-          <div className="flex items-center gap-3 md:col-span-2">
+        <section className="border-t border-[var(--color-border)] pt-5">
+          <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.62)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold">Seguridad</p>
+              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                Actualizá tu contraseña solo cuando necesites reforzar el acceso.
+              </p>
+            </div>
             <Button
-              type="submit"
-              disabled={isSavingPassword}
+              type="button"
               className="w-full sm:w-auto"
+              onClick={() => {
+                setPasswordMessage("");
+                setShowPasswordModal(true);
+              }}
             >
-              {isSavingPassword ? "Cambiando..." : "Cambiar contraseña"}
+              Cambiar contraseña
             </Button>
-            {passwordMessage && <p className="text-sm text-[#b42318]">{passwordMessage}</p>}
           </div>
-        </form>
+        </section>
       </CardBody>
       {toast && <Toast message={toast} onDismiss={() => setToast("")} />}
     </Card>
+    {showPasswordModal && (
+      <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+        <form
+          noValidate
+          onSubmit={savePassword}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="password-modal-title"
+          className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                Seguridad
+              </p>
+              <h2 id="password-modal-title" className="mt-2 text-xl font-semibold">
+                Cambiar contraseña
+              </h2>
+              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                Al confirmar, se cerrarán todas las sesiones activas.
+              </p>
+            </div>
+            <ModalCloseButton
+              disabled={isSavingPassword}
+              onClick={() => {
+                setShowPasswordModal(false);
+                setPasswordMessage("");
+                setPasswords({ currentPassword: "", newPassword: "" });
+              }}
+            />
+          </div>
+          <div className="grid gap-4 p-5">
+            <AccountField
+              label="Contraseña actual"
+              placeholder="Ingresá tu contraseña actual"
+              type="password"
+              autoComplete="current-password"
+              value={passwords.currentPassword}
+              onChange={(currentPassword) => setPasswords((current) => ({ ...current, currentPassword }))}
+            />
+            <PasswordRequirementField
+              label="Nueva contraseña"
+              placeholder="Mínimo 12 caracteres"
+              autoComplete="new-password"
+              minLength={12}
+              value={passwords.newPassword}
+              onChange={(event) =>
+                setPasswords((current) => ({
+                  ...current,
+                  newPassword: event.target.value
+                }))
+              }
+            />
+            {passwordMessage && <p className="text-sm text-[#b42318]">{passwordMessage}</p>}
+          </div>
+          <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] p-5 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              disabled={isSavingPassword}
+              onClick={() => {
+                setShowPasswordModal(false);
+                setPasswordMessage("");
+                setPasswords({ currentPassword: "", newPassword: "" });
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSavingPassword}
+              className="bg-[var(--color-ink)] text-white"
+            >
+              {isSavingPassword ? "Cambiando..." : "Guardar contraseña"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    )}
+    </>
   );
 }
 

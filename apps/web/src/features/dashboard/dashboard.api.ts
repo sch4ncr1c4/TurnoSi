@@ -67,3 +67,25 @@ export function updateDashboardAppointmentStatus(
     body: JSON.stringify({ status: statusValues[status] })
   });
 }
+
+export type ManualAppointmentPayload = {
+  serviceId: string;
+  branchId?: string;
+  assigneeId?: string;
+  startsAt: string;
+  customerName: string;
+  phone: string;
+  email?: string;
+  depositPaid: boolean;
+  notes?: string;
+};
+
+export function createManualDashboardAppointment(data: ManualAppointmentPayload) {
+  return apiRequest<{ success: true; data: { id: string; startsAt: string } }>(
+    "/api/v1/calendar/appointments/manual",
+    {
+      method: "POST",
+      body: JSON.stringify(data)
+    }
+  );
+}
