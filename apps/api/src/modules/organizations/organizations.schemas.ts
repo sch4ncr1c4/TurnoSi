@@ -1,20 +1,9 @@
 import { z } from "zod";
 
-export const updateOrganizationSettingsSchema = z.object({
+const organizationBusinessSettingsSchema = z.object({
   name: z.string().trim().min(2).max(120),
   category: z.string().trim().max(120),
-  phone: z.string().trim().max(40),
-  whatsapp: z.string().trim().max(40),
-  publicEmail: z.string().trim().email().or(z.literal("")),
-  address: z.string().trim().max(240),
-  city: z.string().trim().max(120),
-  province: z.string().trim().max(120),
-  instagram: z.string().trim().max(80),
   description: z.string().trim().max(500),
-  mercadoPagoAccessToken: z.string().trim().min(20).max(260).optional(),
-  mercadoPagoDisconnect: z.boolean(),
-  depositEnabled: z.boolean(),
-  depositAmountCents: z.number().int().min(0).max(10_000_000).nullable(),
   galleryFocus: z
     .array(
       z.object({
@@ -25,7 +14,49 @@ export const updateOrganizationSettingsSchema = z.object({
       })
     )
     .max(2)
-}).partial();
+});
+
+const organizationContactSettingsSchema = z.object({
+  phone: z.string().trim().max(40),
+  whatsapp: z.string().trim().max(40),
+  publicEmail: z.string().trim().email().or(z.literal("")),
+  address: z.string().trim().max(240),
+  city: z.string().trim().max(120),
+  province: z.string().trim().max(120),
+  instagram: z.string().trim().max(80)
+});
+
+const organizationPaymentsSettingsSchema = z.object({
+  mercadoPagoAccessToken: z.string().trim().min(20).max(260).optional(),
+  mercadoPagoDisconnect: z.boolean(),
+  depositEnabled: z.boolean(),
+  depositAmountCents: z.number().int().min(0).max(10_000_000).nullable()
+});
+
+export const updateOrganizationBusinessSettingsSchema =
+  organizationBusinessSettingsSchema.partial().strict();
+
+export const updateOrganizationContactSettingsSchema =
+  organizationContactSettingsSchema.partial().strict();
+
+export const updateOrganizationPaymentsSettingsSchema =
+  organizationPaymentsSettingsSchema.partial().strict();
+
+export const updateOrganizationPageSettingsSchema = z.object({}).strict();
+
+export const updateOrganizationSettingsSectionSchema = z.enum([
+  "business",
+  "contact",
+  "page",
+  "payments"
+]);
+
+export const updateOrganizationSettingsSchema = z
+  .object({})
+  .merge(organizationBusinessSettingsSchema)
+  .merge(organizationContactSettingsSchema)
+  .merge(organizationPaymentsSettingsSchema)
+  .partial();
 
 export const branchSchema = z.object({
   name: z.string().trim().min(2).max(120),

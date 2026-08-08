@@ -1,7 +1,8 @@
 import { ApiError, apiRequest, getApiUrl } from "../../lib/api";
 import type {
   OrganizationSettings,
-  OrganizationSettingsInput
+  OrganizationSettingsInput,
+  OrganizationSettingsSection
 } from "./settings.types";
 
 export async function getOrganizationSettings() {
@@ -14,6 +15,16 @@ export async function getOrganizationSettings() {
 export function updateOrganizationSettings(data: OrganizationSettingsInput) {
   return apiRequest<{ success: true; data: { onboardingCompleted: true } }>(
     "/api/v1/organizations/current/settings",
+    { method: "PATCH", body: JSON.stringify(data) }
+  );
+}
+
+export function updateOrganizationSettingsSection(
+  section: OrganizationSettingsSection,
+  data: OrganizationSettingsInput
+) {
+  return apiRequest<{ success: true; data: { id: string } }>(
+    `/api/v1/organizations/current/settings/${section}`,
     { method: "PATCH", body: JSON.stringify(data) }
   );
 }

@@ -10,7 +10,7 @@ import { markOnboardingGuideSeen } from "./account.api";
 import { useSessionQuery } from "../auth/auth.queries";
 import type { AuthResult } from "../auth/auth.types";
 import {
-  updateOrganizationSettings,
+  updateOrganizationSettingsSection,
   completeOnboarding,
   deleteOrganizationGalleryImage,
   deleteCurrentOrganization,
@@ -21,7 +21,6 @@ import {
 import { useOrganizationSettingsQuery } from "./settings.queries";
 import type { OrganizationSettings } from "./settings.types";
 import { argentinaProvinces } from "./dashboard.options";
-import pencilIcon from "../../components/assets/icons/pencil.svg";
 import businessIcon from "../../components/assets/icons/nav-home.svg";
 import contactIcon from "../../components/assets/icons/nav-team.svg";
 import pageIcon from "../../components/assets/icons/nav-calendar.svg";
@@ -148,8 +147,6 @@ export function DashboardSettingsView({
   const [cropEditorSlot, setCropEditorSlot] = useState<0 | 1 | null>(null);
   const [toast, setToast] = useState("");
   const [activeTab, setActiveTab] = useState<SettingsTab>("business");
-  const [isEditing, setIsEditing] = useState(isOnboarding);
-  const canEditSettings = isOnboarding || isEditing;
   const [accountHasUnsavedChanges, setAccountHasUnsavedChanges] = useState(false);
   const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
   const [showUnsavedState, setShowUnsavedState] = useState(false);
@@ -177,6 +174,36 @@ export function DashboardSettingsView({
     galleryDeleteSlots.some(Boolean) ||
     hasGalleryFocusChanges;
   const hasPendingChanges = hasUnsavedChanges || accountHasUnsavedChanges;
+  const hasBusinessChanges =
+    settings.businessName !== savedSettings.businessName ||
+    settings.category !== savedSettings.category ||
+    settings.description !== savedSettings.description ||
+    Boolean(logoFile) ||
+    galleryFiles.some(Boolean) ||
+    galleryDeleteSlots.some(Boolean) ||
+    hasGalleryFocusChanges;
+  const hasContactChanges =
+    settings.phone !== savedSettings.phone ||
+    settings.whatsapp !== savedSettings.whatsapp ||
+    settings.email !== savedSettings.email ||
+    settings.address !== savedSettings.address ||
+    settings.city !== savedSettings.city ||
+    settings.province !== savedSettings.province ||
+    settings.instagram !== savedSettings.instagram;
+  const hasPaymentChanges =
+    Boolean(settings.mercadoPagoAccessToken.trim()) ||
+    (settings.mercadoPagoConnected !== savedSettings.mercadoPagoConnected &&
+      !settings.mercadoPagoConnected) ||
+    settings.depositEnabled !== savedSettings.depositEnabled ||
+    moneyToCents(settings.depositAmount) !== moneyToCents(savedSettings.depositAmount);
+  const hasActiveSectionChanges =
+    activeTab === "business"
+      ? hasBusinessChanges
+      : activeTab === "contact"
+        ? hasContactChanges
+        : activeTab === "payments"
+          ? hasPaymentChanges
+          : false;
 
   useEffect(() => {
     if (settingsQuery.data) {
@@ -321,64 +348,79 @@ function centsToMoney(value: number | null) {
   }
 
   async function saveSettings() {
-    if (isSaving) return;
-    if (settings.businessName.trim().length < 2) {
+    if (isSaving) return false;
+    if (activeTab === "business" && settings.businessName.trim().length < 2) {
       setMessage("Ingresá el nombre del local.");
-      return;
+      return false;
     }
-    if (settings.description.length > settingsFieldLimits.description) {
+    if (activeTab === "business" && settings.description.length > settingsFieldLimits.description) {
       setMessage(`La descripción pública puede tener hasta ${settingsFieldLimits.description} caracteres.`);
-      return;
+      return false;
     }
-    if (settings.instagram.length > settingsFieldLimits.instagram) {
+    if (activeTab === "contact" && settings.instagram.length > settingsFieldLimits.instagram) {
       setMessage(`Instagram puede tener hasta ${settingsFieldLimits.instagram} caracteres.`);
-      return;
+      return false;
     }
-    const changes = {
-        ...(settings.businessName !== savedSettings.businessName
-          ? { name: settings.businessName }
-          : {}),
-        ...(settings.category !== savedSettings.category
-          ? { category: settings.category }
-          : {}),
-        ...(settings.phone !== savedSettings.phone
-          ? { phone: settings.phone }
-          : {}),
-        ...(settings.whatsapp !== savedSettings.whatsapp
-          ? { whatsapp: settings.whatsapp }
-          : {}),
-        ...(settings.email !== savedSettings.email
-          ? { publicEmail: settings.email }
-          : {}),
-        ...(settings.address !== savedSettings.address
-          ? { address: settings.address }
-          : {}),
-        ...(settings.city !== savedSettings.city
-          ? { city: settings.city }
-          : {}),
-        ...(settings.province !== savedSettings.province
-          ? { province: settings.province }
-          : {}),
-        ...(settings.instagram !== savedSettings.instagram
-          ? { instagram: settings.instagram }
-          : {}),
-        ...(settings.description !== savedSettings.description
-          ? { description: settings.description }
-          : {}),
-        ...(settings.mercadoPagoAccessToken.trim()
-          ? { mercadoPagoAccessToken: settings.mercadoPagoAccessToken.trim() }
-          : {}),
-        ...(settings.mercadoPagoConnected !== savedSettings.mercadoPagoConnected &&
-        !settings.mercadoPagoConnected
-          ? { mercadoPagoDisconnect: true }
-          : {}),
-        ...(settings.depositEnabled !== savedSettings.depositEnabled
-          ? { depositEnabled: settings.depositEnabled }
-          : {}),
-        ...(moneyToCents(settings.depositAmount) !== moneyToCents(savedSettings.depositAmount)
-          ? { depositAmountCents: moneyToCents(settings.depositAmount) }
-          : {})
-    };
+    const changes =
+      activeTab === "business"
+        ? {
+            ...(settings.businessName !== savedSettings.businessName
+              ? { name: settings.businessName }
+              : {}),
+            ...(settings.category !== savedSettings.category
+              ? { category: settings.category }
+              : {}),
+            ...(settings.description !== savedSettings.description
+              ? { description: settings.description }
+              : {})
+          }
+        : activeTab === "contact"
+          ? {
+              ...(settings.phone !== savedSettings.phone
+                ? { phone: settings.phone }
+                : {}),
+              ...(settings.whatsapp !== savedSettings.whatsapp
+                ? { whatsapp: settings.whatsapp }
+                : {}),
+              ...(settings.email !== savedSettings.email
+                ? { publicEmail: settings.email }
+                : {}),
+              ...(settings.instagram !== savedSettings.instagram
+                ? { instagram: settings.instagram }
+                : {}),
+            ...(settings.address !== savedSettings.address
+              ? { address: settings.address }
+              : {}),
+            ...(settings.city !== savedSettings.city
+              ? { city: settings.city }
+              : {}),
+            ...(settings.province !== savedSettings.province
+              ? { province: settings.province }
+              : {})
+          }
+          : activeTab === "payments"
+            ? {
+                ...(settings.mercadoPagoAccessToken.trim()
+                  ? { mercadoPagoAccessToken: settings.mercadoPagoAccessToken.trim() }
+                  : {}),
+                ...(settings.mercadoPagoConnected !== savedSettings.mercadoPagoConnected &&
+                !settings.mercadoPagoConnected
+                  ? { mercadoPagoDisconnect: true }
+                  : {}),
+                ...(settings.depositEnabled !== savedSettings.depositEnabled
+                  ? { depositEnabled: settings.depositEnabled }
+                  : {}),
+                ...(moneyToCents(settings.depositAmount) !== moneyToCents(savedSettings.depositAmount)
+                  ? { depositAmountCents: moneyToCents(settings.depositAmount) }
+                  : {})
+              }
+            : {};
+    const shouldSaveSection =
+      activeTab !== "account" &&
+      activeTab !== "page" &&
+      (Object.keys(changes).length > 0 ||
+        (activeTab === "business" && hasGalleryFocusChanges) ||
+        isOnboarding);
 
     if (
       Object.keys(changes).length === 0 &&
@@ -389,16 +431,16 @@ function centsToMoney(value: number | null) {
       !isOnboarding
     ) {
       setToast("Todo está guardado.");
-      return;
+      return true;
     }
 
     setIsSaving(true);
     setMessage("");
     try {
-      if (Object.keys(changes).length > 0 || hasGalleryFocusChanges || isOnboarding) {
-        await updateOrganizationSettings({
+      if (shouldSaveSection) {
+        await updateOrganizationSettingsSection(activeTab, {
           ...changes,
-          galleryFocus
+          ...(activeTab === "business" ? { galleryFocus } : {})
         });
         queryClient.setQueryData<OrganizationSettings>(
           queryKeys.organizationSettings,
@@ -570,13 +612,12 @@ function centsToMoney(value: number | null) {
       if (isOnboarding) {
         const nextTab = getNextOnboardingTab(nextSavedSettings);
         if (nextTab !== activeTab) setActiveTab(nextTab);
-        setIsEditing(true);
-      } else {
-        setIsEditing(false);
       }
       setShowUnsavedState(false);
+      return true;
     } catch {
       setMessage("No pudimos guardar la configuración.");
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -861,7 +902,6 @@ function centsToMoney(value: number | null) {
       })
     );
     setMessage("");
-    setIsEditing(false);
     setShowUnsavedState(false);
   }
 
@@ -1041,21 +1081,6 @@ function centsToMoney(value: number | null) {
                 }[activeTab]}
               </p>
               </div>
-              {!isOnboarding && !isEditing && (
-                <Button
-                  type="button"
-                  className="group gap-2"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <img
-                    src={pencilIcon}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-4 w-4 opacity-75 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
-                  />
-                  Editar información
-                </Button>
-              )}
             </div>
           </CardHeader>
           {message && (
@@ -1091,13 +1116,7 @@ function centsToMoney(value: number | null) {
                             </span>
                           )}
                         </div>
-                        <label
-                          className={`grid h-28 place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-white/42 px-3 py-3 text-center ${
-                            canEditSettings
-                              ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/62"
-                              : "cursor-default opacity-70"
-                          }`}
-                        >
+                        <label className="grid h-28 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-white/42 px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-white/62">
                           <span>
                             <span className="block text-xl leading-none">↥</span>
                             <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
@@ -1109,25 +1128,17 @@ function centsToMoney(value: number | null) {
                           </span>
                           <input
                             type="file"
-                            disabled={!canEditSettings}
                             accept="image/png,image/jpeg,image/webp"
                             onChange={handleLogoChange}
                             className="sr-only"
                           />
                         </label>
                       </div>
-                      <label
-                        className={`mt-3 flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-white/55 px-3 py-2 text-center text-sm font-semibold ${
-                          canEditSettings
-                            ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/75"
-                            : "cursor-default opacity-70"
-                        }`}
-                      >
+                      <label className="mt-3 flex min-h-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-white/55 px-3 py-2 text-center text-sm font-semibold hover:border-[var(--color-accent)] hover:bg-white/75">
                         <span className="text-base leading-none">✎</span>
                         <span>{logoPreview ? "Cambiar logo" : "Subir logo"}</span>
                         <input
                           type="file"
-                          disabled={!canEditSettings}
                           accept="image/png,image/jpeg,image/webp"
                           onChange={handleLogoChange}
                           className="sr-only"
@@ -1141,7 +1152,6 @@ function centsToMoney(value: number | null) {
                       label="Nombre del local"
                       maxLength={settingsFieldLimits.businessName}
                       placeholder="Ej: Barbería Central"
-                      readOnly={!canEditSettings}
                       highlightChanges={showUnsavedState}
                       savedValue={savedSettings.businessName}
                       value={settings.businessName}
@@ -1152,7 +1162,6 @@ function centsToMoney(value: number | null) {
                         Rubro
                       </span>
                       <select
-                        disabled={!canEditSettings}
                         value={
                           !settings.category || businessCategories.includes(settings.category)
                             ? settings.category
@@ -1165,13 +1174,11 @@ function centsToMoney(value: number | null) {
                           }
                           updateSetting("category", event.target.value);
                         }}
-                        className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
+                        className={`h-10 rounded-md border bg-white/70 px-3 outline-none ${
                           showUnsavedState &&
                           settings.category !== savedSettings.category
                             ? "border-[#d65a50] focus:border-[#d65a50]"
                             : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
-                        } ${
-                          canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
                         }`}
                       >
                         <option value="">Seleccionar rubro</option>
@@ -1189,19 +1196,16 @@ function centsToMoney(value: number | null) {
                       </span>
                       <textarea
                         value={settings.description}
-                        disabled={!canEditSettings}
                         maxLength={settingsFieldLimits.description}
                         placeholder="Contá brevemente qué servicios ofrece tu negocio."
                         onChange={(event) =>
                           updateSetting("description", event.target.value)
                         }
-                        className={`min-h-32 rounded-md border px-3 py-2 text-sm outline-none placeholder:text-[var(--color-muted)] disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] focus:ring-2 ${
+                        className={`min-h-32 rounded-md border bg-white/70 px-3 py-2 text-sm outline-none placeholder:text-[var(--color-muted)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.description !== savedSettings.description
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
                             : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
-                        } ${
-                          canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
                         }`}
                       />
                       <span className="text-right text-xs text-[var(--color-muted)]">
@@ -1255,9 +1259,8 @@ function centsToMoney(value: number | null) {
                           >
                             <button
                               type="button"
-                              disabled={!canEditSettings}
                               onClick={() => setCropEditorSlot(slot)}
-                              className="h-full w-full disabled:cursor-default"
+                              className="h-full w-full"
                               aria-label={`Ajustar encuadre de foto ${slot + 1}`}
                             >
                               <img
@@ -1289,16 +1292,14 @@ function centsToMoney(value: number | null) {
                                 )}
                               </div>
                             )}
-                            {canEditSettings && (
-                              <button
-                                type="button"
-                                onClick={() => removeGalleryImage(slot)}
-                                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-[var(--color-border)] bg-white/92 text-lg leading-none text-[var(--color-ink)] shadow-sm transition hover:-translate-y-0.5 hover:border-[#e7b9b2] hover:text-[#9f1f16]"
-                                aria-label={`Eliminar foto ${slot + 1}`}
-                              >
-                                ×
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeGalleryImage(slot)}
+                              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-[var(--color-border)] bg-white/92 text-lg leading-none text-[var(--color-ink)] shadow-sm transition hover:-translate-y-0.5 hover:border-[#e7b9b2] hover:text-[#9f1f16]"
+                              aria-label={`Eliminar foto ${slot + 1}`}
+                            >
+                              ×
+                            </button>
                           </div>
                         );
                       })}
@@ -1310,13 +1311,7 @@ function centsToMoney(value: number | null) {
                       if (emptySlot === undefined) return null;
 
                       return (
-                        <label
-                          className={`grid aspect-[16/9] min-h-28 place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/40 text-center transition ${
-                            canEditSettings
-                              ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/65"
-                              : "cursor-not-allowed opacity-60"
-                          }`}
-                        >
+                        <label className="grid aspect-[16/9] min-h-28 cursor-pointer place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/40 text-center transition hover:border-[var(--color-accent)] hover:bg-white/65">
                           <span>
                             <span className="block text-2xl leading-none text-[var(--color-ink)]">
                               +
@@ -1330,7 +1325,6 @@ function centsToMoney(value: number | null) {
                           </span>
                           <input
                             type="file"
-                            disabled={!canEditSettings}
                             accept="image/png,image/jpeg,image/webp"
                             onChange={(event) => handleGalleryChange(emptySlot, event)}
                             className="sr-only"
@@ -1357,7 +1351,6 @@ function centsToMoney(value: number | null) {
               <div className="grid gap-4 md:grid-cols-2">
             <ArgentinaPhoneField
               label="Teléfono"
-              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.phone}
               value={settings.phone}
@@ -1365,7 +1358,6 @@ function centsToMoney(value: number | null) {
             />
             <ArgentinaPhoneField
               label="WhatsApp"
-              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.whatsapp}
               value={settings.whatsapp}
@@ -1376,7 +1368,6 @@ function centsToMoney(value: number | null) {
               label="Email público"
               maxLength={settingsFieldLimits.publicEmail}
               placeholder="Ej: contacto@negocio.com"
-              readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
               savedValue={savedSettings.email}
               value={settings.email}
@@ -1394,7 +1385,6 @@ function centsToMoney(value: number | null) {
                 label="Dirección"
                 maxLength={settingsFieldLimits.address}
                 placeholder="Ej: Av. Corrientes 1234"
-                readOnly={!canEditSettings}
                 highlightChanges={showUnsavedState}
                 savedValue={savedSettings.address}
                 value={settings.address}
@@ -1405,7 +1395,6 @@ function centsToMoney(value: number | null) {
                   label="Localidad"
                   maxLength={settingsFieldLimits.city}
                   placeholder="Ej: Palermo"
-                  readOnly={!canEditSettings}
                   highlightChanges={showUnsavedState}
                   savedValue={savedSettings.city}
                   value={settings.city}
@@ -1416,16 +1405,13 @@ function centsToMoney(value: number | null) {
                     Provincia
                   </span>
                   <select
-                    disabled={!canEditSettings}
                     value={settings.province}
                     onChange={(event) => updateSetting("province", event.target.value)}
-                    className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
+                    className={`h-10 rounded-md border bg-white/70 px-3 outline-none ${
                       showUnsavedState &&
                       settings.province !== savedSettings.province
                         ? "border-[#d65a50] focus:border-[#d65a50]"
                         : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
-                    } ${
-                      canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
                     }`}
                   >
                     <option value="">Seleccionar provincia</option>
@@ -1446,7 +1432,6 @@ function centsToMoney(value: number | null) {
                 label="Instagram"
                 maxLength={settingsFieldLimits.instagram}
                 placeholder="Ej: @minegocio"
-                readOnly={!canEditSettings}
                 highlightChanges={showUnsavedState}
                 savedValue={savedSettings.instagram}
                 value={settings.instagram}
@@ -1492,7 +1477,6 @@ function centsToMoney(value: number | null) {
                     Access Token del local
                   </span>
                   <input
-                    readOnly={!canEditSettings}
                     value={settings.mercadoPagoAccessToken}
                     onChange={(event) =>
                       updateSetting("mercadoPagoAccessToken", event.target.value)
@@ -1522,7 +1506,6 @@ function centsToMoney(value: number | null) {
                     </span>
                     <input
                       type="checkbox"
-                      disabled={!canEditSettings}
                       checked={settings.depositEnabled}
                       onChange={(event) =>
                         updateSetting("depositEnabled", event.target.checked)
@@ -1534,7 +1517,6 @@ function centsToMoney(value: number | null) {
                     label="Monto de seña"
                     prefix="$"
                     placeholder="Ej: 5000"
-                    readOnly={!canEditSettings}
                     highlightChanges={showUnsavedState}
                     savedValue={savedSettings.depositAmount}
                     value={settings.depositAmount}
@@ -1543,7 +1525,7 @@ function centsToMoney(value: number | null) {
                 </div>
               </div>
 
-              {canEditSettings && settings.mercadoPagoConnected && (
+              {settings.mercadoPagoConnected && (
                 <div className="flex flex-col gap-2 border-t border-[var(--color-border)] bg-white/35 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-[var(--color-muted)]">
                     Si desconectás Mercado Pago, se desactiva el cobro de seña.
@@ -1575,15 +1557,28 @@ function centsToMoney(value: number | null) {
             />
               </>
             )}
-            {canEditSettings && (
-              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-center md:col-span-2">
+            {hasActiveSectionChanges && (
+              <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:justify-center md:col-span-2">
                 {!isOnboarding && (
                   <Button type="button" onClick={cancelEditing} className="w-full sm:w-auto">
-                    Cancelar
+                    Descartar
                   </Button>
                 )}
-                <Button type="submit" variant="primary" disabled={isSaving} className="w-full sm:w-auto">
-                  {isSaving ? "Guardando..." : "Guardar cambios"}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={isSaving}
+                  className="w-full sm:w-auto"
+                >
+                  {isSaving
+                    ? "Guardando..."
+                    : ({
+                        business: "Guardar negocio",
+                        contact: "Guardar contacto",
+                        payments: "Guardar cobros",
+                        page: "Guardar página",
+                        account: "Guardar cambios"
+                      }[activeTab])}
                 </Button>
               </div>
             )}
@@ -1744,14 +1739,23 @@ function centsToMoney(value: number | null) {
       )}
       {pendingTab && (
         <UnsavedChangesModal
+          isSaving={isSaving}
           onCancel={() => {
             setShowUnsavedState(false);
             setPendingTab(null);
           }}
-          onConfirm={() => {
+          onDiscard={() => {
             if (hasUnsavedChanges) cancelEditing();
             setActiveTab(pendingTab);
             setPendingTab(null);
+          }}
+          onConfirm={() => {
+            const nextTab = pendingTab;
+            void saveSettings().then((saved) => {
+              if (!saved) return;
+              setActiveTab(nextTab);
+              setPendingTab(null);
+            });
           }}
         />
       )}
@@ -2123,10 +2127,14 @@ function GalleryCropModal({
 }
 
 function UnsavedChangesModal({
+  isSaving,
   onCancel,
+  onDiscard,
   onConfirm
 }: {
+  isSaving: boolean;
   onCancel: () => void;
+  onDiscard: () => void;
   onConfirm: () => void;
 }) {
   return (
@@ -2138,14 +2146,17 @@ function UnsavedChangesModal({
       >
         <h2 className="text-lg font-semibold">Tenés cambios sin guardar</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
-          Si continuás, los cambios realizados se perderán.
+          Guardá antes de continuar o descartá lo que modificaste.
         </p>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" onClick={onCancel}>
+          <Button type="button" disabled={isSaving} onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="button" variant="primary" onClick={onConfirm}>
-            Descartar cambios
+          <Button type="button" disabled={isSaving} onClick={onDiscard}>
+            Descartar
+          </Button>
+          <Button type="button" variant="primary" disabled={isSaving} onClick={onConfirm}>
+            {isSaving ? "Guardando..." : "Guardar cambios"}
           </Button>
         </div>
       </section>

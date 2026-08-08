@@ -36,3 +36,9 @@ export type OrganizationSettingsInput = Partial<Omit<
   mercadoPagoAccessToken?: string;
   mercadoPagoDisconnect?: boolean;
 };
+
+export type OrganizationSettingsSection =
+  | "business"
+  | "contact"
+  | "page"
+  | "payments";

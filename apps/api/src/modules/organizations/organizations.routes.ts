@@ -22,13 +22,124 @@ import { deleteOrganizationWithData } from "./delete-organization.service.js";
 import {
   branchParamsSchema,
   branchSchema,
-  updateOrganizationSettingsSchema
+  updateOrganizationBusinessSettingsSchema,
+  updateOrganizationContactSettingsSchema,
+  updateOrganizationPageSettingsSchema,
+  updateOrganizationPaymentsSettingsSchema,
+  updateOrganizationSettingsSchema,
+  updateOrganizationSettingsSectionSchema
 } from "./organizations.schemas.js";
 
 export const organizationsRouter = Router();
 
 const logoContentTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const gallerySlots = new Set([0, 1]);
+
+type SettingsUpdateData = {
+  name?: string;
+  category?: string;
+  phone?: string;
+  whatsapp?: string;
+  publicEmail?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  instagram?: string;
+  description?: string;
+  mercadoPagoAccessToken?: string;
+  mercadoPagoDisconnect?: boolean;
+  depositEnabled?: boolean;
+  depositAmountCents?: number | null;
+  galleryFocus?: {
+    slot: 0 | 1;
+    focusX: number;
+    focusY: number;
+    zoom: number;
+  }[];
+};
+
+async function updateCurrentOrganizationSettings({
+  action,
+  data,
+  organizationId,
+  userId
+}: {
+  action: string;
+  data: SettingsUpdateData;
+  organizationId: string;
+  userId: string;
+}) {
+  const {
+    galleryFocus,
+    mercadoPagoAccessToken,
+    mercadoPagoDisconnect,
+    depositEnabled,
+    depositAmountCents,
+    ...organizationData
+  } = data;
+  const paymentSettings: {
+    mercadoPagoAccessTokenEncrypted?: string | null;
+    depositEnabled?: boolean;
+    depositAmountCents?: number | null;
+  } = {};
+
+  if (mercadoPagoAccessToken) {
+    paymentSettings.mercadoPagoAccessTokenEncrypted = encryptSecret(
+      mercadoPagoAccessToken,
+      env.AUTH_SECRET
+    );
+  }
+  if (mercadoPagoDisconnect) {
+    paymentSettings.mercadoPagoAccessTokenEncrypted = null;
+    paymentSettings.depositEnabled = false;
+  }
+  if (depositEnabled !== undefined) {
+    paymentSettings.depositEnabled = depositEnabled;
+  }
+  if (depositAmountCents !== undefined) {
+    paymentSettings.depositAmountCents = depositAmountCents;
+  }
+
+  const organization = await prisma.organization.update({
+    where: { id: organizationId },
+    data: {
+      ...organizationData,
+      ...paymentSettings,
+      ...(organizationData.publicEmail !== undefined
+        ? { publicEmail: organizationData.publicEmail || null }
+        : {})
+    }
+  });
+
+  if (galleryFocus?.length) {
+    await prisma.$transaction(
+      galleryFocus.map((image) =>
+        prisma.organizationGalleryImage.updateMany({
+          where: {
+            organizationId,
+            slot: image.slot
+          },
+          data: {
+            focusX: image.focusX,
+            focusY: image.focusY,
+            zoom: image.zoom
+          }
+        })
+      )
+    );
+  }
+
+  await auditLog({
+    organizationId,
+    userId,
+    action,
+    entityType: "Organization",
+    entityId: organizationId,
+    metadata: { fields: Object.keys(data) }
+  });
+
+  return organization;
+}
 
 async function ensureMainBranch(organizationId: string) {
   const existing = await prisma.branch.findFirst({
@@ -374,6 +485,32 @@ organizationsRouter.get("/current/settings", async (request, response) => {
   }));
 });
 
+organizationsRouter.patch("/current/settings/:section", authRateLimit, async (request, response) => {
+  const section = updateOrganizationSettingsSectionSchema.parse(request.params.section);
+  const tenant = request.tenant!;
+
+  if (tenant.role !== "owner" && tenant.role !== "admin") {
+    response.status(403).json({ success: false, message: "Insufficient permissions", code: "FORBIDDEN" });
+    return;
+  }
+
+  const schemas = {
+    business: updateOrganizationBusinessSettingsSchema,
+    contact: updateOrganizationContactSettingsSchema,
+    page: updateOrganizationPageSettingsSchema,
+    payments: updateOrganizationPaymentsSettingsSchema
+  };
+  const data = schemas[section].parse(request.body);
+  const organization = await updateCurrentOrganizationSettings({
+    action: `organization.settings_${section}_updated`,
+    data,
+    organizationId: tenant.organizationId,
+    userId: request.auth!.sub
+  });
+
+  response.json(ok({ id: organization.id }));
+});
+
 organizationsRouter.patch("/current/settings", authRateLimit, async (request, response) => {
   const data = updateOrganizationSettingsSchema.parse(request.body);
   const tenant = request.tenant!;
@@ -383,73 +520,11 @@ organizationsRouter.patch("/current/settings", authRateLimit, async (request, re
     return;
   }
 
-  const {
-    galleryFocus,
-    mercadoPagoAccessToken,
-    mercadoPagoDisconnect,
-    depositEnabled,
-    depositAmountCents,
-    ...organizationData
-  } = data;
-  const paymentSettings: {
-    mercadoPagoAccessTokenEncrypted?: string | null;
-    depositEnabled?: boolean;
-    depositAmountCents?: number | null;
-  } = {};
-
-  if (mercadoPagoAccessToken) {
-    paymentSettings.mercadoPagoAccessTokenEncrypted = encryptSecret(
-      mercadoPagoAccessToken,
-      env.AUTH_SECRET
-    );
-  }
-  if (mercadoPagoDisconnect) {
-    paymentSettings.mercadoPagoAccessTokenEncrypted = null;
-    paymentSettings.depositEnabled = false;
-  }
-  if (depositEnabled !== undefined) {
-    paymentSettings.depositEnabled = depositEnabled;
-  }
-  if (depositAmountCents !== undefined) {
-    paymentSettings.depositAmountCents = depositAmountCents;
-  }
-
-  const organization = await prisma.organization.update({
-    where: { id: tenant.organizationId },
-    data: {
-      ...organizationData,
-      ...paymentSettings,
-      ...(organizationData.publicEmail !== undefined
-        ? { publicEmail: organizationData.publicEmail || null }
-        : {})
-    }
-  });
-
-  if (galleryFocus?.length) {
-    await prisma.$transaction(
-      galleryFocus.map((image) =>
-        prisma.organizationGalleryImage.updateMany({
-          where: {
-            organizationId: tenant.organizationId,
-            slot: image.slot
-          },
-          data: {
-            focusX: image.focusX,
-            focusY: image.focusY,
-            zoom: image.zoom
-          }
-        })
-      )
-    );
-  }
-
-  await auditLog({
-    organizationId: tenant.organizationId,
-    userId: request.auth!.sub,
+  const organization = await updateCurrentOrganizationSettings({
     action: "organization.settings_updated",
-    entityType: "Organization",
-    entityId: tenant.organizationId,
-    metadata: { fields: Object.keys(data) }
+    data,
+    organizationId: tenant.organizationId,
+    userId: request.auth!.sub
   });
 
   response.json(ok({ id: organization.id }));
