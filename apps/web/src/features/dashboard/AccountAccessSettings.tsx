@@ -16,6 +16,7 @@ import { useSessionQuery } from "../auth/auth.queries";
 import type { AuthResult } from "../auth/auth.types";
 import { queryKeys } from "../../lib/query-keys";
 import { changeAccountPassword, updateAccountProfile } from "./account.api";
+import pencilIcon from "../../components/assets/icons/pencil.svg";
 
 export function AccountAccessSettings({
   highlightChanges = false,
@@ -139,7 +140,17 @@ export function AccountAccessSettings({
             </p>
           </div>
           {!isProfileEditing && (
-            <Button type="button" onClick={() => setIsProfileEditing(true)}>
+            <Button
+              type="button"
+              className="group gap-2"
+              onClick={() => setIsProfileEditing(true)}
+            >
+              <img
+                src={pencilIcon}
+                alt=""
+                aria-hidden="true"
+                className="h-4 w-4 opacity-75 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
+              />
               Editar datos
             </Button>
           )}

@@ -10,7 +10,7 @@ export const updateOrganizationSettingsSchema = z.object({
   city: z.string().trim().max(120),
   province: z.string().trim().max(120),
   instagram: z.string().trim().max(80),
-  description: z.string().trim().max(600),
+  description: z.string().trim().max(500),
   mercadoPagoAccessToken: z.string().trim().min(20).max(260).optional(),
   mercadoPagoDisconnect: z.boolean(),
   depositEnabled: z.boolean(),

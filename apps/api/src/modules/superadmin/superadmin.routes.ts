@@ -9,6 +9,7 @@ import { AppError } from "../../lib/app-error.js";
 import { parseCookies } from "../../lib/cookies.js";
 import { ok } from "../../lib/http.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
+import { auditLog } from "../audit/audit.service.js";
 import { deleteOrganizationWithData } from "../organizations/delete-organization.service.js";
 
 export const superadminRouter = Router();
@@ -24,6 +25,30 @@ const loginSchema = z.object({
 const organizationParamsSchema = z.object({
   organizationId: z.string().min(1)
 });
+
+const subscriptionActionSchema = z
+  .object({
+    action: z.enum(["grant", "extend", "pause", "cancel"]),
+    plan: z.enum(["trial", "initial", "professional", "operation"]).optional(),
+    extensionDays: z.coerce.number().int().min(1).max(365).optional(),
+    reason: z.string().trim().min(8).max(300)
+  })
+  .superRefine((data, context) => {
+    if (data.action === "grant" && !data.plan) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["plan"],
+        message: "Plan is required for manual grants"
+      });
+    }
+    if (data.action === "extend" && !data.extensionDays) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["extensionDays"],
+        message: "Extension days are required"
+      });
+    }
+  });
 
 const organizationsQuerySchema = z.object({
   search: z.string().trim().max(80).optional()
@@ -133,6 +158,10 @@ function fullName(user: { firstName: string | null; lastName: string | null }) {
   return [user.firstName, user.lastName].filter(Boolean).join(" ") || "Sin nombre";
 }
 
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
 superadminRouter.post("/login", authRateLimit, async (request, response) => {
   const config = superadminConfig();
   const credentials = loginSchema.parse(request.body);
@@ -168,18 +197,17 @@ superadminRouter.get("/me", (request, response) => {
 
 superadminRouter.get("/overview", async (request, response) => {
   requireSuperadmin(request);
-  const [organizations, users, appointments, activeSubscriptions] =
+  const [organizations, ownerAccounts, activeSubscriptions] =
     await Promise.all([
       prisma.organization.count(),
-      prisma.user.count(),
-      prisma.appointment.count({ where: { deletedAt: null } }),
+      prisma.membership.count({ where: { role: "owner" } }),
       prisma.organizationSubscription.count({
         where: { status: "authorized" }
       })
     ]);
 
   response.json(
-    ok({ organizations, users, appointments, activeSubscriptions })
+    ok({ organizations, ownerAccounts, activeSubscriptions })
   );
 });
 
@@ -239,6 +267,9 @@ superadminRouter.get("/organizations", async (request, response) => {
           plan: true,
           status: true,
           trialEndsAt: true,
+          paymentGraceEndsAt: true,
+          nextPaymentAt: true,
+          mercadoPagoPreapprovalId: true,
           payerEmail: true,
           lastPaymentStatus: true
         }
@@ -256,14 +287,8 @@ superadminRouter.get("/organizations", async (request, response) => {
           }
         }
       },
-      appointments: {
-        orderBy: { startsAt: "desc" },
-        take: 1,
-        select: { startsAt: true }
-      },
       _count: {
         select: {
-          appointments: true,
           branches: true,
           memberships: true,
           services: true
@@ -292,8 +317,7 @@ superadminRouter.get("/organizations", async (request, response) => {
             ? { name: fullName(owner), email: owner.email }
             : { name: "Sin dueño", email: "" },
           subscription: organization.subscription,
-          counts: organization._count,
-          lastAppointmentAt: organization.appointments[0]?.startsAt ?? null
+          counts: organization._count
         };
       })
     )
@@ -333,6 +357,7 @@ superadminRouter.get("/organizations/:organizationId", async (request, response)
         }
       },
       memberships: {
+        where: { role: "owner" },
         orderBy: { createdAt: "asc" },
         select: {
           role: true,
@@ -364,23 +389,6 @@ superadminRouter.get("/organizations/:organizationId", async (request, response)
           isOnlineBookable: true
         }
       },
-      appointments: {
-        where: { deletedAt: null },
-        orderBy: { startsAt: "desc" },
-        take: 10,
-        select: {
-          id: true,
-          title: true,
-          startsAt: true,
-          status: true,
-          customer: { select: { fullName: true } },
-          service: { select: { name: true } },
-          branch: { select: { name: true } },
-          assignedUser: {
-            select: { firstName: true, lastName: true }
-          }
-        }
-      },
       subscriptionPayments: {
         orderBy: { createdAt: "desc" },
         take: 8,
@@ -395,7 +403,6 @@ superadminRouter.get("/organizations/:organizationId", async (request, response)
       },
       _count: {
         select: {
-          appointments: true,
           branches: true,
           customers: true,
           memberships: true,
@@ -410,6 +417,111 @@ superadminRouter.get("/organizations/:organizationId", async (request, response)
   }
 
   response.json(ok(organization));
+});
+
+superadminRouter.patch("/organizations/:organizationId/subscription", authRateLimit, async (request, response) => {
+  const session = requireSuperadmin(request);
+  const { organizationId } = organizationParamsSchema.parse(request.params);
+  const input = subscriptionActionSchema.parse(request.body);
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { id: true, subscription: true }
+  });
+
+  if (!organization) {
+    throw new AppError(404, "NOT_FOUND", "Business not found");
+  }
+
+  const now = new Date();
+  const extensionEndsAt = input.extensionDays ? addDays(now, input.extensionDays) : null;
+  const current = organization.subscription;
+  let subscription;
+
+  if (input.action === "grant") {
+    const plan = input.plan!;
+    const trialEndsAt = plan === "trial" ? extensionEndsAt ?? addDays(now, 7) : null;
+    subscription = await prisma.organizationSubscription.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        plan,
+        status: "authorized",
+        mercadoPagoPreapprovalId: null,
+        payerEmail: null,
+        nextPaymentAt: null,
+        trialStartedAt: plan === "trial" ? now : null,
+        trialEndsAt,
+        paymentGraceEndsAt: null,
+        lastPaymentStatus: null,
+        lastWebhookAt: null
+      },
+      update: {
+        plan,
+        status: "authorized",
+        mercadoPagoPreapprovalId: null,
+        payerEmail: null,
+        nextPaymentAt: null,
+        trialStartedAt:
+          plan === "trial" ? current?.trialStartedAt ?? now : current?.trialStartedAt,
+        trialEndsAt,
+        paymentGraceEndsAt: null,
+        lastPaymentStatus: null,
+        lastWebhookAt: null
+      }
+    });
+  } else if (input.action === "extend") {
+    if (!current) {
+      throw new AppError(409, "SUBSCRIPTION_REQUIRED", "Subscription required");
+    }
+    subscription = await prisma.organizationSubscription.update({
+      where: { organizationId },
+      data: {
+        status: "authorized",
+        ...(current.plan === "trial"
+          ? { trialEndsAt: extensionEndsAt }
+          : {
+              paymentGraceEndsAt: extensionEndsAt,
+              lastPaymentStatus: current.lastPaymentStatus ?? "rejected"
+            })
+      }
+    });
+  } else {
+    subscription = await prisma.organizationSubscription.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        plan: input.plan ?? "initial",
+        status: input.action === "pause" ? "paused" : "canceled",
+        mercadoPagoPreapprovalId: null,
+        payerEmail: null,
+        nextPaymentAt: null
+      },
+      update: {
+        status: input.action === "pause" ? "paused" : "canceled",
+        mercadoPagoPreapprovalId: null,
+        payerEmail: null,
+        paymentGraceEndsAt: null,
+        nextPaymentAt: null,
+        lastPaymentStatus: null
+      }
+    });
+  }
+
+  await auditLog({
+    organizationId,
+    action: `superadmin.subscription.${input.action}`,
+    entityType: "organization_subscription",
+    entityId: subscription.id,
+    metadata: {
+      superadminEmail: session.email,
+      reason: input.reason,
+      plan: subscription.plan,
+      status: subscription.status,
+      extensionDays: input.extensionDays ?? null
+    }
+  });
+
+  response.json(ok(subscription));
 });
 
 superadminRouter.delete("/organizations/:organizationId", authRateLimit, async (request, response) => {

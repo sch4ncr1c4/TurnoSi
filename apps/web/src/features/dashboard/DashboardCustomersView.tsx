@@ -2,6 +2,8 @@ import { useDeferredValue, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button, Card, CardBody, CardHeader, Toast } from "../../components/ui";
+import lockOpenIcon from "../../components/assets/icons/lock-open.svg";
+import lockIcon from "../../components/assets/icons/lock.svg";
 import { queryKeys } from "../../lib/query-keys";
 import {
   blockCustomer,
@@ -97,8 +99,8 @@ export function DashboardCustomersView() {
           </div>
         </CardHeader>
         <CardBody className="p-0">
-          <div className="grid gap-3 border-b border-[var(--color-border)] bg-[rgba(240,234,217,0.32)] p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <label className="min-w-0">
+          <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-[rgba(240,234,217,0.32)] p-3 lg:flex-row lg:items-end lg:justify-start">
+            <label className="w-full min-w-0 lg:max-w-xl xl:max-w-2xl">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 Buscar
               </span>
@@ -112,11 +114,11 @@ export function DashboardCustomersView() {
                 className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.92)] px-3 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
               />
             </label>
-            <div>
+            <div className="w-full lg:w-auto">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 Estado
               </span>
-              <div className="grid grid-cols-3 rounded-md border border-[var(--color-border)] bg-white/55 p-1 text-sm">
+              <div className="grid grid-cols-3 rounded-md border border-[var(--color-border)] bg-white/55 p-1 text-sm lg:min-w-[300px]">
                 {([
                   ["all", "Todos"],
                   ["active", "Habilitados"],
@@ -142,14 +144,14 @@ export function DashboardCustomersView() {
             </div>
           </div>
 
-          <div className="grid gap-3 bg-[rgba(32,24,54,0.025)] p-3 sm:p-4">
+          <div className="grid gap-2.5 bg-[rgba(32,24,54,0.025)] p-3 sm:p-4">
             {customers.map((customer) => (
               <article
                 key={customer.id}
-                className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.88)] p-4 shadow-[0_10px_28px_rgba(32,24,54,0.04)] xl:grid-cols-[minmax(260px,1.2fr)_minmax(0,1.4fr)_auto] xl:items-center"
+                className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.88)] p-3 shadow-[0_8px_22px_rgba(32,24,54,0.035)] xl:grid-cols-[minmax(260px,1.1fr)_minmax(0,0.95fr)_auto] xl:items-center"
               >
-                <div className="flex min-w-0 gap-3">
-                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-semibold ${
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${
                       customer.blockedAt
                         ? "bg-[#fde8e5] text-[#9f1f16]"
                         : "bg-[var(--color-ink)] text-[var(--color-button-text)]"
@@ -163,14 +165,14 @@ export function DashboardCustomersView() {
                       </p>
                       <CustomerStatusBadge blocked={Boolean(customer.blockedAt)} />
                     </div>
-                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--color-muted-strong)]">
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-[var(--color-muted-strong)]">
                       <span>{customer.phone || "Sin teléfono"}</span>
                       <span>{customer.email || "Sin email"}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3 border-y border-[var(--color-border)] py-3 sm:grid-cols-2 xl:border-y-0 xl:border-l xl:py-0 xl:pl-5">
+                <div className="grid gap-2 border-y border-[var(--color-border)] py-2 sm:grid-cols-2 xl:border-y-0 xl:border-l xl:py-0 xl:pl-4">
                   <CustomerInfoLine
                     label="Ausencias"
                     value={`${customer.noShowCount}`}
@@ -193,25 +195,48 @@ export function DashboardCustomersView() {
 
                 <div className="flex xl:justify-self-end">
                   {customer.blockedAt ? (
-                    <Button
+                    <button
                       type="button"
                       disabled={Boolean(unblockingId)}
+                      title="Desbloquear cliente"
+                      aria-label={`Desbloquear a ${customer.fullName}`}
                       onClick={() => void handleUnblock(customer)}
+                      className="group inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-strong)] text-[var(--color-ink)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/75 hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {unblockingId === customer.id ? "Desbloqueando..." : "Desbloquear"}
-                    </Button>
+                      {unblockingId === customer.id ? (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-border-strong)] border-t-[var(--color-ink)]" />
+                      ) : (
+                        <img
+                          src={lockOpenIcon}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-[18px] w-[18px] opacity-80 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
+                        />
+                      )}
+                    </button>
                   ) : (
-                    <Button
+                    <button
                       type="button"
                       disabled={Boolean(blockingId)}
+                      title="Bloquear cliente"
+                      aria-label={`Bloquear a ${customer.fullName}`}
                       onClick={() => {
                         setSelected(customer);
                         setReason("");
                       }}
-                      className="border-[#b42318] text-[#b42318]"
+                      className="group inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e7b9b2] text-[#b42318] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#fff3f1] hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Bloquear
-                    </Button>
+                      {blockingId === customer.id ? (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#e7b9b2] border-t-[#b42318]" />
+                      ) : (
+                        <img
+                          src={lockIcon}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-[18px] w-[18px] opacity-85 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
+                        />
+                      )}
+                    </button>
                   )}
                 </div>
               </article>

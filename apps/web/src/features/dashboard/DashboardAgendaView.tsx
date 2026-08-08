@@ -209,9 +209,9 @@ export function DashboardAgendaView({
           />
         </div>
         <div className="border-b border-[var(--color-border)] bg-[rgba(240,234,217,0.38)] px-3 py-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <label className="flex min-w-0 flex-1 flex-col gap-1.5 lg:flex-row lg:items-center">
-              <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-start">
+            <label className="w-full min-w-0 lg:max-w-xl xl:max-w-2xl">
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 Buscar turno
               </span>
               <input
@@ -221,7 +221,7 @@ export function DashboardAgendaView({
                 className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.94)] px-3 text-sm text-[var(--color-ink)] outline-none"
               />
             </label>
-            <div className="rounded-lg border border-[var(--color-border)] bg-white/60 px-3 py-2 text-sm text-[var(--color-muted-strong)]">
+            <div className="h-10 rounded-md border border-[var(--color-border)] bg-white/60 px-3 py-2 text-sm text-[var(--color-muted-strong)] lg:min-w-[170px]">
               <span className="font-semibold text-[var(--color-ink)]">{sortedMatches.length}</span>{" "}
               {sortedMatches.length === 1 ? "turno" : "turnos"} en esta vista
             </div>
@@ -453,8 +453,8 @@ function AgendaMonthView({
           </div>
         </div>
         <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[rgba(240,234,217,0.38)] px-3 py-3">
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+          <label className="block w-full lg:max-w-xl xl:max-w-2xl">
+            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
               Buscar turno
             </span>
             <input

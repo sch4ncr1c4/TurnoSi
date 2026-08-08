@@ -11,6 +11,21 @@ import { dashboardSections } from "./dashboard.data";
 import { canOpenBillingPlans, canAccessDashboardView, type DashboardRole } from "./dashboard.permissions";
 import type { DashboardView } from "./dashboard.types";
 import type { SubscriptionStatus } from "../billing/billing.api";
+import navAvailabilityIcon from "../../components/assets/icons/nav-availability.svg";
+import navCalendarIcon from "../../components/assets/icons/nav-calendar.svg";
+import navHomeIcon from "../../components/assets/icons/nav-home.svg";
+import navSettingsIcon from "../../components/assets/icons/nav-settings.svg";
+import navTeamIcon from "../../components/assets/icons/nav-team.svg";
+import navTeamSettingsIcon from "../../components/assets/icons/nav-team-settings.svg";
+
+const dashboardNavIcons: Partial<Record<DashboardView, string>> = {
+  summary: navHomeIcon,
+  agenda: navCalendarIcon,
+  customers: navTeamIcon,
+  team: navTeamSettingsIcon,
+  availability: navAvailabilityIcon,
+  settings: navSettingsIcon
+};
 
 type DashboardSidebarProps = {
   activeView: DashboardView;
@@ -110,6 +125,7 @@ export function DashboardSidebar({
           const isActive =
             (activeView === "summary" && index === 0) ||
             activeView === view;
+          const icon = dashboardNavIcons[view];
 
           return (
             <button
@@ -123,7 +139,17 @@ export function DashboardSidebar({
                   : "text-white/68 hover:bg-white/8 hover:text-white"
               }`}
             >
-              {section.label}
+              <span className="flex items-center gap-3">
+                {icon && (
+                  <img
+                    src={icon}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0 opacity-90 invert"
+                  />
+                )}
+                <span>{section.label}</span>
+              </span>
             </button>
           );
         })}

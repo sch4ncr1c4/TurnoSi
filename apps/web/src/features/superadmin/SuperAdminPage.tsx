@@ -11,6 +11,8 @@ import {
   getSuperadminSession,
   superadminLogin,
   superadminLogout,
+  updateSuperadminSubscription,
+  type SuperadminSubscriptionActionPayload,
   type SuperadminOrganization
 } from "./superadmin.api";
 
@@ -28,21 +30,26 @@ const statusLabels = {
   canceled: "Cancelada"
 } as const;
 
+const planOptions = [
+  ["trial", "Prueba inicial"],
+  ["initial", "Inicial"],
+  ["professional", "Profesional"],
+  ["operation", "Operación"]
+] as const;
+
+const actionLabels = {
+  grant: "Asignar plan manual",
+  extend: "Extender acceso",
+  pause: "Pausar acceso",
+  cancel: "Cancelar acceso"
+} as const;
+
 function formatDate(value: string | null) {
   if (!value) return "Sin actividad";
   return new Intl.DateTimeFormat("es-AR", {
     day: "2-digit",
     month: "short",
     year: "numeric"
-  }).format(new Date(value));
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit"
   }).format(new Date(value));
 }
 
@@ -53,6 +60,22 @@ function money(cents: number | null, currency = "ARS") {
     currency,
     maximumFractionDigits: 0
   }).format(cents / 100);
+}
+
+function subscriptionMeta(subscription: SuperadminOrganization["subscription"]) {
+  if (!subscription) return "Sin configuración de plan";
+  const date =
+    subscription.trialEndsAt ??
+    subscription.paymentGraceEndsAt ??
+    subscription.nextPaymentAt;
+  if (!date) {
+    return subscription.mercadoPagoPreapprovalId
+      ? "Vinculada a Mercado Pago"
+      : "Asignación local";
+  }
+  if (subscription.trialEndsAt) return `Prueba hasta ${formatDate(date)}`;
+  if (subscription.paymentGraceEndsAt) return `Gracia hasta ${formatDate(date)}`;
+  return `Próximo cobro ${formatDate(date)}`;
 }
 
 function memberName(member: {
@@ -104,41 +127,55 @@ function LoginPanel() {
 
   return (
     <main className="min-h-screen bg-[var(--color-bg)] px-4 py-6 text-[var(--color-ink)]">
-      <section className="mx-auto grid min-h-[calc(100vh-48px)] max-w-5xl overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_24px_80px_rgba(32,24,54,0.12)] lg:grid-cols-[0.9fr_1fr]">
-        <div className="flex flex-col justify-between bg-[var(--color-ink)] p-7 text-white">
-          <Brand boxed />
-          <div className="my-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-              Superadmin
-            </p>
-            <h1 className="mt-3 max-w-sm text-4xl font-semibold leading-tight">
-              Control central de TurnoSi.
-            </h1>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-white/62">
-              Revisá cuentas, planes, actividad y eliminá organizaciones cuando sea necesario.
-            </p>
+      <section className="mx-auto grid min-h-[calc(100vh-48px)] max-w-5xl overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] shadow-[0_24px_80px_rgba(32,24,54,0.12)] lg:grid-cols-[0.86fr_1fr]">
+        <div className="relative flex flex-col justify-between overflow-hidden bg-[var(--color-ink)] p-7 text-white sm:p-9">
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-[radial-gradient(circle_at_20%_40%,rgba(253,134,6,0.22),transparent_34%),radial-gradient(circle_at_85%_80%,rgba(255,255,255,0.09),transparent_28%)]" />
+          <div className="relative z-10 [&_img]:h-14 sm:[&_img]:h-16">
+            <Brand boxed />
           </div>
-          <p className="text-xs text-white/42">
-            Acceso interno. Las acciones quedan protegidas desde backend.
+          <div className="relative z-10 my-10 max-w-md">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              Acceso interno
+            </p>
+            <h1 className="mt-3 text-4xl font-semibold leading-tight">
+              Panel privado para operar TurnoSi.
+            </h1>
+            <p className="mt-4 text-sm leading-6 text-white/64">
+              Gestioná cuentas propietarias, planes manuales, extensiones y bajas desde un único lugar protegido.
+            </p>
+            <div className="mt-7 grid gap-3 text-sm text-white/72">
+              <span className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                Sesión aislada con cookie exclusiva de superadmin.
+              </span>
+              <span className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                Cambios críticos con motivo obligatorio y auditoría.
+              </span>
+            </div>
+          </div>
+          <p className="relative z-10 text-xs text-white/42">
+            Uso interno. No compartas estas credenciales.
           </p>
         </div>
 
         <div className="flex items-center justify-center p-6 sm:p-10">
           <form
             onSubmit={submit}
-            className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-white/70 p-6"
+            className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-white/78 p-6 shadow-[0_18px_54px_rgba(32,24,54,0.08)]"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              Ingreso
+              Superadmin
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">Abrir panel admin</h2>
+            <h2 className="mt-2 text-2xl font-semibold">Iniciar sesión</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
+              Accedé al panel interno de cuentas y planes.
+            </p>
             <label className="mt-6 grid gap-1.5 text-sm">
               <span className="font-semibold text-[var(--color-muted-strong)]">Email</span>
               <input
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white px-3 outline-none focus:border-[var(--color-accent)]"
+                className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white/90 px-3 outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                 autoComplete="username"
                 required
               />
@@ -151,7 +188,7 @@ function LoginPanel() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white px-3 outline-none focus:border-[var(--color-accent)]"
+                className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white/90 px-3 outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                 autoComplete="current-password"
                 required
               />
@@ -169,6 +206,9 @@ function LoginPanel() {
             >
               {loginMutation.isPending ? "Entrando..." : "Entrar"}
             </Button>
+            <p className="mt-4 text-center text-xs text-[var(--color-muted)]">
+              Acceso restringido a operación interna.
+            </p>
           </form>
         </div>
       </section>
@@ -182,6 +222,13 @@ export function SuperAdminPage() {
   const deferredSearch = useDeferredValue(search);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [subscriptionAction, setSubscriptionAction] =
+    useState<SuperadminSubscriptionActionPayload["action"]>("grant");
+  const [subscriptionPlan, setSubscriptionPlan] =
+    useState<NonNullable<SuperadminSubscriptionActionPayload["plan"]>>("professional");
+  const [extensionDays, setExtensionDays] = useState("7");
+  const [actionReason, setActionReason] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
 
   const sessionQuery = useQuery({
     queryKey: ["superadmin", "session"],
@@ -220,6 +267,31 @@ export function SuperAdminPage() {
       queryClient.invalidateQueries({ queryKey: ["superadmin", "organizations"] });
     }
   });
+  const subscriptionMutation = useMutation({
+    mutationFn: () => {
+      const payload: SuperadminSubscriptionActionPayload = {
+        action: subscriptionAction,
+        reason: actionReason.trim()
+      };
+      if (subscriptionAction === "grant") payload.plan = subscriptionPlan;
+      if (subscriptionAction === "grant" || subscriptionAction === "extend") {
+        const parsedDays = Number(extensionDays);
+        if (Number.isFinite(parsedDays) && parsedDays > 0) {
+          payload.extensionDays = parsedDays;
+        }
+      }
+      return updateSuperadminSubscription(selectedId!, payload);
+    },
+    onSuccess() {
+      setActionMessage("Cambio aplicado.");
+      setActionReason("");
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "overview"] });
+      queryClient.invalidateQueries({ queryKey: ["superadmin", "organizations"] });
+    },
+    onError() {
+      setActionMessage("No pudimos aplicar el cambio.");
+    }
+  });
 
   if (sessionQuery.isLoading) {
     return (
@@ -238,23 +310,38 @@ export function SuperAdminPage() {
   const canDelete = Boolean(
     detail && deleteConfirmation.trim().toLowerCase() === detail.name.toLowerCase()
   );
+  const canSubmitSubscriptionAction = Boolean(
+    selectedId &&
+    actionReason.trim().length >= 8 &&
+    (subscriptionAction !== "extend" || Number(extensionDays) > 0)
+  );
 
   return (
     <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)]">
-      <header className="border-b border-white/10 bg-[var(--color-ink)] px-4 py-4 text-white sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-          <div className="[&_*]:text-white">
+      <header className="bg-[var(--color-bg)] px-4 pt-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[var(--color-ink)] px-4 py-3 text-white shadow-[0_18px_60px_rgba(32,24,54,0.16)] sm:px-5">
+          <div className="flex items-center gap-4">
+            <div className="[&_*]:text-white [&_img]:h-11 sm:[&_img]:h-12">
             <Brand boxed />
+            </div>
+            <div className="hidden border-l border-white/12 pl-4 sm:block">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                Panel interno
+              </p>
+              <p className="mt-1 text-sm text-white/62">
+                Gestión de cuentas y operación
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-white/55 sm:inline">
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-1.5 text-sm">
+            <span className="hidden max-w-[220px] truncate px-2 text-white/62 md:inline">
               {sessionQuery.data?.data.email}
             </span>
             <Button
               type="button"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
-              className="border-white/20 text-white hover:bg-white/10"
+              className="border-white/15 bg-white/[0.03] px-3 py-2 text-white hover:bg-white/10"
             >
               Cerrar sesión
             </Button>
@@ -271,11 +358,10 @@ export function SuperAdminPage() {
             <h1 className="mt-2 text-3xl font-semibold">Cuentas y operación</h1>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             {[
               ["Negocios", overviewQuery.data?.data.organizations],
-              ["Usuarios", overviewQuery.data?.data.users],
-              ["Turnos", overviewQuery.data?.data.appointments],
+              ["Cuentas propietarias", overviewQuery.data?.data.ownerAccounts],
               ["Planes activos", overviewQuery.data?.data.activeSubscriptions]
             ].map(([label, value]) => (
               <article
@@ -324,9 +410,13 @@ export function SuperAdminPage() {
                   onClick={() => {
                     setSelectedId(organization.id);
                     setDeleteConfirmation("");
+                    setActionMessage("");
+                    setActionReason("");
                   }}
-                  className={`grid w-full gap-3 p-4 text-left transition hover:bg-white/55 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] ${
-                    selectedId === organization.id ? "bg-white/70" : ""
+                  className={`grid w-full gap-4 p-4 text-left transition hover:bg-white/65 md:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)_auto] ${
+                    selectedId === organization.id
+                      ? "bg-white shadow-[inset_3px_0_0_var(--color-accent)]"
+                      : ""
                   }`}
                 >
                   <span>
@@ -346,8 +436,8 @@ export function SuperAdminPage() {
                   </span>
                   <span className="flex flex-wrap items-center gap-2 md:justify-end">
                     <SubscriptionPill organization={organization} />
-                    <span className="rounded-full bg-white px-2 py-1 text-xs">
-                      {organization.counts.appointments} turnos
+                    <span className="w-full text-right text-xs text-[var(--color-muted)]">
+                      {subscriptionMeta(organization.subscription)}
                     </span>
                   </span>
                 </button>
@@ -399,8 +489,8 @@ export function SuperAdminPage() {
                       sedes
                     </span>
                     <span className="rounded-xl bg-[var(--color-bg)] p-3">
-                      <strong className="block text-lg">{detail._count.memberships}</strong>
-                      equipo
+                      <strong className="block text-lg">{detail._count.services}</strong>
+                      servicios
                     </span>
                     <span className="rounded-xl bg-[var(--color-bg)] p-3">
                       <strong className="block text-lg">{detail._count.customers}</strong>
@@ -410,19 +500,140 @@ export function SuperAdminPage() {
                 </div>
 
                 <div className="space-y-5 p-5">
-                  <section>
-                    <h3 className="text-sm font-semibold">Plan</h3>
-                    <p className="mt-2 text-sm text-[var(--color-muted-strong)]">
-                      {detail.subscription
-                        ? `${planLabels[detail.subscription.plan]} · ${statusLabels[detail.subscription.status]}`
-                        : "Sin suscripción"}
-                    </p>
+                  <section className="rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.8)] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                          Plan actual
+                        </p>
+                        <h3 className="mt-2 text-lg font-semibold">
+                          {detail.subscription
+                            ? planLabels[detail.subscription.plan]
+                            : "Sin plan"}
+                        </h3>
+                        <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                          {detail.subscription
+                            ? `${statusLabels[detail.subscription.status]} · ${subscriptionMeta(detail.subscription)}`
+                            : "Todavía no tiene acceso configurado."}
+                        </p>
+                      </div>
+                      {detail.subscription ? <SubscriptionPill organization={detail} /> : null}
+                    </div>
+
+                    <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/65 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
+                        Acciones internas
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[var(--color-muted-strong)]">
+                        Solo superadmin. Asignar un plan manual no genera pago y desvincula la suscripción local de Mercado Pago.
+                      </p>
+                      <div className="mt-3 grid gap-3">
+                        <label className="grid gap-1.5 text-sm">
+                          <span className="font-semibold text-[var(--color-muted-strong)]">
+                            Acción
+                          </span>
+                          <select
+                            value={subscriptionAction}
+                            onChange={(event) => {
+                              setSubscriptionAction(
+                                event.target.value as SuperadminSubscriptionActionPayload["action"]
+                              );
+                              setActionMessage("");
+                            }}
+                            className="h-10 rounded-lg border border-[var(--color-border-strong)] bg-white px-3 outline-none focus:border-[var(--color-accent)]"
+                          >
+                            {Object.entries(actionLabels).map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        {subscriptionAction === "grant" && (
+                          <label className="grid gap-1.5 text-sm">
+                            <span className="font-semibold text-[var(--color-muted-strong)]">
+                              Plan a asignar
+                            </span>
+                            <select
+                              value={subscriptionPlan}
+                              onChange={(event) =>
+                                setSubscriptionPlan(
+                                  event.target.value as NonNullable<
+                                    SuperadminSubscriptionActionPayload["plan"]
+                                  >
+                                )
+                              }
+                              className="h-10 rounded-lg border border-[var(--color-border-strong)] bg-white px-3 outline-none focus:border-[var(--color-accent)]"
+                            >
+                              {planOptions.map(([value, label]) => (
+                                <option key={value} value={value}>
+                                  {label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
+
+                        {(subscriptionAction === "extend" ||
+                          (subscriptionAction === "grant" &&
+                            subscriptionPlan === "trial")) && (
+                          <label className="grid gap-1.5 text-sm">
+                            <span className="font-semibold text-[var(--color-muted-strong)]">
+                              Días de extensión
+                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={365}
+                              value={extensionDays}
+                              onChange={(event) => setExtensionDays(event.target.value)}
+                              className="h-10 rounded-lg border border-[var(--color-border-strong)] bg-white px-3 outline-none focus:border-[var(--color-accent)]"
+                            />
+                          </label>
+                        )}
+
+                        <label className="grid gap-1.5 text-sm">
+                          <span className="font-semibold text-[var(--color-muted-strong)]">
+                            Motivo interno
+                          </span>
+                          <textarea
+                            value={actionReason}
+                            onChange={(event) => setActionReason(event.target.value)}
+                            placeholder="Ej: extensión por soporte, cortesía comercial o regularización manual."
+                            className="min-h-20 rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-2 outline-none focus:border-[var(--color-accent)]"
+                          />
+                        </label>
+
+                        {actionMessage && (
+                          <p className="rounded-lg bg-[rgba(32,24,54,0.06)] px-3 py-2 text-sm text-[var(--color-muted-strong)]">
+                            {actionMessage}
+                          </p>
+                        )}
+
+                        <Button
+                          type="button"
+                          variant="accent"
+                          disabled={
+                            !canSubmitSubscriptionAction ||
+                            subscriptionMutation.isPending
+                          }
+                          onClick={() => subscriptionMutation.mutate()}
+                        >
+                          {subscriptionMutation.isPending
+                            ? "Aplicando..."
+                            : "Aplicar cambio"}
+                        </Button>
+                      </div>
+                    </div>
                   </section>
 
                   <section>
-                    <h3 className="text-sm font-semibold">Equipo</h3>
+                    <h3 className="text-sm font-semibold">Cuenta propietaria</h3>
                     <div className="mt-2 space-y-2">
-                      {detail.memberships.map((membership) => (
+                      {detail.memberships
+                        .filter((membership) => membership.role === "owner")
+                        .map((membership) => (
                         <div
                           key={membership.user.id}
                           className="rounded-xl border border-[var(--color-border)] bg-white/55 p-3 text-sm"
@@ -435,33 +646,6 @@ export function SuperAdminPage() {
                           </div>
                           <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
                             {membership.user.email}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section>
-                    <h3 className="text-sm font-semibold">Últimos turnos</h3>
-                    <div className="mt-2 space-y-2">
-                      {detail.appointments.length === 0 ? (
-                        <p className="text-sm text-[var(--color-muted-strong)]">
-                          Todavía no hay turnos.
-                        </p>
-                      ) : null}
-                      {detail.appointments.slice(0, 4).map((appointment) => (
-                        <div
-                          key={appointment.id}
-                          className="rounded-xl border border-[var(--color-border)] bg-white/55 p-3 text-sm"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-semibold">{appointment.service.name}</span>
-                            <span className="text-xs text-[var(--color-muted)]">
-                              {formatDateTime(appointment.startsAt)}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
-                            {appointment.customer.fullName} · {appointment.status}
                           </p>
                         </div>
                       ))}

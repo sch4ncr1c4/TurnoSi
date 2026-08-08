@@ -11,8 +11,7 @@ export type SuperadminSession = {
 
 export type SuperadminOverview = {
   organizations: number;
-  users: number;
-  appointments: number;
+  ownerAccounts: number;
   activeSubscriptions: number;
 };
 
@@ -31,7 +30,10 @@ export type SuperadminOrganization = {
   subscription: {
     plan: "trial" | "initial" | "professional" | "operation";
     status: "pending" | "authorized" | "paused" | "canceled";
+    mercadoPagoPreapprovalId: string | null;
     trialEndsAt: string | null;
+    paymentGraceEndsAt: string | null;
+    nextPaymentAt: string | null;
     payerEmail: string | null;
     lastPaymentStatus:
       | "pending"
@@ -44,12 +46,10 @@ export type SuperadminOrganization = {
       | null;
   } | null;
   counts: {
-    appointments: number;
     branches: number;
     memberships: number;
     services: number;
   };
-  lastAppointmentAt: string | null;
 };
 
 export type SuperadminOrganizationDetail = SuperadminOrganization & {
@@ -92,16 +92,6 @@ export type SuperadminOrganizationDetail = SuperadminOrganization & {
     isActive: boolean;
     isOnlineBookable: boolean;
   }>;
-  appointments: Array<{
-    id: string;
-    title: string;
-    startsAt: string;
-    status: string;
-    customer: { fullName: string };
-    service: { name: string };
-    branch: { name: string } | null;
-    assignedUser: { firstName: string | null; lastName: string | null } | null;
-  }>;
   subscriptionPayments: Array<{
     id: string;
     status: string;
@@ -111,12 +101,18 @@ export type SuperadminOrganizationDetail = SuperadminOrganization & {
     createdAt: string;
   }>;
   _count: {
-    appointments: number;
     branches: number;
     customers: number;
     memberships: number;
     services: number;
   };
+};
+
+export type SuperadminSubscriptionActionPayload = {
+  action: "grant" | "extend" | "pause" | "cancel";
+  plan?: "trial" | "initial" | "professional" | "operation";
+  extensionDays?: number;
+  reason: string;
 };
 
 export function superadminLogin(email: string, password: string) {
@@ -163,5 +159,18 @@ export function deleteSuperadminOrganization(id: string) {
   return apiRequest<ApiResponse<{ deleted: true; deletedUsers: number }>>(
     `/api/v1/superadmin/organizations/${id}`,
     { method: "DELETE" }
+  );
+}
+
+export function updateSuperadminSubscription(
+  id: string,
+  payload: SuperadminSubscriptionActionPayload
+) {
+  return apiRequest<ApiResponse<SuperadminOrganizationDetail["subscription"]>>(
+    `/api/v1/superadmin/organizations/${id}/subscription`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }
   );
 }

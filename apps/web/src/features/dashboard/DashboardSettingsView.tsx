@@ -21,6 +21,12 @@ import {
 import { useOrganizationSettingsQuery } from "./settings.queries";
 import type { OrganizationSettings } from "./settings.types";
 import { argentinaProvinces } from "./dashboard.options";
+import pencilIcon from "../../components/assets/icons/pencil.svg";
+import businessIcon from "../../components/assets/icons/nav-home.svg";
+import contactIcon from "../../components/assets/icons/nav-team.svg";
+import pageIcon from "../../components/assets/icons/nav-calendar.svg";
+import paymentsIcon from "../../components/assets/icons/nav-availability.svg";
+import accountIcon from "../../components/assets/icons/nav-settings.svg";
 
 function createPublicSlug(value: string) {
   return value
@@ -49,17 +55,23 @@ function getArgentinaPhoneNumber(value: string) {
   return digits.slice(0, 10);
 }
 
-function formatArgentinaPhoneSetting(value: string) {
-  const number = getArgentinaPhoneNumber(value);
-  if (!number) return "";
-  return `+54 9 ${number}`;
-}
-
 function formatImageBytes(bytes?: number) {
   if (!bytes) return "";
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
+
+const settingsFieldLimits = {
+  businessName: 120,
+  category: 120,
+  phone: 10,
+  publicEmail: 254,
+  address: 240,
+  city: 120,
+  instagram: 80,
+  description: 500,
+  mercadoPagoAccessToken: 260
+} as const;
 
 const initialLocalSettings = {
   businessName: "",
@@ -95,7 +107,7 @@ const businessCategories = [
 const customBusinessCategory = "__custom__";
 
 type LocalSettings = typeof initialLocalSettings;
-type SettingsTab = "business" | "public" | "account";
+type SettingsTab = "business" | "contact" | "page" | "payments" | "account";
 type GalleryUploadState = {
   originalBytes?: number;
   optimizedBytes?: number;
@@ -128,7 +140,6 @@ export function DashboardSettingsView({
     { progress: 0, status: "idle" },
     { progress: 0, status: "idle" }
   ]);
-  const [showGallerySettings, setShowGallerySettings] = useState(false);
   const [galleryDeleteSlots, setGalleryDeleteSlots] = useState([false, false]);
   const [galleryFocus, setGalleryFocus] = useState([
     { slot: 0 as 0 | 1, focusX: 50, focusY: 50, zoom: 100 },
@@ -285,10 +296,14 @@ function centsToMoney(value: number | null) {
     const hasBusinessData = Boolean(
       nextSavedSettings.businessName &&
         nextSavedSettings.category &&
-        nextSavedSettings.phone &&
         nextSavedSettings.description
     );
-    const hasPublicData = Boolean(
+    const hasContactData = Boolean(
+      nextSavedSettings.phone &&
+        nextSavedSettings.whatsapp &&
+        nextSavedSettings.email
+    );
+    const hasPageData = Boolean(
       nextSavedSettings.address &&
         nextSavedSettings.city &&
         nextSavedSettings.province
@@ -299,7 +314,8 @@ function centsToMoney(value: number | null) {
     );
 
     if (!hasBusinessData) return "business";
-    if (!hasPublicData) return "public";
+    if (!hasContactData) return "contact";
+    if (!hasPageData) return "page";
     if (!hasAccountData) return "account";
     return activeTab;
   }
@@ -308,6 +324,14 @@ function centsToMoney(value: number | null) {
     if (isSaving) return;
     if (settings.businessName.trim().length < 2) {
       setMessage("Ingresá el nombre del local.");
+      return;
+    }
+    if (settings.description.length > settingsFieldLimits.description) {
+      setMessage(`La descripción pública puede tener hasta ${settingsFieldLimits.description} caracteres.`);
+      return;
+    }
+    if (settings.instagram.length > settingsFieldLimits.instagram) {
+      setMessage(`Instagram puede tener hasta ${settingsFieldLimits.instagram} caracteres.`);
       return;
     }
     const changes = {
@@ -581,18 +605,72 @@ function centsToMoney(value: number | null) {
       tab: "business"
     },
     {
-      label: "Contacto y página",
+      label: "Contacto",
       done: Boolean(
         savedSettings.phone &&
+          savedSettings.whatsapp &&
+          savedSettings.email
+      ),
+      tab: "contact"
+    },
+    {
+      label: "Página pública",
+      done: Boolean(
         savedSettings.address &&
         savedSettings.city &&
           savedSettings.province
       ),
-      tab: "public"
+      tab: "page"
     }
   ];
   const completedTaskCount = onboardingTasks.filter((task) => task.done).length;
   const onboardingReady = completedTaskCount === onboardingTasks.length;
+  const profileCompletionItems: {
+    icon: string;
+    label: string;
+    done: boolean;
+    tab: SettingsTab;
+  }[] = [
+    {
+      icon: businessIcon,
+      label: "Información del negocio",
+      done: Boolean(savedSettings.businessName && savedSettings.category && savedSettings.description),
+      tab: "business"
+    },
+    {
+      icon: contactIcon,
+      label: "Contacto",
+      done: Boolean(savedSettings.phone && savedSettings.whatsapp && savedSettings.email),
+      tab: "contact"
+    },
+    {
+      icon: pageIcon,
+      label: "Página pública",
+      done: Boolean(savedSettings.address && savedSettings.city && savedSettings.province && publicSlug),
+      tab: "page"
+    },
+    {
+      icon: paymentsIcon,
+      label: "Cobros",
+      done: Boolean(settings.mercadoPagoConnected || !settings.depositEnabled),
+      tab: "payments"
+    },
+    {
+      icon: accountIcon,
+      label: "Cuenta",
+      done: Boolean(
+        sessionQuery.data?.data.user.firstName &&
+          sessionQuery.data.data.user.lastName &&
+          sessionQuery.data.data.user.email
+      ),
+      tab: "account"
+    }
+  ];
+  const profileCompletionPercent = Math.round(
+    (profileCompletionItems.filter((item) => item.done).length /
+      profileCompletionItems.length) *
+      100
+  );
 
   async function finishOnboarding() {
     if (!onboardingReady || hasPendingChanges || isCompleting) return;
@@ -695,7 +773,6 @@ function centsToMoney(value: number | null) {
       return next;
     });
     if (file) {
-      setShowGallerySettings(true);
       setGalleryFocusPoint(slot, 50, 50, 100);
       setCropEditorSlot(slot);
     }
@@ -847,12 +924,14 @@ function centsToMoney(value: number | null) {
             </section>
           </div>
         )}
-      <nav className="flex w-fit max-w-full overflow-x-auto rounded-md border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-1">
+      <nav className="grid max-w-6xl grid-cols-2 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-1 shadow-[0_10px_26px_rgba(32,24,54,0.04)] sm:grid-cols-3 lg:grid-cols-5">
         {([
-          ["business", "Local", "Datos del local"],
-          ["public", "Contacto", "Contacto y página"],
-          ["account", "Cuenta", "Cuenta"]
-        ] as [SettingsTab, string, string][]).map(([value, shortLabel, label]) => (
+          ["business", "Negocio", "Negocio", businessIcon],
+          ["contact", "Contacto", "Contacto", contactIcon],
+          ["page", "Página", "Página pública", pageIcon],
+          ["payments", "Cobros", "Cobros", paymentsIcon],
+          ["account", "Cuenta", "Cuenta", accountIcon]
+        ] as [SettingsTab, string, string, string][]).map(([value, shortLabel, label, icon]) => (
           <button
             key={value}
             type="button"
@@ -864,12 +943,20 @@ function centsToMoney(value: number | null) {
               }
               setActiveTab(value);
             }}
-            className={`shrink-0 rounded px-3 py-1.5 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
+            className={`group flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
               activeTab === value
                 ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
                 : "text-[var(--color-muted-strong)] hover:bg-white/60"
             }`}
           >
+            <img
+              src={icon}
+              alt=""
+              aria-hidden="true"
+              className={`h-4 w-4 shrink-0 opacity-75 transition duration-200 group-hover:scale-110 ${
+                activeTab === value ? "invert" : ""
+              }`}
+            />
             <span className="sm:hidden">{shortLabel}</span>
             <span className="hidden sm:inline">{label}</span>
           </button>
@@ -936,16 +1023,36 @@ function centsToMoney(value: number | null) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
               <h2 className="text-base font-semibold">
-                {activeTab === "business" ? "Datos del local" : "Contacto y página pública"}
+                {{
+                  business: "Identidad del negocio",
+                  contact: "Contacto",
+                  page: "Página pública",
+                  payments: "Cobros",
+                  account: "Cuenta"
+                }[activeTab]}
               </h2>
               <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
-                {activeTab === "business"
-                  ? "Definí la identidad y presentación de tu negocio."
-                  : "Configurá cómo te encuentran y contactan tus clientes."}
+                {{
+                  business: "Definí la identidad y presentación principal de tu negocio.",
+                  contact: "Configurá canales de contacto, ubicación y redes.",
+                  page: "Gestioná el enlace público de reservas.",
+                  payments: "Conectá Mercado Pago para cobrar señas online.",
+                  account: "Administrá el acceso de tu cuenta."
+                }[activeTab]}
               </p>
               </div>
               {!isOnboarding && !isEditing && (
-                <Button type="button" onClick={() => setIsEditing(true)}>
+                <Button
+                  type="button"
+                  className="group gap-2"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <img
+                    src={pencilIcon}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-4 w-4 opacity-75 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
+                  />
                   Editar información
                 </Button>
               )}
@@ -959,217 +1066,221 @@ function centsToMoney(value: number | null) {
           <CardBody className="grid gap-4 p-4 sm:p-5 md:grid-cols-2">
             {activeTab === "business" && (
               <>
-            <div className="grid gap-2 text-sm md:col-span-2">
-              <span className="font-semibold text-[var(--color-muted-strong)]">
-                Logo del negocio <span className="font-normal">(opcional)</span>
-              </span>
-              {logoPreview ? (
-                <div className="flex flex-col gap-4 rounded-lg border border-[var(--color-border)] bg-white/45 p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <img
-                      src={logoPreview}
-                      alt="Logo del negocio"
-                      className="h-16 w-16 shrink-0 rounded-xl border border-[var(--color-border)] object-cover shadow-sm"
+                <section className="grid gap-5 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.68)] p-4 md:col-span-2 lg:grid-cols-[300px_minmax(0,1fr)]">
+                  <div className="min-w-0">
+                    <div>
+                      <div className="mb-2 flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-[var(--color-muted-strong)]">
+                          Logo del negocio
+                        </span>
+                        <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-strong)]">
+                          Opcional
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-3">
+                        <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/75 p-2">
+                          {logoPreview ? (
+                            <img
+                              src={logoPreview}
+                              alt="Logo del negocio"
+                              className="h-full w-full rounded-lg object-contain"
+                            />
+                          ) : (
+                            <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-ink)] text-xl font-semibold text-white">
+                              {settings.businessName.charAt(0).toUpperCase() || "+"}
+                            </span>
+                          )}
+                        </div>
+                        <label
+                          className={`grid h-28 place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-white/42 px-3 py-3 text-center ${
+                            canEditSettings
+                              ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/62"
+                              : "cursor-default opacity-70"
+                          }`}
+                        >
+                          <span>
+                            <span className="block text-xl leading-none">↥</span>
+                            <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
+                              Subí tu logo
+                            </span>
+                            <span className="mt-1 block text-xs text-[var(--color-muted)]">
+                              PNG o JPG, máx. 2MB
+                            </span>
+                          </span>
+                          <input
+                            type="file"
+                            disabled={!canEditSettings}
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={handleLogoChange}
+                            className="sr-only"
+                          />
+                        </label>
+                      </div>
+                      <label
+                        className={`mt-3 flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-white/55 px-3 py-2 text-center text-sm font-semibold ${
+                          canEditSettings
+                            ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/75"
+                            : "cursor-default opacity-70"
+                        }`}
+                      >
+                        <span className="text-base leading-none">✎</span>
+                        <span>{logoPreview ? "Cambiar logo" : "Subir logo"}</span>
+                        <input
+                          type="file"
+                          disabled={!canEditSettings}
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={handleLogoChange}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid min-w-0 content-start gap-4 md:grid-cols-2">
+                    <SettingsField
+                      label="Nombre del local"
+                      maxLength={settingsFieldLimits.businessName}
+                      placeholder="Ej: Barbería Central"
+                      readOnly={!canEditSettings}
+                      highlightChanges={showUnsavedState}
+                      savedValue={savedSettings.businessName}
+                      value={settings.businessName}
+                      onChange={(value) => updateSetting("businessName", value)}
                     />
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-[var(--color-ink)]">
-                        {settings.businessName || "Logo del negocio"}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--color-muted)]">
-                        {logoFile ? "Cambio pendiente de guardar" : "Logo actual"}
+                    <label className="relative grid gap-1.5 text-sm">
+                      <span className="font-semibold text-[var(--color-muted-strong)]">
+                        Rubro
+                      </span>
+                      <select
+                        disabled={!canEditSettings}
+                        value={
+                          !settings.category || businessCategories.includes(settings.category)
+                            ? settings.category
+                            : customBusinessCategory
+                        }
+                        onChange={(event) => {
+                          if (event.target.value === customBusinessCategory) {
+                            setCustomCategoryDraft(settings.category);
+                            return;
+                          }
+                          updateSetting("category", event.target.value);
+                        }}
+                        className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
+                          showUnsavedState &&
+                          settings.category !== savedSettings.category
+                            ? "border-[#d65a50] focus:border-[#d65a50]"
+                            : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
+                        } ${
+                          canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
+                        }`}
+                      >
+                        <option value="">Seleccionar rubro</option>
+                        {businessCategories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                        <option value={customBusinessCategory}>Otro</option>
+                      </select>
+                    </label>
+                    <label className="relative grid gap-1.5 text-sm md:col-span-2">
+                      <span className="font-semibold text-[var(--color-muted-strong)]">
+                        Descripción pública
+                      </span>
+                      <textarea
+                        value={settings.description}
+                        disabled={!canEditSettings}
+                        maxLength={settingsFieldLimits.description}
+                        placeholder="Contá brevemente qué servicios ofrece tu negocio."
+                        onChange={(event) =>
+                          updateSetting("description", event.target.value)
+                        }
+                        className={`min-h-32 rounded-md border px-3 py-2 text-sm outline-none placeholder:text-[var(--color-muted)] disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] focus:ring-2 ${
+                          showUnsavedState &&
+                          settings.description !== savedSettings.description
+                            ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
+                            : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
+                        } ${
+                          canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
+                        }`}
+                      />
+                      <span className="text-right text-xs text-[var(--color-muted)]">
+                        {settings.description.length}/{settingsFieldLimits.description}
+                      </span>
+                    </label>
+                  </div>
+                </section>
+
+                <section className="rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.72)] p-4 md:col-span-2">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[rgba(32,24,54,0.06)] text-base">
+                      ▧
+                    </span>
+                    <div>
+                      <h3 className="font-semibold">Galería del local</h3>
+                      <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                        Mostrá tu espacio y el ambiente de tu negocio.
                       </p>
                     </div>
                   </div>
-                  {canEditSettings && (
-                    <label className="shrink-0 cursor-pointer rounded-md border border-[var(--color-border-strong)] bg-white/70 px-3 py-2 text-center font-medium text-[var(--color-ink)] hover:border-[var(--color-accent)] sm:self-center">
-                      Cambiar logo
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={handleLogoChange}
-                        className="sr-only"
-                      />
-                    </label>
-                  )}
-                </div>
-              ) : (
-                <label className={`flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/35 px-5 py-7 text-center ${
-                  canEditSettings
-                    ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/55"
-                    : "cursor-default"
-                }`}>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-ink)] text-lg font-semibold text-white">
-                    {settings.businessName.charAt(0).toUpperCase() || "+"}
-                  </span>
-                  <span className="mt-3 font-semibold text-[var(--color-ink)]">
-                    Subir logo
-                  </span>
-                  <span className="mt-1 text-xs text-[var(--color-muted)]">
-                    PNG, JPEG o WebP. Se optimiza automáticamente.
-                  </span>
-                  <input
-                    type="file"
-                    disabled={!canEditSettings}
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={handleLogoChange}
-                    className="sr-only"
-                  />
-                </label>
-              )}
-            </div>
-            <div className="grid items-start gap-4 md:col-span-2 lg:grid-cols-2">
-              <SettingsField
-                label="Nombre del local"
-                placeholder="Ej: Barbería Central"
-                readOnly={!canEditSettings}
-                highlightChanges={showUnsavedState}
-                savedValue={savedSettings.businessName}
-                value={settings.businessName}
-                onChange={(value) => updateSetting("businessName", value)}
-              />
-              <div className="grid gap-2">
-              <label className="relative grid gap-1.5 text-sm">
-                <span className="font-semibold text-[var(--color-muted-strong)]">
-                  Rubro
-                </span>
-                <select
-                  disabled={!canEditSettings}
-                  value={
-                    !settings.category || businessCategories.includes(settings.category)
-                      ? settings.category
-                      : customBusinessCategory
-                  }
-                  onChange={(event) => {
-                    if (event.target.value === customBusinessCategory) {
-                      setCustomCategoryDraft(settings.category);
-                      return;
-                    }
-                    updateSetting("category", event.target.value);
-                  }}
-                  className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
-                    showUnsavedState &&
-                    settings.category !== savedSettings.category
-                      ? "border-[#d65a50] focus:border-[#d65a50]"
-                      : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
-                  } ${
-                    canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
-                  }`}
-                >
-                  <option value="">Seleccionar rubro</option>
-                  {businessCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                  <option value={customBusinessCategory}>Otro</option>
-                </select>
-              </label>
-              </div>
-            </div>
-            <label className="relative grid gap-1.5 text-sm md:col-span-2">
-              <span className="font-semibold text-[var(--color-muted-strong)]">
-                Descripción pública
-              </span>
-              <textarea
-                value={settings.description}
-                disabled={!canEditSettings}
-                placeholder="Contá brevemente qué servicios ofrece tu negocio."
-                onChange={(event) =>
-                  updateSetting("description", event.target.value)
-                }
-                className={`min-h-28 rounded-md border px-3 py-2 text-sm outline-none placeholder:text-[var(--color-muted)] disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] focus:ring-2 ${
-                  showUnsavedState &&
-                  settings.description !== savedSettings.description
-                    ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
-                    : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
-                } ${
-                  canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
-                }`}
-              />
-            </label>
-            <div className="grid gap-3 md:col-span-2">
-              <button
-                type="button"
-                onClick={() => setShowGallerySettings((current) => !current)}
-                className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-white/60 px-4 py-3 text-left text-sm font-semibold text-[var(--color-ink)] hover:border-[var(--color-accent)]"
-              >
-                <span>
-                  Fotos del local
-                  <span className="ml-2 text-xs font-medium text-[var(--color-muted)]">
-                    {galleryPreviews.filter(Boolean).length}/2 cargadas
-                  </span>
-                </span>
-                <span className="text-lg leading-none">
-                  {showGallerySettings ? "−" : "+"}
-                </span>
-              </button>
-              {showGallerySettings && (
-                <div className="grid gap-3 md:grid-cols-2">
-                    {[0, 1].map((slot) => {
-                      const typedSlot = slot as 0 | 1;
-                      const currentFocus =
-                        galleryFocus.find((item) => item.slot === typedSlot) ?? {
-                          slot: typedSlot,
-                          focusX: 50,
-                          focusY: 50,
-                          zoom: 100
-                        };
-                      const uploadState = galleryUploadStates[slot] ?? {
-                        progress: 0,
-                        status: "idle"
-                      };
-                      const uploadLabel =
-                        uploadState.status === "uploading"
-                          ? "Subiendo y optimizando..."
-                          : uploadState.status === "done"
-                            ? `${formatImageBytes(uploadState.optimizedBytes)} optimizada`
-                            : uploadState.status === "ready"
-                              ? `${formatImageBytes(uploadState.originalBytes)} original · se optimiza al guardar`
-                              : "";
-                      return (
-                        <div
-                          key={slot}
-                          className="flex flex-col rounded-xl border border-dashed border-[var(--color-border-strong)] bg-white/40 p-4 text-center"
-                        >
-                          <div className="mb-3 flex items-center justify-between gap-3 text-left">
-                            <div>
-                              <p className="text-sm font-semibold text-[var(--color-ink)]">
-                                {slot === 0 ? "Foto principal" : "Foto secundaria"}
-                              </p>
-                              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
-                                {slot === 0 ? "Vista horizontal" : "Vista vertical"}
-                              </p>
-                            </div>
-                            <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-muted-strong)]">
-                              {slot === 0 ? "16:10" : "4:5"}
-                            </span>
-                          </div>
 
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(2,minmax(0,1fr))_190px]">
+                    {([0, 1] as const)
+                      .filter((slot) => galleryPreviews[slot])
+                      .map((slot) => {
+                        const currentFocus =
+                          galleryFocus.find((item) => item.slot === slot) ?? {
+                            slot,
+                            focusX: 50,
+                            focusY: 50,
+                            zoom: 100
+                          };
+                        const uploadState = galleryUploadStates[slot] ?? {
+                          progress: 0,
+                          status: "idle"
+                        };
+                        const uploadLabel =
+                          uploadState.status === "uploading"
+                            ? "Optimizando..."
+                            : uploadState.status === "done"
+                              ? `${formatImageBytes(uploadState.optimizedBytes)}`
+                              : uploadState.status === "ready"
+                                ? `${formatImageBytes(uploadState.originalBytes)} original`
+                                : "";
+
+                        return (
                           <div
-                            className={`w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(32,24,54,0.05)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)] ${
-                              slot === 0 ? "aspect-[16/10]" : "aspect-[4/5]"
-                            } relative`}
+                            key={slot}
+                            className="group relative aspect-[16/9] overflow-hidden rounded-lg border border-[var(--color-border)] bg-white/50"
                           >
-                            {uploadLabel && (
-                              <div className="absolute left-3 right-3 top-3 z-10 rounded-xl border border-white/60 bg-white/88 p-2 text-left shadow-[0_12px_26px_rgba(32,24,54,0.12)] backdrop-blur">
-                                <div className="flex items-center justify-between gap-3 text-xs font-semibold text-[var(--color-ink)]">
+                            <button
+                              type="button"
+                              disabled={!canEditSettings}
+                              onClick={() => setCropEditorSlot(slot)}
+                              className="h-full w-full disabled:cursor-default"
+                              aria-label={`Ajustar encuadre de foto ${slot + 1}`}
+                            >
+                              <img
+                                src={galleryPreviews[slot]}
+                                alt={`Imagen ${slot + 1} del local`}
+                                className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                                style={{
+                                  objectPosition: `${currentFocus.focusX}% ${currentFocus.focusY}%`,
+                                  transform: `scale(${currentFocus.zoom / 100})`,
+                                  transformOrigin: `${currentFocus.focusX}% ${currentFocus.focusY}%`
+                                }}
+                              />
+                            </button>
+                            {uploadLabel && uploadState.status !== "done" && (
+                              <div className="absolute left-2 right-2 top-2 rounded-lg border border-white/70 bg-white/90 px-2 py-1.5 text-xs font-semibold text-[var(--color-ink)] shadow-sm backdrop-blur">
+                                <div className="flex items-center justify-between gap-2">
                                   <span>{uploadLabel}</span>
-                                  {uploadState.status === "done" &&
-                                    uploadState.originalBytes &&
-                                    uploadState.optimizedBytes && (
-                                      <span className="text-[var(--color-muted-strong)]">
-                                        {Math.round(
-                                          (1 -
-                                            uploadState.optimizedBytes /
-                                              uploadState.originalBytes) *
-                                            100
-                                        )}
-                                        % menos
-                                      </span>
-                                    )}
+                                  {uploadState.status === "uploading" && (
+                                    <span>{uploadState.progress}%</span>
+                                  )}
                                 </div>
-                                {uploadState.status !== "ready" && (
-                                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[rgba(32,24,54,0.1)]">
+                                {uploadState.status === "uploading" && (
+                                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[rgba(32,24,54,0.1)]">
                                     <div
                                       className="h-full rounded-full bg-[var(--color-accent)] transition-all duration-300"
                                       style={{ width: `${uploadState.progress}%` }}
@@ -1178,77 +1289,72 @@ function centsToMoney(value: number | null) {
                                 )}
                               </div>
                             )}
-                            {galleryPreviews[slot] ? (
-                              <img
-                                src={galleryPreviews[slot]}
-                                alt={`Imagen ${slot + 1} del local`}
-                                className="h-full w-full object-cover"
-                                style={{
-                                  objectPosition: `${currentFocus.focusX}% ${currentFocus.focusY}%`,
-                                  transform: `scale(${currentFocus.zoom / 100})`,
-                                  transformOrigin: `${currentFocus.focusX}% ${currentFocus.focusY}%`
-                                }}
-                              />
-                            ) : (
-                              <div className="grid h-full w-full place-items-center text-sm font-semibold text-[var(--color-muted-strong)]">
-                                {slot === 0
-                                  ? "Así se verá la foto principal"
-                                  : "Así se verá la foto secundaria"}
-                              </div>
+                            {canEditSettings && (
+                              <button
+                                type="button"
+                                onClick={() => removeGalleryImage(slot)}
+                                className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-[var(--color-border)] bg-white/92 text-lg leading-none text-[var(--color-ink)] shadow-sm transition hover:-translate-y-0.5 hover:border-[#e7b9b2] hover:text-[#9f1f16]"
+                                aria-label={`Eliminar foto ${slot + 1}`}
+                              >
+                                ×
+                              </button>
                             )}
                           </div>
+                        );
+                      })}
 
-                          <label
-                            className={`mt-4 rounded-lg border border-[var(--color-border)] bg-white/75 px-3 py-2 text-sm font-semibold text-[var(--color-ink)] ${
-                              canEditSettings
-                                ? "cursor-pointer hover:border-[var(--color-accent)]"
-                                : "cursor-not-allowed opacity-60"
-                            }`}
-                          >
-                            {galleryPreviews[slot]
-                              ? `Cambiar foto ${slot + 1}`
-                              : `Subir foto ${slot + 1}`}
-                            <input
-                              type="file"
-                              disabled={!canEditSettings}
-                              accept="image/png,image/jpeg,image/webp"
-                              onChange={(event) => handleGalleryChange(typedSlot, event)}
-                              className="sr-only"
-                            />
-                          </label>
-                          <span className="mt-1 text-xs text-[var(--color-muted)]">
-                            {slot === 0
-                              ? "Ideal horizontal 1600x1000. JPG, PNG o WebP. Se optimiza automáticamente."
-                              : "Ideal vertical 900x1100. JPG, PNG o WebP. Se optimiza automáticamente."}
-                          </span>
-                          {galleryPreviews[slot] && canEditSettings && (
-                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                              <button
-                                type="button"
-                                onClick={() => setCropEditorSlot(typedSlot)}
-                                className="rounded-lg border border-[var(--color-border)] bg-white/75 px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:border-[var(--color-accent)]"
-                              >
-                                Ajustar encuadre
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeGalleryImage(typedSlot)}
-                                className="rounded-lg border border-[#e7b9b2] bg-[#fff5f3] px-3 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5]"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                    {(() => {
+                      const emptySlot = ([0, 1] as const).find(
+                        (slot) => !galleryPreviews[slot]
                       );
-                    })}
-                </div>
-              )}
-            </div>
+                      if (emptySlot === undefined) return null;
+
+                      return (
+                        <label
+                          className={`grid aspect-[16/9] min-h-28 place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/40 text-center transition ${
+                            canEditSettings
+                              ? "cursor-pointer hover:border-[var(--color-accent)] hover:bg-white/65"
+                              : "cursor-not-allowed opacity-60"
+                          }`}
+                        >
+                          <span>
+                            <span className="block text-2xl leading-none text-[var(--color-ink)]">
+                              +
+                            </span>
+                            <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
+                              Agregar foto
+                            </span>
+                            <span className="mt-1 block text-xs text-[var(--color-muted)]">
+                              JPG, PNG o WebP, máx. 10MB
+                            </span>
+                          </span>
+                          <input
+                            type="file"
+                            disabled={!canEditSettings}
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={(event) => handleGalleryChange(emptySlot, event)}
+                            className="sr-only"
+                          />
+                        </label>
+                      );
+                    })()}
+                  </div>
+
+                  <p className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                    <span aria-hidden="true">ⓘ</span>
+                    Se recomienda usar fotos horizontales y bien iluminadas.
+                  </p>
+                </section>
               </>
             )}
-            {activeTab === "public" && (
+            {activeTab === "contact" && (
               <>
+            <section className="grid gap-4 md:col-span-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+                <span className="text-[var(--color-accent)]">▧</span>
+                Canales de contacto
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
             <ArgentinaPhoneField
               label="Teléfono"
               readOnly={!canEditSettings}
@@ -1265,8 +1371,10 @@ function centsToMoney(value: number | null) {
               value={settings.whatsapp}
               onChange={(value) => updateSetting("whatsapp", value)}
             />
+              </div>
             <SettingsField
               label="Email público"
+              maxLength={settingsFieldLimits.publicEmail}
               placeholder="Ej: contacto@negocio.com"
               readOnly={!canEditSettings}
               highlightChanges={showUnsavedState}
@@ -1274,6 +1382,81 @@ function centsToMoney(value: number | null) {
               value={settings.email}
               onChange={(value) => updateSetting("email", value)}
             />
+            </section>
+
+            <section className="grid gap-4 border-t border-[var(--color-border)] pt-4 md:col-span-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+                <span className="text-[var(--color-accent)]">⌖</span>
+                Ubicación
+              </div>
+              <SettingsField
+                className="md:col-span-2"
+                label="Dirección"
+                maxLength={settingsFieldLimits.address}
+                placeholder="Ej: Av. Corrientes 1234"
+                readOnly={!canEditSettings}
+                highlightChanges={showUnsavedState}
+                savedValue={savedSettings.address}
+                value={settings.address}
+                onChange={(value) => updateSetting("address", value)}
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <SettingsField
+                  label="Localidad"
+                  maxLength={settingsFieldLimits.city}
+                  placeholder="Ej: Palermo"
+                  readOnly={!canEditSettings}
+                  highlightChanges={showUnsavedState}
+                  savedValue={savedSettings.city}
+                  value={settings.city}
+                  onChange={(value) => updateSetting("city", value)}
+                />
+                <label className="relative grid gap-1.5 text-sm">
+                  <span className="font-semibold text-[var(--color-muted-strong)]">
+                    Provincia
+                  </span>
+                  <select
+                    disabled={!canEditSettings}
+                    value={settings.province}
+                    onChange={(event) => updateSetting("province", event.target.value)}
+                    className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
+                      showUnsavedState &&
+                      settings.province !== savedSettings.province
+                        ? "border-[#d65a50] focus:border-[#d65a50]"
+                        : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
+                    } ${
+                      canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
+                    }`}
+                  >
+                    <option value="">Seleccionar provincia</option>
+                    {argentinaProvinces.map((province) => (
+                      <option key={province} value={province}>{province}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section className="grid gap-4 border-t border-[var(--color-border)] pt-4 md:col-span-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+                <span className="text-[var(--color-accent)]">◎</span>
+                Redes sociales
+              </div>
+              <SettingsField
+                label="Instagram"
+                maxLength={settingsFieldLimits.instagram}
+                placeholder="Ej: @minegocio"
+                readOnly={!canEditSettings}
+                highlightChanges={showUnsavedState}
+                savedValue={savedSettings.instagram}
+                value={settings.instagram}
+                onChange={(value) => updateSetting("instagram", value)}
+              />
+            </section>
+              </>
+            )}
+            {activeTab === "payments" && (
+              <>
             <section className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.78)] md:col-span-2">
               <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-white/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -1314,6 +1497,7 @@ function centsToMoney(value: number | null) {
                     onChange={(event) =>
                       updateSetting("mercadoPagoAccessToken", event.target.value)
                     }
+                    maxLength={settingsFieldLimits.mercadoPagoAccessToken}
                     placeholder={
                       settings.mercadoPagoConnected
                         ? "Pegá un token nuevo para reemplazar el actual"
@@ -1377,58 +1561,12 @@ function centsToMoney(value: number | null) {
                 </div>
               )}
             </section>
+              </>
+            )}
+            {activeTab === "page" && (
+              <>
             <SettingsField
               className="md:col-span-2"
-              label="Dirección"
-              placeholder="Ej: Av. Corrientes 1234"
-              readOnly={!canEditSettings}
-              highlightChanges={showUnsavedState}
-              savedValue={savedSettings.address}
-              value={settings.address}
-              onChange={(value) => updateSetting("address", value)}
-            />
-            <SettingsField
-              label="Localidad"
-              placeholder="Ej: Palermo"
-              readOnly={!canEditSettings}
-              highlightChanges={showUnsavedState}
-              savedValue={savedSettings.city}
-              value={settings.city}
-              onChange={(value) => updateSetting("city", value)}
-            />
-            <label className="relative grid gap-1.5 text-sm">
-              <span className="font-semibold text-[var(--color-muted-strong)]">
-                Provincia
-              </span>
-              <select
-                disabled={!canEditSettings}
-                value={settings.province}
-                onChange={(event) => updateSetting("province", event.target.value)}
-                className={`h-10 rounded-md border px-3 outline-none disabled:cursor-not-allowed disabled:text-[var(--color-muted-strong)] ${
-                  showUnsavedState &&
-                  settings.province !== savedSettings.province
-                    ? "border-[#d65a50] focus:border-[#d65a50]"
-                    : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
-                } ${
-                  canEditSettings ? "bg-white/70" : "bg-[rgba(32,24,54,0.035)]"
-                }`}
-              >
-                <option value="">Seleccionar provincia</option>
-                {argentinaProvinces.map((province) => (
-                  <option key={province} value={province}>{province}</option>
-                ))}
-              </select>
-            </label>
-            <SettingsField
-              label="Instagram"
-              placeholder="Ej: @minegocio"
-              readOnly={!canEditSettings}
-              highlightChanges={showUnsavedState}
-              savedValue={savedSettings.instagram}
-              value={settings.instagram}
-              onChange={(value) => updateSetting("instagram", value)}
-            />
-            <SettingsField
               actionHref={`/book/${publicSlug}`}
               label="URL pública"
               prefix="turnosi.com/"
@@ -1498,34 +1636,90 @@ function centsToMoney(value: number | null) {
       <aside className="min-w-0 space-y-3 xl:sticky xl:top-4 xl:self-start">
         <Card>
           <CardBody className="p-4 sm:p-5">
-            <h2 className="text-base font-semibold">Vista pública</h2>
-            <div className="mt-4 rounded-lg border border-[var(--color-border)] bg-white/50 p-4">
-              <p className="text-lg font-semibold">{settings.businessName}</p>
-              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
-                {settings.category}
-              </p>
-              <div className="mt-4 space-y-2 text-sm text-[var(--color-muted-strong)]">
-                <p>{formatArgentinaPhoneSetting(settings.phone)}</p>
-                {settings.whatsapp && (
-                <p>WhatsApp: {formatArgentinaPhoneSetting(settings.whatsapp)}</p>
-                )}
-                <p>{[settings.address, settings.city, settings.province].filter(Boolean).join(", ")}</p>
-                <p>{settings.instagram}</p>
+            <div className="flex items-center gap-4">
+              <div
+                className="grid h-20 w-20 shrink-0 place-items-center rounded-full"
+                style={{
+                  background: `conic-gradient(#2f7d45 ${profileCompletionPercent}%, rgba(32,24,54,0.08) 0)`
+                }}
+              >
+                <div className="grid h-14 w-14 place-items-center rounded-full bg-[#fffaf4] text-lg font-semibold text-[#2f7d45]">
+                  {profileCompletionPercent}%
+                </div>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">
+                  {profileCompletionPercent === 100 ? "Perfil completo" : "Perfil en progreso"}
+                </h2>
+                <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                  {profileCompletionPercent === 100
+                    ? "Tu página pública ya tiene lo esencial."
+                    : "Completá estos datos para publicar mejor."}
+                </p>
               </div>
             </div>
-          </CardBody>
-        </Card>
 
-        <Card>
-          <CardBody className="p-4 sm:p-5">
-            <h2 className="text-base font-semibold">Checklist</h2>
-            <div className="mt-4 space-y-3 text-sm">
-              <ChecklistItem label="Teléfono cargado" done={Boolean(settings.phone)} />
-              <ChecklistItem label="WhatsApp cargado" done={Boolean(settings.whatsapp)} />
-              <ChecklistItem label="Dirección cargada" done={Boolean(settings.address)} />
-              <ChecklistItem label="Provincia definida" done={Boolean(settings.province)} />
-              <ChecklistItem label="Instagram cargado" done={Boolean(settings.instagram)} />
-              <ChecklistItem label="URL pública definida" done={Boolean(publicSlug)} />
+            <div className="mt-5 space-y-2 border-t border-[var(--color-border)] pt-4">
+              {profileCompletionItems.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => {
+                    if (activeTab !== item.tab && hasPendingChanges) {
+                      setShowUnsavedState(true);
+                      setPendingTab(item.tab);
+                      return;
+                    }
+                    setActiveTab(item.tab);
+                  }}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/55"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span
+                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                        item.done
+                          ? "bg-[#e3f3e5]"
+                          : "bg-[rgba(32,24,54,0.07)]"
+                      }`}
+                    >
+                      <img
+                        src={item.icon}
+                        alt=""
+                        aria-hidden="true"
+                        className={`h-4 w-4 ${item.done ? "opacity-80" : "opacity-45"}`}
+                      />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-[var(--color-ink)]">
+                        {item.label}
+                      </span>
+                      <span className="text-xs text-[var(--color-muted-strong)]">
+                        {item.done ? "Completado" : "Pendiente"}
+                      </span>
+                    </span>
+                  </span>
+                  <span
+                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-xs font-semibold ${
+                      item.done
+                        ? "border-[#5aa66d] text-[#2f7d45]"
+                        : "border-[var(--color-border-strong)] text-[var(--color-muted)]"
+                    }`}
+                  >
+                    {item.done ? "✓" : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-lg border border-[rgba(253,134,6,0.28)] bg-[rgba(253,134,6,0.07)] p-3">
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                {profileCompletionPercent === 100 ? "Todo listo" : "Siguiente paso"}
+              </p>
+              <p className="mt-1 text-sm leading-5 text-[var(--color-muted-strong)]">
+                {profileCompletionPercent === 100
+                  ? "Tu perfil está completo y visible para tus clientes."
+                  : "Revisá los bloques pendientes antes de compartir tu página."}
+              </p>
             </div>
           </CardBody>
         </Card>
@@ -1590,6 +1784,7 @@ function SettingsField({
   actionHref,
   highlightChanges = false,
   label,
+  maxLength,
   onChange,
   options,
   placeholder,
@@ -1602,6 +1797,7 @@ function SettingsField({
   actionHref?: string;
   highlightChanges?: boolean;
   label: string;
+  maxLength?: number;
   onChange?: (value: string) => void;
   options?: string[];
   placeholder?: string;
@@ -1637,6 +1833,7 @@ function SettingsField({
           readOnly={readOnly}
           placeholder={placeholder}
           value={value}
+          maxLength={maxLength}
           onChange={(event) => onChange?.(event.target.value)}
           className={`min-w-0 flex-1 bg-transparent px-3 outline-none placeholder:text-[var(--color-muted)] ${
             readOnly ? "cursor-not-allowed text-[var(--color-muted-strong)]" : ""
@@ -1725,7 +1922,7 @@ function ArgentinaPhoneField({
               ? "cursor-not-allowed text-[var(--color-muted-strong)]"
               : ""
           }`}
-          maxLength={13}
+          maxLength={settingsFieldLimits.phone}
         />
       </span>
     </label>
@@ -1754,6 +1951,7 @@ function CustomCategoryModal({
           autoFocus
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          maxLength={settingsFieldLimits.category}
           placeholder="Ej: Veterinaria"
           className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
         />
@@ -2022,21 +2220,6 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ChecklistItem({ done, label }: { done: boolean; label: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-[var(--color-muted-strong)]">{label}</span>
-      <span
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-          done ? "bg-[#e3f3e5] text-[#347a43]" : "bg-[#fde8e5] text-[#b42318]"
-        }`}
-      >
-        {done ? "Listo" : "Pendiente"}
-      </span>
     </div>
   );
 }

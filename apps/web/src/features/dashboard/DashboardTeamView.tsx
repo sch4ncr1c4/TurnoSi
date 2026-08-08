@@ -23,6 +23,7 @@ import {
 } from "./team.api";
 import { getBranches, type Branch } from "./branches.api";
 import { useSessionQuery } from "../auth/auth.queries";
+import pencilIcon from "../../components/assets/icons/pencil.svg";
 
 type TeamFormDraft = Pick<
   TeamMember,
@@ -245,7 +246,7 @@ export function DashboardTeamView() {
           </div>
         </CardHeader>
         <CardBody className="bg-[rgba(32,24,54,0.025)] p-3 sm:p-4">
-          <div className="grid gap-3">
+          <div className="grid gap-2.5">
             {teamMembers.map((member) => {
               const canEditMember = currentRole === "owner" || member.role !== "owner";
               const branchesLabel = member.branches.length
@@ -254,11 +255,11 @@ export function DashboardTeamView() {
               return (
                 <article
                   key={member.id}
-                  className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_10px_28px_rgba(32,24,54,0.04)]"
+                  className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_8px_22px_rgba(32,24,54,0.035)]"
                 >
-                  <div className="grid gap-4 p-4 xl:grid-cols-[minmax(260px,1.2fr)_minmax(0,1.6fr)_auto] xl:items-center">
+                  <div className="grid gap-3 p-3 xl:grid-cols-[minmax(260px,1.05fr)_minmax(0,1fr)_auto] xl:items-center">
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-sm font-semibold text-[var(--color-button-text)]">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-sm font-semibold text-[var(--color-button-text)]">
                         {memberInitials(member)}
                       </span>
                       <div className="min-w-0">
@@ -277,27 +278,34 @@ export function DashboardTeamView() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 border-y border-[var(--color-border)] py-3 sm:grid-cols-2 xl:border-y-0 xl:border-l xl:py-0 xl:pl-5">
+                    <div className="grid gap-2 border-y border-[var(--color-border)] py-2 sm:grid-cols-2 xl:border-y-0 xl:border-l xl:py-0 xl:pl-4">
                       <TeamInfoLine label="Sede" value={branchesLabel} />
                       <TeamInfoLine label="Capacidad" value={`${member.hourlyCapacity} por hora`} />
                       <TeamInfoLine label="Hoy" value={`${member.todayAssignedCount} turnos`} />
                       <TeamInfoLine label="Próximos" value={`${member.upcomingAssignedCount} turnos`} />
                     </div>
 
-                    <div className="flex flex-col gap-3 xl:items-end">
-                      <div className="flex flex-wrap gap-1.5 xl:justify-end">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-end xl:justify-center">
+                      <div className="flex flex-wrap gap-1 xl:justify-end">
                         <StatusLabel active={member.bookingsEnabled} label="Toma turnos" />
                         <StatusLabel active={member.visibleInPublicBooking} label="Visible online" />
                       </div>
                       {canEditMember ? (
-                        <div className="flex flex-wrap gap-2 xl:justify-end">
-                          <Button
+                        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                          <button
                             type="button"
-                            className="h-9 px-3"
+                            title="Editar integrante"
+                            aria-label={`Editar a ${member.name}`}
+                            className="group inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-strong)] text-[var(--color-ink)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/75 hover:shadow-md active:translate-y-0"
                             onClick={() => setEditingId(member.id)}
                           >
-                            Editar
-                          </Button>
+                            <img
+                              src={pencilIcon}
+                              alt=""
+                              aria-hidden="true"
+                              className="h-[18px] w-[18px] opacity-75 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
+                            />
+                          </button>
                           {member.role !== "owner" && (
                             <Button
                               type="button"
@@ -654,13 +662,13 @@ function TeamModal({
 function StatusLabel({ active, label }: { active: boolean; label: string }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
         active
           ? "bg-[rgba(64,145,91,0.12)] text-[#347548]"
           : "bg-[rgba(32,24,54,0.07)] text-[var(--color-muted-strong)]"
       }`}
     >
-      {label}: {active ? "Sí" : "No"}
+      {active ? label : `${label}: No`}
     </span>
   );
 }
@@ -669,7 +677,7 @@ function RoleBadge({ role }: { role: TeamMember["role"] }) {
   const isOwner = role === "owner";
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
         isOwner
           ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-accent)]"
           : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
@@ -686,7 +694,7 @@ function TeamInfoLine({ label, value }: { label: string; value: string }) {
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
         {label}
       </p>
-      <p className="mt-1 truncate text-sm font-semibold text-[var(--color-ink)]" title={value}>
+      <p className="mt-0.5 truncate text-sm font-semibold text-[var(--color-ink)]" title={value}>
         {value}
       </p>
     </div>

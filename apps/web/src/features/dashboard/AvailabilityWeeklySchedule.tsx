@@ -1,4 +1,5 @@
 import { StatusBadge, TimeInput } from "../../components/ui";
+import trashIcon from "../../components/assets/icons/trash.svg";
 import { dayToneClassName } from "./availability.constants";
 import type { WeeklyAvailabilityDay } from "./availability.types";
 
@@ -32,6 +33,31 @@ export function AvailabilityWeeklySchedule({
   onUpdateBreakTime,
   onUpdateSlotTime
 }: AvailabilityWeeklyScheduleProps) {
+  function RemoveButton({
+    label,
+    onClick
+  }: {
+    label: string;
+    onClick: () => void;
+  }) {
+    return (
+      <button
+        type="button"
+        aria-label={label}
+        title={label}
+        onClick={onClick}
+        className="group grid h-8 w-8 place-items-center rounded-md transition duration-200 hover:-translate-y-0.5 hover:bg-[#fde8e5]/45 active:translate-y-0"
+      >
+        <img
+          src={trashIcon}
+          alt=""
+          aria-hidden="true"
+          className="h-5 w-5 opacity-80 transition duration-200 group-hover:rotate-[-6deg] group-hover:scale-110 group-hover:opacity-100 [filter:invert(18%)_sepia(85%)_saturate(2628%)_hue-rotate(352deg)_brightness(91%)_contrast(93%)]"
+        />
+      </button>
+    );
+  }
+
   return (
     <>
       <div className="divide-y divide-[var(--color-border)] min-[1900px]:hidden">
@@ -79,13 +105,10 @@ export function AvailabilityWeeklySchedule({
                       <p className="text-xs font-semibold text-[var(--color-muted)]">
                         {index === 0 ? "Mañana" : "Tarde"}
                       </p>
-                      <button
-                        type="button"
+                      <RemoveButton
+                        label={`Quitar horario de ${day.day}`}
                         onClick={() => onRemoveSlot(dayIndex, index)}
-                        className="text-xs font-semibold text-[#b42318]"
-                      >
-                        Quitar
-                      </button>
+                      />
                     </div>
                     <div className="inline-flex w-fit items-center gap-2">
                       <TimeInput
@@ -109,13 +132,10 @@ export function AvailabilityWeeklySchedule({
                   <div className="mt-5 rounded-md border border-[var(--color-border)] bg-[rgba(255,251,244,0.42)] p-3 min-[900px]:max-w-[590px]">
                     <div className="mb-2 flex items-center justify-between">
                       <p className="text-xs font-semibold text-[var(--color-muted)]">Descanso</p>
-                      <button
-                        type="button"
+                      <RemoveButton
+                        label={`Quitar descanso de ${day.day}`}
                         onClick={() => onToggleBreak(dayIndex)}
-                        className="text-xs font-semibold text-[#b42318]"
-                      >
-                        Quitar
-                      </button>
+                      />
                     </div>
                     <div className="inline-flex w-fit items-center gap-2">
                       <TimeInput
@@ -188,13 +208,10 @@ export function AvailabilityWeeklySchedule({
                           onChange={(value) => onUpdateSlotTime(dayIndex, index, "end", value)}
                           value={slot.end}
                         />
-                        <button
-                          type="button"
+                        <RemoveButton
+                          label={`Quitar horario de ${day.day}`}
                           onClick={() => onRemoveSlot(dayIndex, index)}
-                          className="justify-self-start rounded-md px-2 py-1 text-xs font-semibold text-[#b42318] hover:bg-[#fde8e5]"
-                        >
-                          Quitar
-                        </button>
+                        />
                       </span>
                     ))}
                   </div>
