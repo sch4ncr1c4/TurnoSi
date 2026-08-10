@@ -2,8 +2,8 @@ import { useDeferredValue, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button, Card, CardBody, CardHeader, Toast } from "../../components/ui";
-import lockOpenIcon from "../../components/assets/icons/lock-open.svg";
-import lockIcon from "../../components/assets/icons/lock.svg";
+import lockOpenIcon from "../../components/assets/icons/actions/lock-open.svg";
+import lockIcon from "../../components/assets/icons/actions/lock.svg";
 import { queryKeys } from "../../lib/query-keys";
 import {
   blockCustomer,

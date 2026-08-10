@@ -23,7 +23,7 @@ import {
 } from "./team.api";
 import { getBranches, type Branch } from "./branches.api";
 import { useSessionQuery } from "../auth/auth.queries";
-import pencilIcon from "../../components/assets/icons/pencil.svg";
+import pencilIcon from "../../components/assets/icons/actions/pencil.svg";
 
 type TeamFormDraft = Pick<
   TeamMember,

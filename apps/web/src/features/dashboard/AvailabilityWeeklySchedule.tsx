@@ -1,5 +1,5 @@
 import { StatusBadge, TimeInput } from "../../components/ui";
-import trashIcon from "../../components/assets/icons/trash.svg";
+import trashIcon from "../../components/assets/icons/actions/trash.svg";
 import { dayToneClassName } from "./availability.constants";
 import type { WeeklyAvailabilityDay } from "./availability.types";
 

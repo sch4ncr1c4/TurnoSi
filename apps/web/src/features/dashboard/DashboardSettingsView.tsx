@@ -21,11 +21,21 @@ import {
 import { useOrganizationSettingsQuery } from "./settings.queries";
 import type { OrganizationSettings } from "./settings.types";
 import { argentinaProvinces } from "./dashboard.options";
-import businessIcon from "../../components/assets/icons/nav-home.svg";
-import contactIcon from "../../components/assets/icons/nav-team.svg";
-import pageIcon from "../../components/assets/icons/nav-calendar.svg";
-import paymentsIcon from "../../components/assets/icons/nav-availability.svg";
-import accountIcon from "../../components/assets/icons/nav-settings.svg";
+import businessIcon from "../../components/assets/icons/navigation/home.svg";
+import contactIcon from "../../components/assets/icons/navigation/team.svg";
+import pageIcon from "../../components/assets/icons/navigation/calendar.svg";
+import accountIcon from "../../components/assets/icons/navigation/settings.svg";
+import businessIdentityIcon from "../../components/assets/icons/settings/business-identity.svg";
+import galleryIcon from "../../components/assets/icons/settings/gallery.svg";
+import contactCardIcon from "../../components/assets/icons/settings/contact-card.svg";
+import contactLocationIcon from "../../components/assets/icons/settings/contact-location.svg";
+import contactPhoneIcon from "../../components/assets/icons/settings/contact-phone.svg";
+import settingsNavAccountIcon from "../../components/assets/icons/settings/nav-account-user.svg";
+import settingsNavBusinessIcon from "../../components/assets/icons/settings/nav-business-store.svg";
+import settingsNavPageIcon from "../../components/assets/icons/settings/nav-public-page-globe.svg";
+import paymentsDepositIcon from "../../components/assets/icons/settings/payments-deposit.svg";
+import paymentsHeaderIcon from "../../components/assets/icons/settings/payments-header.svg";
+import paymentsWalletIcon from "../../components/assets/icons/settings/payments-wallet.svg";
 
 function createPublicSlug(value: string) {
   return value
@@ -58,6 +68,22 @@ function formatImageBytes(bytes?: number) {
   if (!bytes) return "";
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function SettingsSectionIcon({ icon }: { icon: string }) {
+  return (
+    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[rgba(253,134,6,0.12)]">
+      <img
+        src={icon}
+        alt=""
+        className="h-6 w-6 opacity-85"
+        style={{
+          filter:
+            "brightness(0) saturate(100%) invert(12%) sepia(35%) saturate(1053%) hue-rotate(221deg) brightness(92%) contrast(97%)"
+        }}
+      />
+    </span>
+  );
 }
 
 const settingsFieldLimits = {
@@ -139,7 +165,8 @@ export function DashboardSettingsView({
     { progress: 0, status: "idle" },
     { progress: 0, status: "idle" }
   ]);
-  const [galleryDeleteSlots, setGalleryDeleteSlots] = useState([false, false]);
+  const [galleryDeleteSlot, setGalleryDeleteSlot] = useState<0 | 1 | null>(null);
+  const [isDeletingGalleryImage, setIsDeletingGalleryImage] = useState(false);
   const [galleryFocus, setGalleryFocus] = useState([
     { slot: 0 as 0 | 1, focusX: 50, focusY: 50, zoom: 100 },
     { slot: 1 as 0 | 1, focusX: 50, focusY: 50, zoom: 100 }
@@ -171,7 +198,6 @@ export function DashboardSettingsView({
     JSON.stringify(settings) !== JSON.stringify(savedSettings) ||
     Boolean(logoFile) ||
     galleryFiles.some(Boolean) ||
-    galleryDeleteSlots.some(Boolean) ||
     hasGalleryFocusChanges;
   const hasPendingChanges = hasUnsavedChanges || accountHasUnsavedChanges;
   const hasBusinessChanges =
@@ -180,7 +206,6 @@ export function DashboardSettingsView({
     settings.description !== savedSettings.description ||
     Boolean(logoFile) ||
     galleryFiles.some(Boolean) ||
-    galleryDeleteSlots.some(Boolean) ||
     hasGalleryFocusChanges;
   const hasContactChanges =
     settings.phone !== savedSettings.phone ||
@@ -426,7 +451,6 @@ function centsToMoney(value: number | null) {
       Object.keys(changes).length === 0 &&
       !logoFile &&
       !galleryFiles.some(Boolean) &&
-      !galleryDeleteSlots.some(Boolean) &&
       !hasGalleryFocusChanges &&
       !isOnboarding
     ) {
@@ -508,12 +532,6 @@ function centsToMoney(value: number | null) {
         window.dispatchEvent(new Event("turnosi:logo-updated"));
         setLogoFile(null);
       }
-      for (const [slot, shouldDelete] of galleryDeleteSlots.entries()) {
-        const hadSavedImage = settingsQuery.data?.galleryImageSlots.includes(slot);
-        if (shouldDelete && hadSavedImage) {
-          await deleteOrganizationGalleryImage(slot as 0 | 1);
-        }
-      }
       for (const [slot, file] of galleryFiles.entries()) {
         if (!file) continue;
         setGalleryUploadStates((current) => {
@@ -567,9 +585,6 @@ function centsToMoney(value: number | null) {
               : current
         );
         setGalleryFiles([null, null]);
-      }
-      if (galleryDeleteSlots.some(Boolean)) {
-        setGalleryDeleteSlots([false, false]);
       }
       const refreshedSettings = await settingsQuery.refetch();
       const latestSettings = refreshedSettings.data;
@@ -691,7 +706,7 @@ function centsToMoney(value: number | null) {
       tab: "page"
     },
     {
-      icon: paymentsIcon,
+      icon: paymentsWalletIcon,
       label: "Cobros",
       done: Boolean(settings.mercadoPagoConnected || !settings.depositEnabled),
       tab: "payments"
@@ -798,11 +813,6 @@ function centsToMoney(value: number | null) {
         : { progress: 0, status: "idle" };
       return next;
     });
-    setGalleryDeleteSlots((current) => {
-      const next = [...current];
-      next[slot] = false;
-      return next;
-    });
     setGalleryPreviews((current) => {
       const next = [...current];
       if (next[slot].startsWith("blob:")) URL.revokeObjectURL(next[slot]);
@@ -840,39 +850,74 @@ function centsToMoney(value: number | null) {
     );
   }
 
-  function removeGalleryImage(slot: 0 | 1) {
+  async function confirmRemoveGalleryImage() {
+    if (galleryDeleteSlot === null || isDeletingGalleryImage) return;
+    const slot = galleryDeleteSlot;
+    const hadSavedImage = Boolean(settingsQuery.data?.galleryImageSlots.includes(slot));
+
+    setIsDeletingGalleryImage(true);
     setMessage("");
     const preview = galleryPreviews[slot];
     if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
-    setGalleryFiles((current) => {
-      const next = [...current];
-      next[slot] = null;
-      return next;
-    });
-    setGalleryPreviews((current) => {
-      const next = [...current];
-      next[slot] = "";
-      return next;
-    });
-    setGalleryDeleteSlots((current) => {
-      const next = [...current];
-      next[slot] = Boolean(settingsQuery.data?.galleryImageSlots.includes(slot));
-      return next;
-    });
-    setGalleryUploadStates((current) => {
-      const next = [...current];
-      next[slot] = { progress: 0, status: "idle" };
-      return next;
-    });
-    setGalleryFocusPoint(slot, 50, 50, 100);
-    setToast("Foto marcada para eliminar. Guardá los cambios para aplicarlo.");
+
+    try {
+      if (hadSavedImage) {
+        await deleteOrganizationGalleryImage(slot);
+      }
+      setGalleryFiles((current) => {
+        const next = [...current];
+        next[slot] = null;
+        return next;
+      });
+      setGalleryPreviews((current) => {
+        const next = [...current];
+        next[slot] = "";
+        return next;
+      });
+      setGalleryUploadStates((current) => {
+        const next = [...current];
+        next[slot] = { progress: 0, status: "idle" };
+        return next;
+      });
+      setGalleryFocusPoint(slot, 50, 50, 100);
+      queryClient.setQueryData<OrganizationSettings>(
+        queryKeys.organizationSettings,
+        (current) =>
+          current
+            ? {
+                ...current,
+                galleryImageSlots: current.galleryImageSlots.filter(
+                  (currentSlot) => currentSlot !== slot
+                ),
+                galleryVersions: current.galleryVersions.filter(
+                  (item) => item.slot !== slot
+                ),
+                galleryFocus: current.galleryFocus.filter((item) => item.slot !== slot)
+              }
+            : current
+      );
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.publicBooking(publicSlug)
+      });
+      if (organizationSlug && organizationSlug !== publicSlug) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.publicBooking(organizationSlug)
+        });
+      }
+      void settingsQuery.refetch();
+      setGalleryDeleteSlot(null);
+      setToast("Foto eliminada.");
+    } catch {
+      setMessage("No pudimos eliminar la foto.");
+    } finally {
+      setIsDeletingGalleryImage(false);
+    }
   }
 
-  function cancelEditing() {
+  function discardSettingsChanges() {
     setSettings(savedSettings);
     setLogoFile(null);
     setGalleryFiles([null, null]);
-    setGalleryDeleteSlots([false, false]);
     setGalleryUploadStates([
       { progress: 0, status: "idle" },
       { progress: 0, status: "idle" }
@@ -904,6 +949,16 @@ function centsToMoney(value: number | null) {
     setMessage("");
     setShowUnsavedState(false);
   }
+
+  const gallerySlots = [0, 1] as const;
+  const galleryImagesCount = galleryPreviews.filter(Boolean).length;
+  const activeSettingsIcon =
+    ({
+      contact: contactCardIcon,
+      page: pageIcon,
+      payments: paymentsWalletIcon,
+      account: accountIcon
+    } as Partial<Record<SettingsTab, string>>)[activeTab] ?? null;
 
   return (
     <section className="min-w-0 space-y-4 sm:space-y-5">
@@ -964,14 +1019,14 @@ function centsToMoney(value: number | null) {
             </section>
           </div>
         )}
-      <nav className="grid max-w-6xl grid-cols-2 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-1 shadow-[0_10px_26px_rgba(32,24,54,0.04)] sm:grid-cols-3 lg:grid-cols-5">
+      <nav className="flex w-full snap-x gap-1 overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-1 shadow-[0_10px_26px_rgba(32,24,54,0.04)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:grid 2xl:grid-cols-5 2xl:overflow-hidden 2xl:w-[calc(100%-360px)]">
         {([
-          ["business", "Negocio", "Negocio", businessIcon],
-          ["contact", "Contacto", "Contacto", contactIcon],
-          ["page", "Página", "Página pública", pageIcon],
-          ["payments", "Cobros", "Cobros", paymentsIcon],
-          ["account", "Cuenta", "Cuenta", accountIcon]
-        ] as [SettingsTab, string, string, string][]).map(([value, shortLabel, label, icon]) => (
+          ["business", "Negocio", "Negocio", settingsNavBusinessIcon],
+          ["contact", "Contacto", "Contacto", contactPhoneIcon],
+          ["page", "Página", "Página pública", settingsNavPageIcon],
+          ["payments", "Cobros", "Cobros", paymentsHeaderIcon],
+          ["account", "Cuenta", "Cuenta", settingsNavAccountIcon]
+        ] as [SettingsTab, string, string, string][]).map(([value, shortLabel, label, icon], index) => (
           <button
             key={value}
             type="button"
@@ -983,12 +1038,20 @@ function centsToMoney(value: number | null) {
               }
               setActiveTab(value);
             }}
-            className={`group flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${
+            className={`group relative flex min-w-[150px] snap-start items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors 2xl:min-w-0 2xl:px-4 ${
               activeTab === value
                 ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
                 : "text-[var(--color-muted-strong)] hover:bg-white/60"
             }`}
           >
+            {index > 0 && (
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none absolute left-0 top-1/2 hidden h-6 w-px -translate-y-1/2 bg-[var(--color-border)] 2xl:block ${
+                  activeTab === value ? "opacity-0" : "opacity-100"
+                }`}
+              />
+            )}
             <img
               src={icon}
               alt=""
@@ -997,13 +1060,13 @@ function centsToMoney(value: number | null) {
                 activeTab === value ? "invert" : ""
               }`}
             />
-            <span className="sm:hidden">{shortLabel}</span>
-            <span className="hidden sm:inline">{label}</span>
+            <span className="2xl:hidden">{shortLabel}</span>
+            <span className="hidden 2xl:inline">{label}</span>
           </button>
         ))}
       </nav>
 
-      <div className="grid min-w-0 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid min-w-0 gap-4 sm:gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-4 sm:space-y-5">
         {isOnboarding && (
           <section className="rounded-lg border border-[var(--color-accent)] bg-[rgba(253,134,6,0.08)] p-3 sm:p-4">
@@ -1061,7 +1124,13 @@ function centsToMoney(value: number | null) {
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+              <div className="flex items-start gap-3">
+                {activeTab === "business" ? (
+                  <SettingsSectionIcon icon={businessIdentityIcon} />
+                ) : (
+                  activeSettingsIcon && <SettingsSectionIcon icon={activeSettingsIcon} />
+                )}
+                <div>
               <h2 className="text-base font-semibold">
                 {{
                   business: "Identidad del negocio",
@@ -1080,6 +1149,7 @@ function centsToMoney(value: number | null) {
                   account: "Administrá el acceso de tu cuenta."
                 }[activeTab]}
               </p>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -1088,10 +1158,16 @@ function centsToMoney(value: number | null) {
               {message}
             </p>
           )}
-          <CardBody className="grid gap-4 p-4 sm:p-5 md:grid-cols-2">
+          <CardBody
+            className={
+              activeTab === "business"
+                ? "grid gap-4 p-4 sm:p-5 md:grid-cols-2"
+                : "grid gap-4 p-4 sm:p-5 md:grid-cols-2"
+            }
+          >
             {activeTab === "business" && (
               <>
-                <section className="grid gap-5 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.68)] p-4 md:col-span-2 lg:grid-cols-[300px_minmax(0,1fr)]">
+                <section className="grid max-w-4xl gap-5 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5 xl:grid-cols-[300px_minmax(0,620px)]">
                   <div className="min-w-0">
                     <div>
                       <div className="mb-2 flex items-center gap-2 text-sm">
@@ -1147,7 +1223,7 @@ function centsToMoney(value: number | null) {
                     </div>
                   </div>
 
-                  <div className="grid min-w-0 content-start gap-4 md:grid-cols-2">
+                  <div className="grid min-w-0 content-start gap-4 md:grid-cols-[minmax(0,300px)_minmax(0,300px)]">
                     <SettingsField
                       label="Nombre del local"
                       maxLength={settingsFieldLimits.businessName}
@@ -1174,11 +1250,11 @@ function centsToMoney(value: number | null) {
                           }
                           updateSetting("category", event.target.value);
                         }}
-                        className={`h-10 rounded-md border bg-white/70 px-3 outline-none ${
+                        className={`h-10 appearance-none rounded-md border bg-[rgba(32,24,54,0.035)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.category !== savedSettings.category
-                            ? "border-[#d65a50] focus:border-[#d65a50]"
-                            : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
+                            ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
+                            : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
                         }`}
                       >
                         <option value="">Seleccionar rubro</option>
@@ -1189,6 +1265,9 @@ function centsToMoney(value: number | null) {
                         ))}
                         <option value={customBusinessCategory}>Otro</option>
                       </select>
+                      <span className="pointer-events-none absolute bottom-0 right-3 grid h-10 place-items-center text-sm text-[var(--color-muted-strong)]">
+                        ⌄
+                      </span>
                     </label>
                     <label className="relative grid gap-1.5 text-sm md:col-span-2">
                       <span className="font-semibold text-[var(--color-muted-strong)]">
@@ -1201,7 +1280,7 @@ function centsToMoney(value: number | null) {
                         onChange={(event) =>
                           updateSetting("description", event.target.value)
                         }
-                        className={`min-h-32 rounded-md border bg-white/70 px-3 py-2 text-sm outline-none placeholder:text-[var(--color-muted)] focus:ring-2 ${
+                        className={`min-h-32 resize-none rounded-md border bg-[rgba(32,24,54,0.035)] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.description !== savedSettings.description
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1215,21 +1294,24 @@ function centsToMoney(value: number | null) {
                   </div>
                 </section>
 
-                <section className="rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.72)] p-4 md:col-span-2">
+                <section className="max-w-4xl rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
                   <div className="flex items-start gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[rgba(32,24,54,0.06)] text-base">
-                      ▧
-                    </span>
-                    <div>
-                      <h3 className="font-semibold">Galería del local</h3>
+                    <SettingsSectionIcon icon={galleryIcon} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">Galería del local</h3>
+                        <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-strong)]">
+                          {galleryImagesCount}/{gallerySlots.length} fotos
+                        </span>
+                      </div>
                       <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
                         Mostrá tu espacio y el ambiente de tu negocio.
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(2,minmax(0,1fr))_190px]">
-                    {([0, 1] as const)
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(2,minmax(0,240px))_180px] xl:grid-cols-[repeat(2,minmax(0,260px))_190px]">
+                    {gallerySlots
                       .filter((slot) => galleryPreviews[slot])
                       .map((slot) => {
                         const currentFocus =
@@ -1294,7 +1376,7 @@ function centsToMoney(value: number | null) {
                             )}
                             <button
                               type="button"
-                              onClick={() => removeGalleryImage(slot)}
+                              onClick={() => setGalleryDeleteSlot(slot)}
                               className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-[var(--color-border)] bg-white/92 text-lg leading-none text-[var(--color-ink)] shadow-sm transition hover:-translate-y-0.5 hover:border-[#e7b9b2] hover:text-[#9f1f16]"
                               aria-label={`Eliminar foto ${slot + 1}`}
                             >
@@ -1305,13 +1387,26 @@ function centsToMoney(value: number | null) {
                       })}
 
                     {(() => {
-                      const emptySlot = ([0, 1] as const).find(
+                      const emptySlot = gallerySlots.find(
                         (slot) => !galleryPreviews[slot]
                       );
-                      if (emptySlot === undefined) return null;
+                      if (emptySlot === undefined) {
+                        return (
+                          <div className="grid aspect-[16/9] min-h-24 place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.025)] px-4 text-center">
+                            <span>
+                              <span className="block text-sm font-semibold text-[var(--color-ink)]">
+                                Máximo alcanzado
+                              </span>
+                              <span className="mt-1 block text-xs text-[var(--color-muted)]">
+                                {galleryImagesCount}/{gallerySlots.length} fotos cargadas
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      }
 
                       return (
-                        <label className="grid aspect-[16/9] min-h-28 cursor-pointer place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/40 text-center transition hover:border-[var(--color-accent)] hover:bg-white/65">
+                        <label className="grid aspect-[16/9] min-h-24 cursor-pointer place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/40 text-center transition hover:border-[var(--color-accent)] hover:bg-white/65">
                           <span>
                             <span className="block text-2xl leading-none text-[var(--color-ink)]">
                               +
@@ -1343,12 +1438,12 @@ function centsToMoney(value: number | null) {
             )}
             {activeTab === "contact" && (
               <>
-            <section className="grid gap-4 md:col-span-2">
+            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
-                <span className="text-[var(--color-accent)]">▧</span>
+                <SettingsSectionIcon icon={contactPhoneIcon} />
                 Canales de contacto
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-[minmax(0,320px)_minmax(0,320px)]">
             <ArgentinaPhoneField
               label="Teléfono"
               highlightChanges={showUnsavedState}
@@ -1365,6 +1460,7 @@ function centsToMoney(value: number | null) {
             />
               </div>
             <SettingsField
+              className="max-w-lg"
               label="Email público"
               maxLength={settingsFieldLimits.publicEmail}
               placeholder="Ej: contacto@negocio.com"
@@ -1375,13 +1471,13 @@ function centsToMoney(value: number | null) {
             />
             </section>
 
-            <section className="grid gap-4 border-t border-[var(--color-border)] pt-4 md:col-span-2">
+            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
-                <span className="text-[var(--color-accent)]">⌖</span>
+                <SettingsSectionIcon icon={contactLocationIcon} />
                 Ubicación
               </div>
               <SettingsField
-                className="md:col-span-2"
+                className="max-w-2xl"
                 label="Dirección"
                 maxLength={settingsFieldLimits.address}
                 placeholder="Ej: Av. Corrientes 1234"
@@ -1390,7 +1486,7 @@ function centsToMoney(value: number | null) {
                 value={settings.address}
                 onChange={(value) => updateSetting("address", value)}
               />
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid max-w-2xl gap-4 md:grid-cols-2">
                 <SettingsField
                   label="Localidad"
                   maxLength={settingsFieldLimits.city}
@@ -1407,11 +1503,11 @@ function centsToMoney(value: number | null) {
                   <select
                     value={settings.province}
                     onChange={(event) => updateSetting("province", event.target.value)}
-                    className={`h-10 rounded-md border bg-white/70 px-3 outline-none ${
+                    className={`h-10 appearance-none rounded-md border bg-[rgba(32,24,54,0.035)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                       showUnsavedState &&
                       settings.province !== savedSettings.province
-                        ? "border-[#d65a50] focus:border-[#d65a50]"
-                        : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
+                        ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
+                        : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
                     }`}
                   >
                     <option value="">Seleccionar provincia</option>
@@ -1419,16 +1515,19 @@ function centsToMoney(value: number | null) {
                       <option key={province} value={province}>{province}</option>
                     ))}
                   </select>
+                  <span className="pointer-events-none absolute bottom-0 right-3 grid h-10 place-items-center text-sm text-[var(--color-muted-strong)]">
+                    ⌄
+                  </span>
                 </label>
               </div>
             </section>
 
-            <section className="grid gap-4 border-t border-[var(--color-border)] pt-4 md:col-span-2">
+            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
-                <span className="text-[var(--color-accent)]">◎</span>
                 Redes sociales
               </div>
               <SettingsField
+                className="max-w-md"
                 label="Instagram"
                 maxLength={settingsFieldLimits.instagram}
                 placeholder="Ej: @minegocio"
@@ -1442,16 +1541,16 @@ function centsToMoney(value: number | null) {
             )}
             {activeTab === "payments" && (
               <>
-            <section className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.78)] md:col-span-2">
-              <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-white/45 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-                    Cobros
-                  </p>
-                  <h3 className="mt-1 text-base font-semibold">Seña online</h3>
+            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <SettingsSectionIcon icon={paymentsDepositIcon} />
+                  <div>
+                  <h3 className="text-base font-semibold">Seña online</h3>
                   <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
                     El cliente paga por Mercado Pago y el dinero entra directo al local.
                   </p>
+                  </div>
                 </div>
                 <span
                   className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
@@ -1471,7 +1570,7 @@ function centsToMoney(value: number | null) {
                 </span>
               </div>
 
-              <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_minmax(240px,300px)]">
                 <label className="grid gap-1.5 text-sm">
                   <span className="font-semibold text-[var(--color-muted-strong)]">
                     Access Token del local
@@ -1487,7 +1586,7 @@ function centsToMoney(value: number | null) {
                         ? "Pegá un token nuevo para reemplazar el actual"
                         : "APP_USR-..."
                     }
-                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white/75 px-3 text-sm outline-none read-only:cursor-not-allowed read-only:bg-[rgba(32,24,54,0.035)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
+                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.035)] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[rgba(32,24,54,0.035)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                     type="password"
                     autoComplete="off"
                   />
@@ -1526,7 +1625,7 @@ function centsToMoney(value: number | null) {
               </div>
 
               {settings.mercadoPagoConnected && (
-                <div className="flex flex-col gap-2 border-t border-[var(--color-border)] bg-white/35 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 rounded-lg border border-[#e7b9b2] bg-[#fff8f6] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-[var(--color-muted)]">
                     Si desconectás Mercado Pago, se desactiva el cobro de seña.
                   </p>
@@ -1547,20 +1646,30 @@ function centsToMoney(value: number | null) {
             )}
             {activeTab === "page" && (
               <>
-            <SettingsField
-              className="md:col-span-2"
-              actionHref={`/book/${publicSlug}`}
-              label="URL pública"
-              prefix="turnosi.com/"
-              readOnly
-              value={publicSlug}
-            />
+            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--color-ink)]">
+                  Link de reservas
+                </h3>
+                <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                  Compartilo con tus clientes para que puedan pedir turnos online.
+                </p>
+              </div>
+              <SettingsField
+                className="max-w-2xl"
+                actionHref={`/book/${publicSlug}`}
+                label="URL pública"
+                prefix="turnosi.com/"
+                readOnly
+                value={publicSlug}
+              />
+            </section>
               </>
             )}
             {hasActiveSectionChanges && (
-              <div className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:justify-center md:col-span-2">
+              <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end md:col-span-2">
                 {!isOnboarding && (
-                  <Button type="button" onClick={cancelEditing} className="w-full sm:w-auto">
+                  <Button type="button" onClick={discardSettingsChanges} className="w-full sm:w-auto">
                     Descartar
                   </Button>
                 )}
@@ -1737,6 +1846,17 @@ function centsToMoney(value: number | null) {
           }}
         />
       )}
+      {galleryDeleteSlot !== null && (
+        <DeleteGalleryImageModal
+          isDeleting={isDeletingGalleryImage}
+          onCancel={() => {
+            if (!isDeletingGalleryImage) setGalleryDeleteSlot(null);
+          }}
+          onConfirm={() => {
+            void confirmRemoveGalleryImage();
+          }}
+        />
+      )}
       {pendingTab && (
         <UnsavedChangesModal
           isSaving={isSaving}
@@ -1745,7 +1865,7 @@ function centsToMoney(value: number | null) {
             setPendingTab(null);
           }}
           onDiscard={() => {
-            if (hasUnsavedChanges) cancelEditing();
+            if (hasUnsavedChanges) discardSettingsChanges();
             setActiveTab(pendingTab);
             setPendingTab(null);
           }}
@@ -1790,7 +1910,6 @@ function SettingsField({
   label,
   maxLength,
   onChange,
-  options,
   placeholder,
   prefix,
   readOnly = false,
@@ -1803,7 +1922,6 @@ function SettingsField({
   label: string;
   maxLength?: number;
   onChange?: (value: string) => void;
-  options?: string[];
   placeholder?: string;
   prefix?: string;
   readOnly?: boolean;
@@ -1816,24 +1934,21 @@ function SettingsField({
   return (
     <label className={`relative grid gap-1.5 text-sm ${className}`}>
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
-      <span className={`flex h-10 min-w-0 overflow-hidden rounded-md border focus-within:ring-2 ${
+      <span className={`flex h-10 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
         changed
           ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
           : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-      } ${
-        readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-white/70"
-      }`}>
+      } bg-[rgba(32,24,54,0.035)]`}>
         {prefix && (
           <span
             className={`shrink-0 border-r border-[var(--color-border)] px-3 py-2 text-[var(--color-muted)] ${
-              readOnly ? "bg-[rgba(32,24,54,0.035)]" : ""
+              readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-[rgba(32,24,54,0.025)]"
             }`}
           >
             {prefix}
           </span>
         )}
         <input
-          list={options ? `settings-${createPublicSlug(label)}` : undefined}
           readOnly={readOnly}
           placeholder={placeholder}
           value={value}
@@ -1854,13 +1969,6 @@ function SettingsField({
           >
             Ver página
           </a>
-        )}
-        {options && (
-          <datalist id={`settings-${createPublicSlug(label)}`}>
-            {options.map((option) => (
-              <option key={option} value={option} />
-            ))}
-          </datalist>
         )}
       </span>
       {readOnly && actionHref && (
@@ -1900,17 +2008,15 @@ function ArgentinaPhoneField({
     <label className="relative grid gap-1.5 text-sm">
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
       <span
-        className={`flex h-10 min-w-0 overflow-hidden rounded-md border focus-within:ring-2 ${
+        className={`flex h-10 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
           changed
             ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
             : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-        } ${
-          readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-white/70"
-        }`}
+        } bg-[rgba(32,24,54,0.035)]`}
       >
         <span
           className={`inline-flex shrink-0 items-center border-r border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-ink)] ${
-            readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-white/60"
+            readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-[rgba(32,24,54,0.025)]"
           }`}
         >
           +54 9
@@ -1957,7 +2063,7 @@ function CustomCategoryModal({
           onChange={(event) => onChange(event.target.value)}
           maxLength={settingsFieldLimits.category}
           placeholder="Ej: Veterinaria"
-          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
+          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.035)] px-3 outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
         />
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" onClick={onClose}>
@@ -1966,6 +2072,49 @@ function CustomCategoryModal({
           <Button type="button" variant="primary" disabled={!value.trim()} onClick={onSave}>
             Guardar rubro
           </Button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DeleteGalleryImageModal({
+  isDeleting,
+  onCancel,
+  onConfirm
+}: {
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="modal-overlay-enter fixed inset-0 z-[100] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+      <section
+        role="dialog"
+        aria-modal="true"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+      >
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b42318]">
+          Eliminar foto
+        </p>
+        <h2 className="mt-2 text-lg font-semibold text-[var(--color-ink)]">
+          ¿Querés quitar esta imagen?
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
+          Se elimina de la galería del local al confirmar. No hace falta guardar cambios después.
+        </p>
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" disabled={isDeleting} onClick={onCancel}>
+            Cancelar
+          </Button>
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={onConfirm}
+            className="rounded-md border border-[#e7b9b2] bg-[#fff8f6] px-4 py-2 text-sm font-semibold text-[#9f1f16] transition hover:-translate-y-0.5 hover:bg-[#fde8e5] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isDeleting ? "Eliminando..." : "Eliminar foto"}
+          </button>
         </div>
       </section>
     </div>

@@ -11,12 +11,12 @@ import { dashboardSections } from "./dashboard.data";
 import { canOpenBillingPlans, canAccessDashboardView, type DashboardRole } from "./dashboard.permissions";
 import type { DashboardView } from "./dashboard.types";
 import type { SubscriptionStatus } from "../billing/billing.api";
-import navAvailabilityIcon from "../../components/assets/icons/nav-availability.svg";
-import navCalendarIcon from "../../components/assets/icons/nav-calendar.svg";
-import navHomeIcon from "../../components/assets/icons/nav-home.svg";
-import navSettingsIcon from "../../components/assets/icons/nav-settings.svg";
-import navTeamIcon from "../../components/assets/icons/nav-team.svg";
-import navTeamSettingsIcon from "../../components/assets/icons/nav-team-settings.svg";
+import navAvailabilityIcon from "../../components/assets/icons/navigation/availability.svg";
+import navCalendarIcon from "../../components/assets/icons/navigation/calendar.svg";
+import navHomeIcon from "../../components/assets/icons/navigation/home.svg";
+import navSettingsIcon from "../../components/assets/icons/navigation/settings.svg";
+import navTeamIcon from "../../components/assets/icons/navigation/team.svg";
+import navTeamSettingsIcon from "../../components/assets/icons/navigation/team-settings.svg";
 
 const dashboardNavIcons: Partial<Record<DashboardView, string>> = {
   summary: navHomeIcon,

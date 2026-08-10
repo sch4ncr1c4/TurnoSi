@@ -16,7 +16,7 @@ import { useSessionQuery } from "../auth/auth.queries";
 import type { AuthResult } from "../auth/auth.types";
 import { queryKeys } from "../../lib/query-keys";
 import { changeAccountPassword, updateAccountProfile } from "./account.api";
-import pencilIcon from "../../components/assets/icons/pencil.svg";
+import pencilIcon from "../../components/assets/icons/actions/pencil.svg";
 
 export function AccountAccessSettings({
   highlightChanges = false,
@@ -156,10 +156,10 @@ export function AccountAccessSettings({
           )}
         </div>
       </CardHeader>
-      <CardBody className="space-y-5 p-4 sm:p-5">
+      <CardBody className="space-y-4 p-4 sm:p-5">
         <form
           onSubmit={saveProfile}
-          className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]"
+          className="grid max-w-4xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,240px)_minmax(0,240px)_minmax(0,320px)]"
         >
           <AccountField
             label="Nombre del propietario"
@@ -222,8 +222,8 @@ export function AccountAccessSettings({
           )}
         </form>
 
-        <section className="border-t border-[var(--color-border)] pt-5">
-          <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.62)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="max-w-4xl rounded-xl border border-[var(--color-border)] bg-white/35 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold">Seguridad</p>
               <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
@@ -365,7 +365,7 @@ function AccountField({
         placeholder={placeholder}
         autoComplete={autoComplete ?? (type === "email" ? "email" : "name")}
         onChange={(event) => onChange(event.target.value)}
-        className={`rounded-md border bg-white/70 px-3 py-2 outline-none placeholder:text-[var(--color-muted)] disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] focus:ring-2 ${
+        className={`rounded-md border bg-[rgba(32,24,54,0.035)] px-3 py-2 outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] focus:ring-2 ${
           changed
             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
             : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
