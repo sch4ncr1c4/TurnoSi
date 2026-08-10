@@ -109,9 +109,14 @@ function buildStatusMap<T>(fn: (status: AppointmentStatusLabel, color: typeof st
   ) as Record<AppointmentStatusLabel, T>;
 }
 
-export const statusClassName = buildStatusMap(
-  (_, c) => `bg-[${c.solid}] text-white`
-);
+export const statusClassName: Record<AppointmentStatusLabel, string> = {
+  Confirmado: "bg-[var(--color-accent)] text-white",
+  "En espera": "bg-[#438397] text-white",
+  Pagado: "bg-[#569165] text-white",
+  Asistido: "bg-[rgba(32,24,54,0.9)] text-white",
+  Cancelado: "bg-[#b42318] text-white",
+  "No asistió": "bg-[#8a5a44] text-white"
+};
 
 export const rowClassName = buildStatusMap(
   (_, c) => `border-l-4 border-l-[${c.border}] bg-[${c.light}]`

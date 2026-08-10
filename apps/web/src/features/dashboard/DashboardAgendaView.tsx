@@ -26,6 +26,8 @@ type AgendaTone =
   | "confirmed"
   | "pending"
   | "attended"
+  | "cancelled"
+  | "noShow"
   | "available"
   | "empty";
 
@@ -46,11 +48,52 @@ function getAgendaEventClassName(tone: AgendaTone) {
     return "border-[#c8b8ee] bg-[#f3edff] text-[#4d2f9b]";
   }
 
+  if (tone === "cancelled") {
+    return "border-[#e7b9b2] bg-[#fde8e5] text-[#9f1f16]";
+  }
+
+  if (tone === "noShow") {
+    return "border-[#d9b7a6] bg-[#fff0e9] text-[#8a3f22]";
+  }
+
   if (tone === "available") {
     return "border-dashed border-[#f0b56f] bg-[#fffaf4] text-[#8a5a22]";
   }
 
   return "border-dashed border-[var(--color-border-strong)] bg-white/40 text-[var(--color-muted-strong)]";
+}
+
+function getAgendaTone(status: AppointmentStatusLabel): AgendaTone {
+  if (status === "En espera") return "pending";
+  if (status === "Asistido") return "attended";
+  if (status === "Pagado") return "paid";
+  if (status === "Cancelado") return "cancelled";
+  if (status === "No asistió") return "noShow";
+  return "confirmed";
+}
+
+function getStatusBadgeClassName(status: AppointmentStatusLabel) {
+  if (status === "Pagado") {
+    return "bg-[#e5f4e8] text-[#1f6b35] ring-[#b9dfc0]";
+  }
+
+  if (status === "Confirmado") {
+    return "bg-[#fff3e3] text-[#a44b00] ring-[#f0b56f]";
+  }
+
+  if (status === "En espera") {
+    return "bg-[#eef9fb] text-[#275f6b] ring-[#98cbd5]";
+  }
+
+  if (status === "Asistido") {
+    return "bg-[#f3edff] text-[#4d2f9b] ring-[#c8b8ee]";
+  }
+
+  if (status === "Cancelado") {
+    return "bg-[#fde8e5] text-[#9f1f16] ring-[#e7b9b2]";
+  }
+
+  return "bg-[#fff0e9] text-[#8a3f22] ring-[#d9b7a6]";
 }
 
 function getAgendaHours(appointments: DashboardAppointment[]) {
@@ -118,14 +161,6 @@ export function DashboardAgendaView({
     .filter((appointment) => appointment.startsAt)
     .map((appointment) => {
       const startsAt = new Date(appointment.startsAt!);
-      const tone: AgendaTone =
-        appointment.status === "En espera"
-          ? "pending"
-          : appointment.status === "Asistido"
-            ? "attended"
-            : appointment.status === "Pagado"
-              ? "paid"
-              : "confirmed";
       return {
         id: appointment.id,
         day: differenceInCalendarDays(startsAt, weekStart),
@@ -133,8 +168,9 @@ export function DashboardAgendaView({
         time: appointment.time,
         title: appointment.service,
         client: appointment.client,
+        status: appointment.status,
         depositPaid: appointment.depositPayment?.status === "approved",
-        tone
+        tone: getAgendaTone(appointment.status)
       };
     });
   const weekDays = Array.from({ length: 7 }, (_, index) => {
@@ -318,6 +354,11 @@ export function DashboardAgendaView({
                                       Seña
                                     </span>
                                   )}
+                                  <span
+                                    className={`inline-flex h-4 shrink-0 items-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ${getStatusBadgeClassName(event.status)}`}
+                                  >
+                                    {event.status}
+                                  </span>
                                 </span>
                                 <span className="mt-0.5 block truncate text-[11px] font-semibold leading-4">
                                   {event.title}
@@ -623,34 +664,49 @@ function AgendaMatchesCard({
         </span>
       </div>
       <div className="mt-3 space-y-2.5">
-        {appointments.slice(0, 8).map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelectAppointment(item)}
-            className="w-full rounded-lg border border-[var(--color-border)] bg-white/60 px-3 py-2.5 text-left transition-colors hover:border-[var(--color-accent)] hover:bg-white/80"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-sm font-semibold text-[var(--color-accent)]">
-                {item.time}
-              </span>
-              <span className="text-xs text-[var(--color-muted)]">
-                {item.day ?? ""}
-              </span>
-            </div>
-            <p className="mt-1 text-sm font-semibold text-[var(--color-ink)]">
-              {item.service}
-            </p>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-strong)]">
-              {item.client} · {item.assignee}
-            </p>
-            {item.depositPayment?.status === "approved" && (
-              <span className="mt-2 inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35]">
-                Seña pagada
-              </span>
-            )}
-          </button>
-        ))}
+        {appointments.slice(0, 8).map((item) => {
+          const tone = getAgendaTone(item.status);
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSelectAppointment(item)}
+              className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors hover:border-[var(--color-accent)] ${
+                tone === "cancelled" || tone === "noShow"
+                  ? getAgendaEventClassName(tone)
+                  : "border-[var(--color-border)] bg-white/60 hover:bg-white/80"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono text-sm font-semibold text-[var(--color-accent)]">
+                  {item.time}
+                </span>
+                <span className="text-xs text-[var(--color-muted)]">
+                  {item.day ?? ""}
+                </span>
+              </div>
+              <p className="mt-1 text-sm font-semibold text-[var(--color-ink)]">
+                {item.service}
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--color-muted-strong)]">
+                {item.client} · {item.assignee}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span
+                  className={`inline-flex rounded-md px-2 py-1 text-[10px] font-semibold ring-1 ${getStatusBadgeClassName(item.status)}`}
+                >
+                  {item.status}
+                </span>
+                {item.depositPayment?.status === "approved" && (
+                  <span className="inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35] ring-1 ring-[#b9dfc0]">
+                    Seña pagada
+                  </span>
+                )}
+              </div>
+            </button>
+          );
+        })}
         {appointments.length === 0 && (
           <p className="text-sm text-[var(--color-muted)]">
             No encontramos turnos con esos filtros.
