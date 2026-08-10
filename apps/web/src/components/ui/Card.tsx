@@ -18,7 +18,7 @@ export function Card({ children, className = "" }: CardProps) {
 
 export function CardHeader({ children }: { children: ReactNode }) {
   return (
-    <div className="border-b border-[var(--color-border)] px-4 py-4">
+    <div className="px-4 py-4">
       {children}
     </div>
   );

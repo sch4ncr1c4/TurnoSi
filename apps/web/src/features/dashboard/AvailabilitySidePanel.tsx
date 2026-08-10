@@ -8,7 +8,7 @@ export function AvailabilitySidePanel({
   availability: WeeklyAvailabilityDay[];
 }) {
   return (
-    <aside className="grid min-w-0 gap-3 md:grid-cols-3 min-[1500px]:sticky min-[1500px]:top-4 min-[1500px]:block min-[1500px]:space-y-3 min-[1500px]:self-start">
+    <aside className="grid min-w-0 gap-3 lg:grid-cols-2 min-[1700px]:sticky min-[1700px]:top-4 min-[1700px]:block min-[1700px]:space-y-3 min-[1700px]:self-start">
       <article className="rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <h2 className="text-base font-semibold">Vista rápida</h2>
         <div className="mt-4 grid grid-cols-[42px_minmax(0,1fr)] gap-y-3 text-xs">

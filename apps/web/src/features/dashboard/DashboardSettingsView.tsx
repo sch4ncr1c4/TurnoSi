@@ -24,10 +24,9 @@ import { argentinaProvinces } from "./dashboard.options";
 import businessIcon from "../../components/assets/icons/navigation/home.svg";
 import contactIcon from "../../components/assets/icons/navigation/team.svg";
 import pageIcon from "../../components/assets/icons/navigation/calendar.svg";
-import accountIcon from "../../components/assets/icons/navigation/settings.svg";
+import accountProfileIcon from "../../components/assets/icons/settings/account-profile.svg";
 import businessIdentityIcon from "../../components/assets/icons/settings/business-identity.svg";
 import galleryIcon from "../../components/assets/icons/settings/gallery.svg";
-import contactCardIcon from "../../components/assets/icons/settings/contact-card.svg";
 import contactLocationIcon from "../../components/assets/icons/settings/contact-location.svg";
 import contactPhoneIcon from "../../components/assets/icons/settings/contact-phone.svg";
 import settingsNavAccountIcon from "../../components/assets/icons/settings/nav-account-user.svg";
@@ -712,7 +711,7 @@ function centsToMoney(value: number | null) {
       tab: "payments"
     },
     {
-      icon: accountIcon,
+      icon: accountProfileIcon,
       label: "Cuenta",
       done: Boolean(
         sessionQuery.data?.data.user.firstName &&
@@ -954,14 +953,14 @@ function centsToMoney(value: number | null) {
   const galleryImagesCount = galleryPreviews.filter(Boolean).length;
   const activeSettingsIcon =
     ({
-      contact: contactCardIcon,
+      contact: accountProfileIcon,
       page: pageIcon,
       payments: paymentsWalletIcon,
-      account: accountIcon
+      account: accountProfileIcon
     } as Partial<Record<SettingsTab, string>>)[activeTab] ?? null;
 
   return (
-    <section className="min-w-0 space-y-4 sm:space-y-5">
+    <section className="min-w-0 max-w-full overflow-x-clip space-y-4 pb-2 sm:space-y-5">
       {isOnboarding &&
         sessionQuery.data &&
         !sessionQuery.data.data.user.onboardingGuideSeen && (
@@ -1019,7 +1018,7 @@ function centsToMoney(value: number | null) {
             </section>
           </div>
         )}
-      <nav className="flex w-full snap-x gap-1 overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-1 shadow-[0_10px_26px_rgba(32,24,54,0.04)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:grid 2xl:grid-cols-5 2xl:overflow-hidden 2xl:w-[calc(100%-360px)]">
+      <nav className="flex w-full max-w-full snap-x gap-1 overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-1 shadow-[0_10px_26px_rgba(32,24,54,0.04)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:grid 2xl:grid-cols-5 2xl:overflow-hidden">
         {([
           ["business", "Negocio", "Negocio", settingsNavBusinessIcon],
           ["contact", "Contacto", "Contacto", contactPhoneIcon],
@@ -1038,20 +1037,14 @@ function centsToMoney(value: number | null) {
               }
               setActiveTab(value);
             }}
-            className={`group relative flex min-w-[150px] snap-start items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors 2xl:min-w-0 2xl:px-4 ${
+            className={`group flex min-w-[150px] snap-start items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold transition-colors 2xl:min-w-0 2xl:px-4 ${
+              index > 0 ? "2xl:border-l 2xl:border-[var(--color-border)]" : ""
+            } ${
               activeTab === value
                 ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
-                : "text-[var(--color-muted-strong)] hover:bg-white/60"
+                : "text-[var(--color-ink)] hover:bg-white/60"
             }`}
           >
-            {index > 0 && (
-              <span
-                aria-hidden="true"
-                className={`pointer-events-none absolute left-0 top-1/2 hidden h-6 w-px -translate-y-1/2 bg-[var(--color-border)] 2xl:block ${
-                  activeTab === value ? "opacity-0" : "opacity-100"
-                }`}
-              />
-            )}
             <img
               src={icon}
               alt=""
@@ -1066,7 +1059,7 @@ function centsToMoney(value: number | null) {
         ))}
       </nav>
 
-      <div className="grid min-w-0 gap-4 sm:gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid min-w-0 max-w-full gap-4 overflow-x-clip sm:gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-4 sm:space-y-5">
         {isOnboarding && (
           <section className="rounded-lg border border-[var(--color-accent)] bg-[rgba(253,134,6,0.08)] p-3 sm:p-4">
@@ -1167,7 +1160,7 @@ function centsToMoney(value: number | null) {
           >
             {activeTab === "business" && (
               <>
-                <section className="grid max-w-4xl gap-5 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5 xl:grid-cols-[300px_minmax(0,620px)]">
+                <section className="grid gap-5 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5 xl:grid-cols-[300px_minmax(0,1fr)]">
                   <div className="min-w-0">
                     <div>
                       <div className="mb-2 flex items-center gap-2 text-sm">
@@ -1223,7 +1216,7 @@ function centsToMoney(value: number | null) {
                     </div>
                   </div>
 
-                  <div className="grid min-w-0 content-start gap-4 md:grid-cols-[minmax(0,300px)_minmax(0,300px)]">
+                  <div className="grid min-w-0 max-w-3xl content-start gap-4 md:grid-cols-2">
                     <SettingsField
                       label="Nombre del local"
                       maxLength={settingsFieldLimits.businessName}
@@ -1250,7 +1243,7 @@ function centsToMoney(value: number | null) {
                           }
                           updateSetting("category", event.target.value);
                         }}
-                        className={`h-10 appearance-none rounded-md border bg-[rgba(32,24,54,0.035)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`h-10 appearance-none rounded-md border bg-[rgba(255,255,255,0.72)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.category !== savedSettings.category
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1280,7 +1273,7 @@ function centsToMoney(value: number | null) {
                         onChange={(event) =>
                           updateSetting("description", event.target.value)
                         }
-                        className={`min-h-32 resize-none rounded-md border bg-[rgba(32,24,54,0.035)] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`min-h-32 resize-none rounded-md border bg-[rgba(255,255,255,0.72)] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.description !== savedSettings.description
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1294,7 +1287,7 @@ function centsToMoney(value: number | null) {
                   </div>
                 </section>
 
-                <section className="max-w-4xl rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+                <section className="rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
                   <div className="flex items-start gap-3">
                     <SettingsSectionIcon icon={galleryIcon} />
                     <div className="min-w-0 flex-1">
@@ -1310,7 +1303,7 @@ function centsToMoney(value: number | null) {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(2,minmax(0,240px))_180px] xl:grid-cols-[repeat(2,minmax(0,260px))_190px]">
+                  <div className="mt-4 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(2,minmax(0,260px))_190px] xl:grid-cols-[repeat(2,minmax(0,280px))_200px]">
                     {gallerySlots
                       .filter((slot) => galleryPreviews[slot])
                       .map((slot) => {
@@ -1438,12 +1431,12 @@ function centsToMoney(value: number | null) {
             )}
             {activeTab === "contact" && (
               <>
-            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 <SettingsSectionIcon icon={contactPhoneIcon} />
                 Canales de contacto
               </div>
-              <div className="grid gap-4 md:grid-cols-[minmax(0,320px)_minmax(0,320px)]">
+              <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,320px)_minmax(0,320px)]">
             <ArgentinaPhoneField
               label="Teléfono"
               highlightChanges={showUnsavedState}
@@ -1471,7 +1464,7 @@ function centsToMoney(value: number | null) {
             />
             </section>
 
-            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 <SettingsSectionIcon icon={contactLocationIcon} />
                 Ubicación
@@ -1486,7 +1479,7 @@ function centsToMoney(value: number | null) {
                 value={settings.address}
                 onChange={(value) => updateSetting("address", value)}
               />
-              <div className="grid max-w-2xl gap-4 md:grid-cols-2">
+              <div className="grid min-w-0 max-w-2xl gap-4 md:grid-cols-2">
                 <SettingsField
                   label="Localidad"
                   maxLength={settingsFieldLimits.city}
@@ -1503,7 +1496,7 @@ function centsToMoney(value: number | null) {
                   <select
                     value={settings.province}
                     onChange={(event) => updateSetting("province", event.target.value)}
-                    className={`h-10 appearance-none rounded-md border bg-[rgba(32,24,54,0.035)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                    className={`h-10 appearance-none rounded-md border bg-[rgba(255,255,255,0.72)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                       showUnsavedState &&
                       settings.province !== savedSettings.province
                         ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1522,7 +1515,7 @@ function centsToMoney(value: number | null) {
               </div>
             </section>
 
-            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 Redes sociales
               </div>
@@ -1541,7 +1534,7 @@ function centsToMoney(value: number | null) {
             )}
             {activeTab === "payments" && (
               <>
-            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+            <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
                   <SettingsSectionIcon icon={paymentsDepositIcon} />
@@ -1586,7 +1579,7 @@ function centsToMoney(value: number | null) {
                         ? "Pegá un token nuevo para reemplazar el actual"
                         : "APP_USR-..."
                     }
-                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.035)] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[rgba(32,24,54,0.035)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
+                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.72)] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[rgba(255,255,255,0.72)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                     type="password"
                     autoComplete="off"
                   />
@@ -1646,7 +1639,7 @@ function centsToMoney(value: number | null) {
             )}
             {activeTab === "page" && (
               <>
-            <section className="grid max-w-3xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:col-span-2 sm:p-5">
+            <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--color-ink)]">
                   Link de reservas
@@ -1932,17 +1925,17 @@ function SettingsField({
     highlightChanges && savedValue !== undefined && value !== savedValue;
 
   return (
-    <label className={`relative grid gap-1.5 text-sm ${className}`}>
+    <label className={`relative grid min-w-0 gap-1.5 text-sm ${className}`}>
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
       <span className={`flex h-10 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
         changed
           ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
           : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-      } bg-[rgba(32,24,54,0.035)]`}>
+      } bg-[rgba(255,255,255,0.72)]`}>
         {prefix && (
           <span
             className={`shrink-0 border-r border-[var(--color-border)] px-3 py-2 text-[var(--color-muted)] ${
-              readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-[rgba(32,24,54,0.025)]"
+              readOnly ? "bg-[rgba(255,255,255,0.72)]" : "bg-[rgba(255,255,255,0.72)]"
             }`}
           >
             {prefix}
@@ -1964,7 +1957,7 @@ function SettingsField({
             target="_blank"
             rel="noreferrer"
             className={`shrink-0 border-l border-[var(--color-border)] px-3 py-2 font-semibold text-[var(--color-ink)] hover:bg-[rgba(253,134,6,0.1)] ${
-              readOnly ? "bg-[rgba(32,24,54,0.035)]" : ""
+              readOnly ? "bg-[rgba(255,255,255,0.72)]" : ""
             }`}
           >
             Ver página
@@ -2005,18 +1998,18 @@ function ArgentinaPhoneField({
   }
 
   return (
-    <label className="relative grid gap-1.5 text-sm">
+    <label className="relative grid min-w-0 gap-1.5 text-sm">
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
       <span
         className={`flex h-10 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
           changed
             ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
             : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-        } bg-[rgba(32,24,54,0.035)]`}
+        } bg-[rgba(255,255,255,0.72)]`}
       >
         <span
           className={`inline-flex shrink-0 items-center border-r border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-ink)] ${
-            readOnly ? "bg-[rgba(32,24,54,0.035)]" : "bg-[rgba(32,24,54,0.025)]"
+            readOnly ? "bg-[rgba(255,255,255,0.72)]" : "bg-[rgba(255,255,255,0.72)]"
           }`}
         >
           +54 9
@@ -2063,7 +2056,7 @@ function CustomCategoryModal({
           onChange={(event) => onChange(event.target.value)}
           maxLength={settingsFieldLimits.category}
           placeholder="Ej: Veterinaria"
-          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.035)] px-3 outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
+          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.72)] px-3 outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
         />
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" onClick={onClose}>
@@ -2088,7 +2081,7 @@ function DeleteGalleryImageModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="modal-overlay-enter fixed inset-0 z-[100] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+    <div className="viewport-overlay modal-overlay-enter z-[100] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
       <section
         role="dialog"
         aria-modal="true"
@@ -2174,7 +2167,7 @@ function GalleryCropModal({
   }
 
   return (
-    <div className="modal-overlay-enter fixed inset-0 z-[120] grid place-items-end bg-[rgba(32,24,54,0.72)] p-3 backdrop-blur-sm sm:place-items-center">
+    <div className="viewport-overlay modal-overlay-enter z-[120] grid place-items-end bg-[rgba(32,24,54,0.72)] p-3 backdrop-blur-sm sm:place-items-center">
       <section
         role="dialog"
         aria-modal="true"
@@ -2287,7 +2280,7 @@ function UnsavedChangesModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+    <div className="viewport-overlay modal-overlay-enter z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
       <section
         role="dialog"
         aria-modal="true"
@@ -2340,7 +2333,7 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.62)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.62)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <h2 className="text-lg font-semibold text-[#8f1b13]">
           Confirmar eliminación

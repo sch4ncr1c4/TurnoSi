@@ -1,5 +1,8 @@
 import { type ChangeEvent, type InputHTMLAttributes, useState } from "react";
 
+import passwordEyeOffIcon from "../assets/icons/auth/password-eye-off.svg";
+import passwordEyeIcon from "../assets/icons/auth/password-eye.svg";
+
 type PasswordRequirementFieldProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "className" | "onChange" | "type"
@@ -52,7 +55,7 @@ export function PasswordRequirementField({
           value={value}
           minLength={minLength}
           onChange={handleChange}
-          className={`w-full rounded-md border bg-[rgba(32,24,54,0.035)] px-3 py-2.5 pr-20 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent)] focus:ring-2 ${
+          className={`w-full rounded-md border bg-[rgba(32,24,54,0.035)] px-3 py-2.5 pr-12 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent)] focus:ring-2 ${
             isTooShort
               ? "border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.16)]"
               : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
@@ -61,9 +64,16 @@ export function PasswordRequirementField({
         <button
           type="button"
           onClick={() => setIsVisible((current) => !current)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.06)]"
+          aria-label={isVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-[var(--color-muted-strong)] transition hover:bg-[rgba(32,24,54,0.06)] hover:text-[var(--color-ink)] active:scale-95"
         >
-          {isVisible ? "Ocultar" : "Mostrar"}
+          <img
+            key={isVisible ? "eye-off" : "eye"}
+            src={isVisible ? passwordEyeOffIcon : passwordEyeIcon}
+            alt=""
+            aria-hidden="true"
+            className="auth-icon-swap h-5 w-5 opacity-70"
+          />
         </button>
       </span>
       <span

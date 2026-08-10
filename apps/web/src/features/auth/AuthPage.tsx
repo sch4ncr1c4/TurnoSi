@@ -2,6 +2,11 @@ import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
+import backChevronIcon from "../../components/assets/icons/actions/back-chevron.svg";
+import loginPasswordIcon from "../../components/assets/icons/auth/login-password.svg";
+import loginUserIcon from "../../components/assets/icons/auth/login-user.svg";
+import passwordEyeOffIcon from "../../components/assets/icons/auth/password-eye-off.svg";
+import passwordEyeIcon from "../../components/assets/icons/auth/password-eye.svg";
 import { PasswordRequirementField } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { parseFormData } from "../../utils/validation";
@@ -16,6 +21,19 @@ type AuthPageProps = {
 };
 
 const maxVerificationSendAttempts = 5;
+
+function AuthFieldIcon({ fieldId }: { fieldId: string }) {
+  const icon = fieldId === "password" ? loginPasswordIcon : loginUserIcon;
+
+  return (
+    <img
+      src={icon}
+      alt=""
+      aria-hidden="true"
+      className="block h-4 w-4 opacity-55"
+    />
+  );
+}
 
 function getAuthErrorMessage(error: ApiError) {
   if (error.code === "INVALID_CREDENTIALS") {
@@ -188,33 +206,37 @@ export function AuthPage({ brand, route }: AuthPageProps) {
           </div>
         </aside>
 
-        <section className="flex flex-col">
-          <header className="border-b border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] px-5 py-4 sm:px-7">
-            <div className="flex items-center justify-end gap-4">
-              <Link
-                to="/"
-                className="text-sm font-medium text-[var(--color-muted-strong)]"
-              >
-                Volver al inicio
-              </Link>
-            </div>
+        <section className="relative flex min-w-0 flex-col overflow-hidden bg-[#fbfaf7]">
+          <header className="relative z-10 flex justify-end px-5 py-5 sm:px-8">
+            <Link
+              to="/"
+              className="group inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-strong)] transition hover:text-[var(--color-ink)]"
+            >
+              <img
+                src={backChevronIcon}
+                alt=""
+                aria-hidden="true"
+                className="h-4 w-4 opacity-70 transition-transform duration-300 ease-out group-hover:-translate-x-1"
+              />
+              Volver al inicio
+            </Link>
           </header>
 
-          <div className="flex flex-1 items-center justify-center px-5 py-8 sm:px-7 lg:py-10">
-            <div className="w-full max-w-[500px] lg:-translate-y-4">
-              <div className="border-b border-[var(--color-border)] pb-6">
-                <p className="text-xs font-semibold uppercase text-[var(--color-muted)]">
+          <div className="relative z-10 flex flex-1 items-center justify-center px-5 pb-8 pt-4 sm:px-7 lg:pb-12">
+            <div className="w-full max-w-[590px] rounded-2xl border border-[rgba(32,24,54,0.11)] bg-white/90 px-8 py-7 shadow-[0_24px_70px_rgba(32,24,54,0.12)] backdrop-blur sm:px-14 sm:py-12 lg:px-16 lg:py-14 lg:-translate-y-2">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--color-ink)]">
                   {config.eyebrow}
                 </p>
-                <h2 className="mt-3 text-3xl font-semibold sm:text-4xl">
+                <h2 className="mt-3 max-w-md text-3xl font-extrabold leading-tight sm:text-4xl">
                   {config.title}
                 </h2>
-                <p className="mt-3 text-sm leading-7 text-[var(--color-muted-strong)]">
+                <p className="mt-3 max-w-md text-sm leading-6 text-[var(--color-muted-strong)]">
                   {config.description}
                 </p>
               </div>
 
-                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <form onSubmit={handleSubmit} className="mt-7 space-y-4">
                   {formError && (
                     <div role="alert" className="rounded-md border border-[#f0c9c5] bg-[#fff3f1] p-3 text-sm text-[#9f261d]">
                       {formError}
@@ -267,7 +289,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                                   autoComplete={nameField.id === "firstName" ? "given-name" : "family-name"}
                                   aria-invalid={Boolean(nameError)}
                                   aria-describedby={nameError ? `${nameField.id}-error` : undefined}
-                                  className={`w-full rounded-md border bg-[rgba(255,251,244,0.88)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] ${
+                                  className={`h-12 w-full rounded-lg border bg-white/70 px-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-ink)] focus:ring-2 focus:ring-[rgba(32,24,54,0.08)] ${
                                     nameError
                                       ? "border-[#b42318]"
                                       : "border-[var(--color-border)]"
@@ -328,6 +350,9 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                           {field.label}
                         </span>
                         <span className="relative block">
+                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]">
+                            <AuthFieldIcon fieldId={field.id} />
+                          </span>
                           <input
                             id={field.id}
                             name={field.id}
@@ -336,8 +361,8 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                             autoComplete={autoComplete}
                             aria-invalid={Boolean(error)}
                             aria-describedby={error ? `${field.id}-error` : undefined}
-                            className={`w-full rounded-md border bg-[rgba(255,251,244,0.88)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] ${
-                              field.type === "password" ? "pr-20" : ""
+                            className={`h-12 w-full rounded-lg border bg-white/70 py-3 pl-10 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-ink)] focus:ring-2 focus:ring-[rgba(32,24,54,0.08)] ${
+                              field.type === "password" ? "pr-12" : ""
                             } ${
                               error
                                 ? "border-[#b42318]"
@@ -348,9 +373,16 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                             <button
                               type="button"
                               onClick={() => setShowLoginPassword((current) => !current)}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.06)]"
+                              aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                              className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-[var(--color-muted-strong)] transition hover:bg-[rgba(32,24,54,0.06)] hover:text-[var(--color-ink)] active:scale-95"
                             >
-                              {showLoginPassword ? "Ocultar" : "Mostrar"}
+                              <img
+                                key={showLoginPassword ? "eye-off" : "eye"}
+                                src={showLoginPassword ? passwordEyeOffIcon : passwordEyeIcon}
+                                alt=""
+                                aria-hidden="true"
+                                className="auth-icon-swap h-5 w-5 opacity-70"
+                              />
                             </button>
                           )}
                         </span>
@@ -365,18 +397,18 @@ export function AuthPage({ brand, route }: AuthPageProps) {
 
                   {isLogin && (
                     <div className="flex items-center justify-between gap-4 pt-1 text-sm">
-                      <label className="flex items-center gap-2 text-[var(--color-muted-strong)]">
+                      <label className="flex cursor-pointer items-center gap-2 text-[var(--color-muted-strong)]">
                         <input
                           name="rememberMe"
                           value="true"
                           type="checkbox"
-                          className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-accent)]"
+                          className="h-4 w-4 cursor-pointer rounded border-[var(--color-border)] accent-[var(--color-ink)]"
                         />
                         Recordarme
                       </label>
                       <Link
                         to="/recuperar-acceso"
-                        className="font-medium text-[var(--color-ink)]"
+                        className="font-semibold text-[var(--color-ink)]"
                       >
                         Recuperar acceso
                       </Link>
@@ -386,17 +418,18 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[var(--color-ink)] px-5 py-3 text-sm font-medium text-[var(--color-button-text)] hover:bg-[var(--color-accent)] hover:text-[var(--color-button-text)]"
+                    className="mt-3 inline-flex h-12 w-full items-center justify-center gap-3 rounded-lg bg-[var(--color-ink)] px-5 text-sm font-bold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(32,24,54,0.2)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent)] hover:text-[var(--color-button-text)]"
                   >
-                    {isSubmitting ? "Procesando..." : config.submitLabel}
+                    <span>{isSubmitting ? "Procesando..." : config.submitLabel}</span>
+                    {!isSubmitting && <span aria-hidden="true">→</span>}
                   </button>
                 </form>
 
-              <div className="mt-6 border-t border-[var(--color-border)] pt-5 text-sm text-[var(--color-muted)]">
+              <div className="mt-6 border-t border-[var(--color-border)] pt-5 text-center text-sm text-[var(--color-muted)]">
                 {config.alternateLabel}{" "}
                 <Link
                   to={config.alternateHref}
-                  className="font-medium text-[var(--color-ink)]"
+                  className="font-bold text-[var(--color-ink)]"
                 >
                   {config.alternateCta}
                 </Link>

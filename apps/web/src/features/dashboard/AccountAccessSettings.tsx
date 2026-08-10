@@ -246,7 +246,7 @@ export function AccountAccessSettings({
       {toast && <Toast message={toast} onDismiss={() => setToast("")} />}
     </Card>
     {showPasswordModal && (
-      <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+      <div className="viewport-overlay modal-overlay-enter z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
         <form
           noValidate
           onSubmit={savePassword}

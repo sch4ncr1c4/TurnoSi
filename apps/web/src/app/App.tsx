@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { Brand } from "../components/brand/Brand";
 import { ErrorBoundary } from "../components/layout/ErrorBoundary";
+import { PageLoader } from "../components/layout/PageLoader";
 import { PageShell } from "../components/layout/PageShell";
 import { ROUTES } from "./routes";
 import { AuthGuard } from "../features/auth/AuthGuard";
@@ -15,7 +17,26 @@ import { PublicBookingPage } from "../features/booking/PublicBookingPage";
 import { SuperAdminPage } from "../features/superadmin/SuperAdminPage";
 import { NotFoundPage } from "../features/NotFoundPage";
 
+const firstLoadStorageKey = "turnosi:first-load-seen";
+const firstLoadMinimumMs = 1300;
+
 export function App() {
+  const [showFirstLoad, setShowFirstLoad] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.sessionStorage.getItem(firstLoadStorageKey) !== "1";
+  });
+
+  useEffect(() => {
+    if (!showFirstLoad) return;
+
+    const timeout = window.setTimeout(() => {
+      window.sessionStorage.setItem(firstLoadStorageKey, "1");
+      setShowFirstLoad(false);
+    }, firstLoadMinimumMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [showFirstLoad]);
+
   return (
     <BrowserRouter>
       <ErrorBoundary>
@@ -65,6 +86,7 @@ export function App() {
           />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        {showFirstLoad && <PageLoader overlay />}
       </ErrorBoundary>
     </BrowserRouter>
   );

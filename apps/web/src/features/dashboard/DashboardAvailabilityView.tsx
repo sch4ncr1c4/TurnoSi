@@ -669,11 +669,11 @@ export function DashboardAvailabilityView() {
   }
 
   return (
-    <section className="grid min-w-0 gap-5 min-[1500px]:grid-cols-[minmax(0,1fr)_340px]">
+    <section className="grid min-w-0 gap-5 min-[1700px]:grid-cols-[minmax(0,1fr)_320px]">
       <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
-        <div className="flex flex-col gap-4 border-b border-[var(--color-border)] px-4 py-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="flex flex-wrap gap-4 text-sm font-medium text-[var(--color-muted-strong)] sm:gap-6">
+        <div className="flex flex-col gap-4 border-b border-[var(--color-border)] px-4 py-4 min-[1280px]:flex-row min-[1280px]:items-end min-[1280px]:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="stable-scrollbar flex gap-4 overflow-x-auto whitespace-nowrap text-sm font-medium text-[var(--color-muted-strong)] sm:gap-6">
               {availabilityTabs.map((tab) => (
                 <button
                   key={tab.value}
@@ -690,15 +690,15 @@ export function DashboardAvailabilityView() {
               ))}
             </div>
             {activeTab !== "resources" && (
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
-                <label className="grid w-full gap-1 text-sm sm:max-w-sm">
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+              <div className="mt-4 flex flex-wrap items-end gap-3">
+                <label className="flex w-full flex-col gap-1 text-sm sm:w-auto sm:min-w-[300px] sm:flex-row sm:items-center">
+                  <span className="shrink-0 text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                     Sede
                   </span>
                   <select
                     value={activeBranchId}
                     onChange={(event) => handleBranchChange(event.target.value)}
-                    className="h-11 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.78)] px-3 font-semibold outline-none focus:border-[var(--color-accent)]"
+                    className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.74)] px-3 text-sm font-semibold outline-none transition-colors hover:border-[var(--color-ink)] focus:border-[var(--color-accent)]"
                   >
                     {(branchesQuery.data ?? []).map((branch) => (
                       <option key={branch.id} value={branch.id}>
@@ -708,21 +708,23 @@ export function DashboardAvailabilityView() {
                     ))}
                   </select>
                 </label>
-                <button
-                  type="button"
-                  onClick={openCreateBranch}
-                  className={`h-11 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] ${buttonMotionClass}`}
-                >
-                  + Nueva sede
-                </button>
-                <button
-                  type="button"
-                  disabled={!selectedBranch}
-                  onClick={openEditBranch}
-                  className={`h-11 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 ${buttonMotionClass}`}
-                >
-                  Editar sede
-                </button>
+                <div className="flex flex-nowrap gap-2">
+                  <button
+                    type="button"
+                    onClick={openCreateBranch}
+                    className={`h-10 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] ${buttonMotionClass}`}
+                  >
+                    + Nueva sede
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!selectedBranch}
+                    onClick={openEditBranch}
+                    className={`h-10 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 ${buttonMotionClass}`}
+                  >
+                    Editar sede
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -881,7 +883,7 @@ function BranchModal({
   }
 
   return (
-    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <div className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)] sm:p-5">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-3">
           <div>
@@ -1010,7 +1012,7 @@ function CategoryModal({
   onSave: () => void;
 }) {
   return (
-    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <div className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <div className="border-b border-[var(--color-border)] pb-3">
           <h2 className="text-lg font-semibold">Nueva categoría</h2>
@@ -1069,7 +1071,7 @@ function DuplicateDayModal({
   const source = availability[draft.sourceIndex];
 
   return (
-    <div className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
+    <div className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
       <div className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)] sm:p-5">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-3">
           <div>

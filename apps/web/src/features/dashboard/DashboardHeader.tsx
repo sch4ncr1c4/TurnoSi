@@ -33,10 +33,10 @@ export function DashboardHeader({
       : "Control diario de agenda, disponibilidad, actividad y cuenta.";
 
   return (
-    <header className="border-b border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] px-5 py-3 sm:px-7">
+    <header className="bg-[var(--color-dashboard-page)] px-5 py-3 sm:px-7">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">{pageTitle}</h1>
+          <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">{pageTitle}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-muted-strong)]">
             {pageDescription}
           </p>

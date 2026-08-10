@@ -480,8 +480,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   }
 
   return (
-    <PageLayout>
-      <div className="dashboard-shell min-h-screen">
+    <PageLayout className="dashboard-page">
+      <div className="dashboard-shell min-h-screen overflow-x-clip">
         <DashboardSidebar
           activeView={effectiveActiveView}
           brand={brand}
@@ -493,12 +493,12 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           onChangeView={changeDashboardView}
         />
 
-        <section className="min-w-0 overflow-x-clip">
+        <section className="min-w-0 max-w-full overflow-x-clip">
           <DashboardHeader
             activeView={effectiveActiveView}
           />
 
-          <div className="space-y-4 px-5 py-4 sm:px-7">
+          <div className="min-w-0 max-w-full space-y-4 overflow-x-clip px-5 pb-10 pt-4 sm:px-7 sm:pb-12">
             {billingError && (
               <div className="rounded-lg border border-[#e7b9b2] bg-[#fde8e5] px-4 py-3 text-sm font-medium text-[#9f1f16]">
                 {billingError}
@@ -622,7 +622,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         />
       )}
       {showBillingPlans && (
-        <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+        <div className="viewport-overlay modal-overlay-enter z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
           <section
             role="dialog"
             aria-modal="true"
@@ -654,7 +654,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         />
       )}
       {pendingDashboardView && (
-        <div className="modal-overlay-enter fixed inset-0 z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
+        <div className="viewport-overlay modal-overlay-enter z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
           <section
             role="dialog"
             aria-modal="true"

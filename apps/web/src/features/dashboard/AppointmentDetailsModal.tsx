@@ -25,7 +25,7 @@ export function AppointmentDetailsModal({
 
   return (
     <div
-      className="modal-overlay-enter fixed inset-0 z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center"
+      className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();

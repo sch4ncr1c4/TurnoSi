@@ -36,7 +36,7 @@ export function StatusChangeModal({
   return (
     <div
       aria-modal="true"
-      className="modal-overlay-enter fixed inset-0 z-50 grid place-items-center bg-[rgba(32,24,54,0.68)] px-4 backdrop-blur-sm"
+      className="viewport-overlay modal-overlay-enter z-50 grid place-items-center bg-[rgba(32,24,54,0.68)] px-4 backdrop-blur-sm"
       role="dialog"
       onClick={(event) => {
         if (event.target === event.currentTarget) {

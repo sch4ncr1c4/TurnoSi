@@ -1,7 +1,11 @@
+import type { Ref } from "react";
+
 type TimeInputProps = {
   ariaLabel: string;
   className?: string;
+  inputRef?: Ref<HTMLInputElement>;
   onChange: (value: string) => void;
+  selectOnFocus?: boolean;
   value: string;
 };
 
@@ -24,7 +28,9 @@ function normalizeTimeInput(value: string) {
 export function TimeInput({
   ariaLabel,
   className = "",
+  inputRef,
   onChange,
+  selectOnFocus = false,
   value
 }: TimeInputProps) {
   return (
@@ -35,8 +41,12 @@ export function TimeInput({
       maxLength={5}
       onBlur={(event) => onChange(normalizeTimeInput(event.target.value))}
       onChange={(event) => onChange(formatTimeInput(event.target.value))}
+      onFocus={(event) => {
+        if (selectOnFocus) event.target.select();
+      }}
       placeholder="09:00"
       pattern="[0-9]{2}:[0-9]{2}"
+      ref={inputRef}
       type="text"
       value={value}
     />
