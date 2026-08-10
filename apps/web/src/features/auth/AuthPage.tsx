@@ -24,13 +24,14 @@ const maxVerificationSendAttempts = 5;
 
 function AuthFieldIcon({ fieldId }: { fieldId: string }) {
   const icon = fieldId === "password" ? loginPasswordIcon : loginUserIcon;
+  const sizeClass = fieldId === "password" ? "h-[21px] w-[21px]" : "h-[22px] w-[22px]";
 
   return (
     <img
       src={icon}
       alt=""
       aria-hidden="true"
-      className="block h-4 w-4 opacity-55"
+      className={`block ${sizeClass} opacity-62 transition duration-200 ease-out group-focus-within/auth-field:scale-110 group-focus-within/auth-field:opacity-90`}
     />
   );
 }
@@ -349,8 +350,8 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                         <span className="mb-2 block text-sm font-medium text-[var(--color-ink)]">
                           {field.label}
                         </span>
-                        <span className="relative block">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]">
+                        <span className="group/auth-field relative block">
+                          <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[var(--color-muted)] transition duration-200 ease-out group-focus-within/auth-field:text-[var(--color-ink)]">
                             <AuthFieldIcon fieldId={field.id} />
                           </span>
                           <input
@@ -361,7 +362,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                             autoComplete={autoComplete}
                             aria-invalid={Boolean(error)}
                             aria-describedby={error ? `${field.id}-error` : undefined}
-                            className={`h-12 w-full rounded-lg border bg-white/70 py-3 pl-10 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-ink)] focus:ring-2 focus:ring-[rgba(32,24,54,0.08)] ${
+                            className={`relative z-0 h-12 w-full rounded-lg border bg-white/70 py-3 pl-12 text-sm text-[var(--color-ink)] outline-none transition-all duration-200 ease-out placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:-translate-y-0.5 focus:border-[var(--color-ink)] focus:shadow-[0_14px_34px_rgba(32,24,54,0.08)] focus:ring-2 focus:ring-[rgba(32,24,54,0.08)] ${
                               field.type === "password" ? "pr-12" : ""
                             } ${
                               error
