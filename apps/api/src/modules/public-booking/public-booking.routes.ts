@@ -87,7 +87,7 @@ function activeAppointmentConflictWhere(
   };
 }
 
-async function expireStaleDepositHolds(organizationId: string) {
+export async function expireStaleDepositHolds(organizationId: string) {
   const holdCutoff = depositPaymentHoldCutoff();
 
   await prisma.appointment.updateMany({
@@ -894,6 +894,43 @@ publicBookingRouter.post(
               403,
               "BOOKING_NOT_ALLOWED",
               "Online booking is not available for this customer"
+            );
+          }
+          const bookingDay = localDateInTimezone(
+            startsAt,
+            context.organization.timezone
+          );
+          const bookingDayStart = zonedTimeToUtc(
+            bookingDay,
+            0,
+            context.organization.timezone
+          );
+          const bookingDayEnd = zonedTimeToUtc(
+            bookingDay,
+            1440,
+            context.organization.timezone
+          );
+          const duplicateDailyAppointment = await transaction.appointment.findFirst({
+            where: {
+              organizationId: context.organization.id,
+              deletedAt: null,
+              startsAt: { gte: bookingDayStart, lt: bookingDayEnd },
+              AND: [
+                activeConflictWhere,
+                {
+                  customer: {
+                    OR: [{ phone: data.phone }, { email }]
+                  }
+                }
+              ]
+            },
+            select: { id: true }
+          });
+          if (duplicateDailyAppointment) {
+            throw new AppError(
+              409,
+              "CUSTOMER_DAILY_LIMIT",
+              "Customer already has an appointment for that day"
             );
           }
           const customer = existing

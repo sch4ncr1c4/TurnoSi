@@ -3,6 +3,7 @@ export const queryKeys = {
   organizationSettings: ["organization", "settings"] as const,
   organizationBranches: ["organization", "branches"] as const,
   appointments: (month: string) => ["appointments", month] as const,
+  recentReservations: (since: string) => ["appointments", "recent", since] as const,
   weeklyAvailability: (branchId = "main") => ["availability", "weekly", branchId] as const,
   availabilityExceptions: (branchId = "main") =>
     ["availability", "exceptions", branchId] as const,

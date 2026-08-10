@@ -6,6 +6,7 @@ import { AppError } from "../../lib/app-error.js";
 import { requireEditor } from "../../lib/membership.js";
 import { hashPassword } from "../../lib/password.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
+import { visibleOperationalAppointmentWhere } from "../appointments/appointment-visibility.js";
 import { assertPlanLimitAvailable } from "../billing/plan-limits.service.js";
 import {
   createTeamMemberSchema,
@@ -258,7 +259,8 @@ teamRouter.get("/", async (request, response) => {
       deletedAt: null,
       assignedUserId: { in: members.map((member) => member.userId) },
       startsAt: { gte: new Date() },
-      status: { in: ["pending", "confirmed"] }
+      status: { in: ["pending", "confirmed"] },
+      AND: [visibleOperationalAppointmentWhere]
     },
     select: {
       assignedUserId: true,

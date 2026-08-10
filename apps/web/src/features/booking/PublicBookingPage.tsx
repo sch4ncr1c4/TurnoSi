@@ -375,10 +375,15 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         setStartsAt("");
         setStep("schedule");
       }
+      if (error instanceof ApiError && error.code === "CUSTOMER_DAILY_LIMIT") {
+        setStep("schedule");
+      }
       setStatus(
         error instanceof ApiError && error.code === "SLOT_UNAVAILABLE"
           ? "Ese horario acaba de ocuparse. Elegí otro."
-          : "No pudimos confirmar el turno."
+          : error instanceof ApiError && error.code === "CUSTOMER_DAILY_LIMIT"
+            ? "Ya tenés un turno reservado para ese día. Si necesitás cambiarlo, escribile al local."
+            : "No pudimos confirmar el turno."
       );
     } finally {
       setIsSubmitting(false);

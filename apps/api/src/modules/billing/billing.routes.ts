@@ -282,11 +282,16 @@ billingRouter.get("/subscription", async (request, response) => {
         subscription.plan === "trial" &&
         subscription.status === "authorized" &&
         remoteStatus !== "authorized";
+      const keepManualAccess =
+        subscription.status === "authorized" &&
+        subscription.plan !== "trial" &&
+        !subscription.mercadoPagoPreapprovalId &&
+        remoteStatus !== "authorized";
 
       subscription = await prisma.organizationSubscription.update({
         where: { id: subscription.id },
         data: {
-          ...(keepActiveTrial
+          ...(keepActiveTrial || keepManualAccess
             ? {}
             : {
                 status: remoteStatus,
@@ -385,7 +390,8 @@ billingRouter.post("/subscription", async (request, response) => {
     existing &&
     !isExpiredPendingSubscription(existing) &&
     existing.status === "authorized" &&
-    existing.plan !== "trial";
+    existing.plan !== "trial" &&
+    Boolean(existing.mercadoPagoPreapprovalId);
   if (activeExisting) {
     throw new AppError(
       409,
@@ -417,7 +423,9 @@ billingRouter.post("/subscription", async (request, response) => {
     );
   }
 
-  const keepActiveTrial = existing?.plan === "trial" && existing.status === "authorized";
+  const keepCurrentAccess =
+    existing?.status === "authorized" &&
+    (existing.plan === "trial" || existing.source === "manual");
   await prisma.organizationSubscription.upsert({
     where: { organizationId: tenant.organizationId },
     create: {
@@ -431,7 +439,7 @@ billingRouter.post("/subscription", async (request, response) => {
         : null
     },
     update: {
-      ...(keepActiveTrial
+      ...(keepCurrentAccess
         ? {}
         : {
             plan,
@@ -510,6 +518,15 @@ billingPublicRouter.post("/mercadopago", async (request, response) => {
   if (
     existing?.plan === "trial" &&
     existing.status === "authorized" &&
+    status !== "authorized"
+  ) {
+    response.sendStatus(200);
+    return;
+  }
+  if (
+    existing?.status === "authorized" &&
+    existing.plan !== "trial" &&
+    !existing.mercadoPagoPreapprovalId &&
     status !== "authorized"
   ) {
     response.sendStatus(200);

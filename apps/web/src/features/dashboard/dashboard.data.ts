@@ -18,6 +18,7 @@ export type AppointmentStatus =
 export type DashboardAppointment = {
   id: string;
   startsAt?: string;
+  createdAt?: string;
   day?: string;
   time: string;
   service: string;

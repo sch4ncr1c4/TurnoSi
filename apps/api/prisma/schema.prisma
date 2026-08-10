@@ -52,6 +52,11 @@ enum SubscriptionPaymentStatus {
   unknown
 }
 
+enum SubscriptionSource {
+  mercadopago
+  manual
+}
+
 enum AppointmentPaymentStatus {
   pending
   approved
@@ -174,6 +179,7 @@ model OrganizationSubscription {
   organizationId           String             @unique
   plan                     SubscriptionPlan
   status                   SubscriptionStatus @default(pending)
+  source                   SubscriptionSource @default(mercadopago)
   mercadoPagoPreapprovalId String?            @unique
   payerEmail               String?
   nextPaymentAt            DateTime?

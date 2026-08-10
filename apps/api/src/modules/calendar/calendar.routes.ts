@@ -6,10 +6,15 @@ import { ok } from "../../lib/http.js";
 import { requireEditor } from "../../lib/membership.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
-import { calculateSlots } from "../public-booking/public-booking.routes.js";
+import { visibleOperationalAppointmentWhere } from "../appointments/appointment-visibility.js";
+import {
+  calculateSlots,
+  expireStaleDepositHolds
+} from "../public-booking/public-booking.routes.js";
 import {
   calendarAppointmentParamsSchema,
   calendarQuerySchema,
+  calendarRecentQuerySchema,
   createManualCalendarAppointmentSchema,
   updateCalendarStatusSchema
 } from "./calendar.schemas.js";
@@ -19,13 +24,15 @@ export const calendarRouter = Router();
 calendarRouter.get("/appointments", async (request, response) => {
   const query = calendarQuerySchema.parse(request.query);
   const tenant = request.tenant!;
+  await expireStaleDepositHolds(tenant.organizationId);
 
   const appointments = await prisma.appointment.findMany({
     where: {
       organizationId: tenant.organizationId,
       deletedAt: null,
       ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {}),
-      startsAt: { gte: new Date(query.from), lt: new Date(query.to) }
+      startsAt: { gte: new Date(query.from), lt: new Date(query.to) },
+      AND: [visibleOperationalAppointmentWhere]
     },
     include: {
       customer: true,
@@ -42,6 +49,60 @@ calendarRouter.get("/appointments", async (request, response) => {
     id: appointment.id,
     startsAt: appointment.startsAt,
     endsAt: appointment.endsAt,
+    createdAt: appointment.createdAt,
+    service: appointment.service.name,
+    client: appointment.customer.fullName,
+    assignee: appointment.assignedUser
+      ? [appointment.assignedUser.firstName, appointment.assignedUser.lastName]
+          .filter(Boolean).join(" ") || appointment.assignedUser.email
+      : "Sin asignar",
+    status: appointment.status,
+    channel: appointment.channel,
+    depositPayment: appointment.depositPayment
+      ? {
+          status: appointment.depositPayment.status,
+          amountCents: appointment.depositPayment.amountCents,
+          paidAt: appointment.depositPayment.paidAt
+        }
+      : null
+  }))));
+});
+
+calendarRouter.get("/appointments/recent", async (request, response) => {
+  const query = calendarRecentQuerySchema.parse(request.query);
+  const tenant = request.tenant!;
+  const since = query.since
+    ? new Date(query.since)
+    : new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  await expireStaleDepositHolds(tenant.organizationId);
+
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      organizationId: tenant.organizationId,
+      deletedAt: null,
+      channel: "web",
+      createdAt: { gt: since },
+      ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {}),
+      AND: [visibleOperationalAppointmentWhere]
+    },
+    include: {
+      customer: true,
+      service: true,
+      depositPayment: true,
+      assignedUser: {
+        select: { firstName: true, lastName: true, email: true }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10
+  });
+
+  response.json(ok(appointments.map((appointment) => ({
+    id: appointment.id,
+    startsAt: appointment.startsAt,
+    endsAt: appointment.endsAt,
+    createdAt: appointment.createdAt,
     service: appointment.service.name,
     client: appointment.customer.fullName,
     assignee: appointment.assignedUser

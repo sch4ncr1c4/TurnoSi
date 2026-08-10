@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -35,6 +35,8 @@ import settingsNavPageIcon from "../../components/assets/icons/settings/nav-publ
 import paymentsDepositIcon from "../../components/assets/icons/settings/payments-deposit.svg";
 import paymentsHeaderIcon from "../../components/assets/icons/settings/payments-header.svg";
 import paymentsWalletIcon from "../../components/assets/icons/settings/payments-wallet.svg";
+import statusCheckIcon from "../../components/assets/icons/status/status-check.svg";
+import statusXIcon from "../../components/assets/icons/status/status-x.svg";
 
 function createPublicSlug(value: string) {
   return value
@@ -173,6 +175,7 @@ export function DashboardSettingsView({
   const [cropEditorSlot, setCropEditorSlot] = useState<0 | 1 | null>(null);
   const [toast, setToast] = useState("");
   const [activeTab, setActiveTab] = useState<SettingsTab>("business");
+  const settingsTabButtonRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({});
   const [accountHasUnsavedChanges, setAccountHasUnsavedChanges] = useState(false);
   const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
   const [showUnsavedState, setShowUnsavedState] = useState(false);
@@ -279,6 +282,15 @@ export function DashboardSettingsView({
         );
     }
   }, [settingsQuery.data]);
+
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 1535px)").matches) return;
+    settingsTabButtonRefs.current[activeTab]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center"
+    });
+  }, [activeTab]);
 
   useEffect(() => {
     window.dispatchEvent(
@@ -726,6 +738,12 @@ function centsToMoney(value: number | null) {
       profileCompletionItems.length) *
       100
   );
+  const profileCompletionColor =
+    profileCompletionPercent < 50
+      ? "#b42318"
+      : profileCompletionPercent < 100
+        ? "#d97706"
+        : "#2f7d45";
 
   async function finishOnboarding() {
     if (!onboardingReady || hasPendingChanges || isCompleting) return;
@@ -1018,46 +1036,56 @@ function centsToMoney(value: number | null) {
             </section>
           </div>
         )}
-      <nav className="flex w-full snap-x gap-1 overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-0.5 shadow-[0_8px_20px_rgba(32,24,54,0.035)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:grid 2xl:max-w-[calc(100%-360px)] 2xl:grid-cols-5 2xl:overflow-hidden">
-        {([
-          ["business", "Negocio", "Negocio", settingsNavBusinessIcon],
-          ["contact", "Contacto", "Contacto", contactPhoneIcon],
-          ["page", "Página", "Página pública", settingsNavPageIcon],
-          ["payments", "Cobros", "Cobros", paymentsHeaderIcon],
-          ["account", "Cuenta", "Cuenta", settingsNavAccountIcon]
-        ] as [SettingsTab, string, string, string][]).map(([value, shortLabel, label, icon], index) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => {
-              if (activeTab !== value && hasPendingChanges) {
-                setShowUnsavedState(true);
-                setPendingTab(value);
-                return;
-              }
-              setActiveTab(value);
-            }}
-            className={`group flex min-w-[132px] snap-start items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-bold transition-colors 2xl:min-w-0 2xl:px-3 ${
-              index > 0 ? "2xl:border-l 2xl:border-[var(--color-border)]" : ""
-            } ${
-              activeTab === value
-                ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
-                : "text-[var(--color-ink)] hover:bg-white/60"
-            }`}
-          >
-            <img
-              src={icon}
-              alt=""
-              aria-hidden="true"
-              className={`h-4 w-4 shrink-0 opacity-75 transition duration-200 group-hover:scale-110 ${
-                activeTab === value ? "invert" : ""
-              }`}
-            />
-            <span className="2xl:hidden">{shortLabel}</span>
-            <span className="hidden 2xl:inline">{label}</span>
-          </button>
-        ))}
-      </nav>
+      <div className="settings-tabs-shell relative 2xl:max-w-[calc(100%-360px)]">
+        <nav className="settings-mobile-tabs flex w-max max-w-full snap-x items-center overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-0.5 shadow-[0_8px_20px_rgba(32,24,54,0.035)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:overflow-hidden">
+          {([
+            ["business", "Negocio", "Negocio", settingsNavBusinessIcon],
+            ["contact", "Contacto", "Contacto", contactPhoneIcon],
+            ["page", "Página", "Página pública", settingsNavPageIcon],
+            ["payments", "Cobros", "Cobros", paymentsHeaderIcon],
+            ["account", "Cuenta", "Cuenta", settingsNavAccountIcon]
+          ] as [SettingsTab, string, string, string][]).map(([value, shortLabel, label, icon], index) => (
+            <Fragment key={value}>
+              {index > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="mx-0.5 h-5 w-px shrink-0 bg-[var(--color-border)]"
+                />
+              )}
+              <button
+                ref={(node) => {
+                  settingsTabButtonRefs.current[value] = node;
+                }}
+                type="button"
+                onClick={() => {
+                  if (activeTab !== value && hasPendingChanges) {
+                    setShowUnsavedState(true);
+                    setPendingTab(value);
+                    return;
+                  }
+                  setActiveTab(value);
+                }}
+                className={`group flex min-w-[132px] snap-start items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-bold transition-colors 2xl:min-w-[132px] 2xl:px-3 ${
+                  activeTab === value
+                    ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
+                    : "text-[var(--color-ink)] hover:bg-white/60"
+                }`}
+              >
+                <img
+                  src={icon}
+                  alt=""
+                  aria-hidden="true"
+                  className={`h-4 w-4 shrink-0 opacity-75 transition duration-200 group-hover:scale-110 ${
+                    activeTab === value ? "invert" : ""
+                  }`}
+                />
+                <span className="2xl:hidden">{shortLabel}</span>
+                <span className="hidden 2xl:inline">{label}</span>
+              </button>
+            </Fragment>
+          ))}
+        </nav>
+      </div>
 
       <div className="grid min-w-0 max-w-full gap-4 overflow-x-clip sm:gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-4 sm:space-y-5">
@@ -1166,7 +1194,7 @@ function centsToMoney(value: number | null) {
                         </span>
                       </div>
                       <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-3">
-                        <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/75 p-2">
+                        <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-2">
                           {logoPreview ? (
                             <img
                               src={logoPreview}
@@ -1179,7 +1207,7 @@ function centsToMoney(value: number | null) {
                             </span>
                           )}
                         </div>
-                        <label className="grid h-28 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-white/42 px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-white/62">
+                        <label className="grid h-28 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[#fffaf4] px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
                           <span>
                             <span className="block text-xl leading-none">↥</span>
                             <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
@@ -1197,7 +1225,7 @@ function centsToMoney(value: number | null) {
                           />
                         </label>
                       </div>
-                      <label className="mt-3 flex min-h-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-white/55 px-3 py-2 text-center text-sm font-semibold hover:border-[var(--color-accent)] hover:bg-white/75">
+                      <label className="mt-3 flex min-h-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[#fffaf4] px-3 py-2 text-center text-sm font-semibold hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
                         <span className="text-base leading-none">✎</span>
                         <span>{logoPreview ? "Cambiar logo" : "Subir logo"}</span>
                         <input
@@ -1237,7 +1265,7 @@ function centsToMoney(value: number | null) {
                           }
                           updateSetting("category", event.target.value);
                         }}
-                        className={`h-10 appearance-none rounded-md border bg-[rgba(255,255,255,0.72)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`h-10 appearance-none rounded-md border bg-[#fffaf4] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.category !== savedSettings.category
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1267,7 +1295,7 @@ function centsToMoney(value: number | null) {
                         onChange={(event) =>
                           updateSetting("description", event.target.value)
                         }
-                        className={`min-h-32 resize-none rounded-md border bg-[rgba(255,255,255,0.72)] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`min-h-32 resize-none rounded-md border bg-[#fffaf4] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.description !== savedSettings.description
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1379,7 +1407,7 @@ function centsToMoney(value: number | null) {
                       );
                       if (emptySlot === undefined) {
                         return (
-                          <div className="grid h-full min-h-[9.85rem] place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.72)] px-4 text-center lg:min-h-[9.15rem] xl:min-h-[9.85rem]">
+                          <div className="grid h-full min-h-[9.85rem] place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[#fffaf4] px-4 text-center lg:min-h-[9.15rem] xl:min-h-[9.85rem]">
                             <span>
                               <span className="block text-sm font-semibold text-[var(--color-ink)]">
                                 Máximo alcanzado
@@ -1447,7 +1475,7 @@ function centsToMoney(value: number | null) {
             />
               </div>
             <SettingsField
-              className="max-w-lg"
+              className="max-w-2xl"
               label="Email público"
               maxLength={settingsFieldLimits.publicEmail}
               placeholder="Ej: contacto@negocio.com"
@@ -1490,7 +1518,7 @@ function centsToMoney(value: number | null) {
                   <select
                     value={settings.province}
                     onChange={(event) => updateSetting("province", event.target.value)}
-                    className={`h-10 appearance-none rounded-md border bg-[rgba(255,255,255,0.72)] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                    className={`h-10 appearance-none rounded-md border bg-[#fffaf4] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                       showUnsavedState &&
                       settings.province !== savedSettings.province
                         ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1514,7 +1542,7 @@ function centsToMoney(value: number | null) {
                 Redes sociales
               </div>
               <SettingsField
-                className="max-w-md"
+                className="max-w-2xl"
                 label="Instagram"
                 maxLength={settingsFieldLimits.instagram}
                 placeholder="Ej: @minegocio"
@@ -1573,7 +1601,7 @@ function centsToMoney(value: number | null) {
                         ? "Pegá un token nuevo para reemplazar el actual"
                         : "APP_USR-..."
                     }
-                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.72)] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[rgba(255,255,255,0.72)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
+                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[#fffaf4] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[#fffaf4] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                     type="password"
                     autoComplete="off"
                   />
@@ -1725,24 +1753,27 @@ function centsToMoney(value: number | null) {
       </div>
 
       <aside className="min-w-0 space-y-3 xl:sticky xl:top-4 xl:self-start">
-        <Card>
-          <CardBody className="p-4 sm:p-5">
-            <div className="flex items-center gap-4">
+        <Card className="bg-[#fffaf4]">
+          <CardBody className="p-4">
+            <div className="flex items-center gap-3">
               <div
-                className="grid h-20 w-20 shrink-0 place-items-center rounded-full"
+                className="grid h-16 w-16 shrink-0 place-items-center rounded-full"
                 style={{
-                  background: `conic-gradient(#2f7d45 ${profileCompletionPercent}%, rgba(32,24,54,0.08) 0)`
+                  background: `conic-gradient(${profileCompletionColor} ${profileCompletionPercent}%, rgba(32,24,54,0.08) 0)`
                 }}
               >
-                <div className="grid h-14 w-14 place-items-center rounded-full bg-[#fffaf4] text-lg font-semibold text-[#2f7d45]">
+                <div
+                  className="grid h-11 w-11 place-items-center rounded-full bg-[#fffaf4] text-sm font-extrabold"
+                  style={{ color: profileCompletionColor }}
+                >
                   {profileCompletionPercent}%
                 </div>
               </div>
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-base font-semibold">
                   {profileCompletionPercent === 100 ? "Perfil completo" : "Perfil en progreso"}
                 </h2>
-                <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                <p className="mt-1 text-xs leading-5 text-[var(--color-muted-strong)]">
                   {profileCompletionPercent === 100
                     ? "Tu página pública ya tiene lo esencial."
                     : "Completá estos datos para publicar mejor."}
@@ -1750,7 +1781,17 @@ function centsToMoney(value: number | null) {
               </div>
             </div>
 
-            <div className="mt-5 space-y-2 border-t border-[var(--color-border)] pt-4">
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[rgba(32,24,54,0.08)]">
+              <div
+                className="h-full rounded-full bg-[#2f7d45] transition-all duration-500"
+                style={{
+                  width: `${profileCompletionPercent}%`,
+                  backgroundColor: profileCompletionColor
+                }}
+              />
+            </div>
+
+            <div className="mt-4 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-[rgba(255,255,255,0.35)]">
               {profileCompletionItems.map((item) => (
                 <button
                   key={item.label}
@@ -1763,11 +1804,11 @@ function centsToMoney(value: number | null) {
                     }
                     setActiveTab(item.tab);
                   }}
-                  className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/55"
+                  className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-white/60"
                 >
                   <span className="flex min-w-0 items-center gap-3">
                     <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
                         item.done
                           ? "bg-[#e3f3e5]"
                           : "bg-[rgba(32,24,54,0.07)]"
@@ -1777,36 +1818,39 @@ function centsToMoney(value: number | null) {
                         src={item.icon}
                         alt=""
                         aria-hidden="true"
-                        className={`h-4 w-4 ${item.done ? "opacity-80" : "opacity-45"}`}
+                        className={`h-3.5 w-3.5 ${item.done ? "opacity-80" : "opacity-45"}`}
                       />
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-[var(--color-ink)]">
                         {item.label}
                       </span>
-                      <span className="text-xs text-[var(--color-muted-strong)]">
+                      <span className="text-xs text-[var(--color-muted)]">
                         {item.done ? "Completado" : "Pendiente"}
                       </span>
                     </span>
                   </span>
-                  <span
-                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-xs font-semibold ${
-                      item.done
-                        ? "border-[#5aa66d] text-[#2f7d45]"
-                        : "border-[var(--color-border-strong)] text-[var(--color-muted)]"
-                    }`}
-                  >
-                    {item.done ? "✓" : ""}
+                  <span className="grid h-6 w-6 shrink-0 place-items-center">
+                    <img
+                      src={item.done ? statusCheckIcon : statusXIcon}
+                      alt=""
+                      aria-hidden="true"
+                      className={`h-5 w-5 ${
+                        item.done
+                          ? "opacity-90 [filter:brightness(0)_saturate(100%)_invert(40%)_sepia(34%)_saturate(707%)_hue-rotate(84deg)_brightness(90%)_contrast(87%)]"
+                          : "opacity-80 [filter:brightness(0)_saturate(100%)_invert(20%)_sepia(95%)_saturate(2342%)_hue-rotate(350deg)_brightness(91%)_contrast(94%)]"
+                      }`}
+                    />
                   </span>
                 </button>
               ))}
             </div>
 
-            <div className="mt-4 rounded-lg border border-[rgba(253,134,6,0.28)] bg-[rgba(253,134,6,0.07)] p-3">
-              <p className="text-sm font-semibold text-[var(--color-ink)]">
+            <div className="mt-3 rounded-xl border border-[rgba(253,134,6,0.24)] bg-[#fff4e4] p-3">
+              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--color-accent)]">
                 {profileCompletionPercent === 100 ? "Todo listo" : "Siguiente paso"}
               </p>
-              <p className="mt-1 text-sm leading-5 text-[var(--color-muted-strong)]">
+              <p className="mt-1 text-sm leading-5 text-[var(--color-ink)]">
                 {profileCompletionPercent === 100
                   ? "Tu perfil está completo y visible para tus clientes."
                   : "Revisá los bloques pendientes antes de compartir tu página."}
@@ -1925,11 +1969,11 @@ function SettingsField({
         changed
           ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
           : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-      } bg-[rgba(255,255,255,0.72)]`}>
+      } bg-[#fffaf4]`}>
         {prefix && (
           <span
             className={`shrink-0 border-r border-[var(--color-border)] px-3 py-2 text-[var(--color-muted)] ${
-              readOnly ? "bg-[rgba(255,255,255,0.72)]" : "bg-[rgba(255,255,255,0.72)]"
+              readOnly ? "bg-[#fffaf4]" : "bg-[#fffaf4]"
             }`}
           >
             {prefix}
@@ -1951,7 +1995,7 @@ function SettingsField({
             target="_blank"
             rel="noreferrer"
             className={`shrink-0 border-l border-[var(--color-border)] px-3 py-2 font-semibold text-[var(--color-ink)] hover:bg-[rgba(253,134,6,0.1)] ${
-              readOnly ? "bg-[rgba(255,255,255,0.72)]" : ""
+              readOnly ? "bg-[#fffaf4]" : ""
             }`}
           >
             Ver página
@@ -1999,11 +2043,11 @@ function ArgentinaPhoneField({
           changed
             ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
             : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-        } bg-[rgba(255,255,255,0.72)]`}
+        } bg-[#fffaf4]`}
       >
         <span
           className={`inline-flex shrink-0 items-center border-r border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-ink)] ${
-            readOnly ? "bg-[rgba(255,255,255,0.72)]" : "bg-[rgba(255,255,255,0.72)]"
+            readOnly ? "bg-[#fffaf4]" : "bg-[#fffaf4]"
           }`}
         >
           +54 9
@@ -2050,7 +2094,7 @@ function CustomCategoryModal({
           onChange={(event) => onChange(event.target.value)}
           maxLength={settingsFieldLimits.category}
           placeholder="Ej: Veterinaria"
-          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.72)] px-3 outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
+          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-[#fffaf4] px-3 outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
         />
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" onClick={onClose}>

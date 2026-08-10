@@ -6,7 +6,6 @@ import { logout } from "../auth/auth.api";
 import { useSessionQuery } from "../auth/auth.queries";
 import { getApiUrl } from "../../lib/api";
 import { getBillingPlan } from "../billing/billing.plans";
-import { buttonMotionClass } from "./dashboard.constants";
 import { dashboardSections } from "./dashboard.data";
 import { canOpenBillingPlans, canAccessDashboardView, type DashboardRole } from "./dashboard.permissions";
 import type { DashboardView } from "./dashboard.types";
@@ -33,6 +32,7 @@ type DashboardSidebarProps = {
   navigationLocked?: boolean;
   role?: DashboardRole;
   subscription?: SubscriptionStatus;
+  unreadReservationsCount?: number;
   onChangeView: (view: DashboardView) => void;
   onOpenBillingPlans: () => void;
   onOpenManualAppointment: () => void;
@@ -44,12 +44,14 @@ export function DashboardSidebar({
   navigationLocked = false,
   role,
   subscription,
+  unreadReservationsCount = 0,
   onChangeView,
   onOpenBillingPlans,
   onOpenManualAppointment
 }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [logoAvailable, setLogoAvailable] = useState<boolean | null>(null);
   const [logoVersion, setLogoVersion] = useState(0);
   const sessionQuery = useSessionQuery();
@@ -104,10 +106,39 @@ export function DashboardSidebar({
   }
 
   return (
-    <aside className="dashboard-sidebar dot-pattern-corner dot-pattern-bottom-left z-40 flex flex-col border-b border-[var(--color-border)] bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] md:border-r md:border-b-0 md:px-4 md:py-4">
-      <div className="flex justify-center [&_*]:text-[var(--color-button-text)]">{brand}</div>
+    <>
+      <header className="dot-pattern-corner dot-pattern-bottom-left sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-[var(--color-ink)] px-4 py-3 text-[var(--color-button-text)] md:hidden">
+        <div className="[&_*]:text-[var(--color-button-text)] [&_img]:h-12">{brand}</div>
+        <button
+          type="button"
+          aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={isMobileMenuOpen}
+          onClick={() => setIsMobileMenuOpen((current) => !current)}
+          className="group grid h-11 w-11 place-items-center rounded-xl border border-white/14 bg-white/8 transition hover:bg-white/14"
+        >
+          <span className="relative h-5 w-6">
+            <span className={`absolute left-0 top-0 h-0.5 w-6 rounded-full bg-white transition duration-300 ${isMobileMenuOpen ? "translate-y-2 rotate-45" : ""}`} />
+            <span className={`absolute left-0 top-2 h-0.5 w-6 rounded-full bg-white transition duration-200 ${isMobileMenuOpen ? "opacity-0" : "opacity-100"}`} />
+            <span className={`absolute left-0 top-4 h-0.5 w-6 rounded-full bg-white transition duration-300 ${isMobileMenuOpen ? "-translate-y-2 -rotate-45" : ""}`} />
+          </span>
+        </button>
+      </header>
 
-      <nav className="mt-8 space-y-1 md:mt-7 md:shrink-0">
+      {isMobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          className="fixed inset-0 z-[60] bg-[rgba(18,13,31,0.42)] backdrop-blur-[3px] md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+    <aside className={`dashboard-sidebar dot-pattern-corner dot-pattern-bottom-left z-[70] flex flex-col border-b border-[var(--color-border)] bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] transition-transform duration-300 ease-out max-md:border-r max-md:border-white/10 max-md:shadow-[24px_0_70px_rgba(18,13,31,0.28)] max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:z-40 md:border-r md:border-b-0 md:px-4 md:py-4 ${
+      isMobileMenuOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
+    }`}>
+      <div className="dashboard-sidebar-brand flex justify-center [&_*]:text-[var(--color-button-text)]">{brand}</div>
+
+      <nav className="dashboard-sidebar-nav mt-8 space-y-1 md:mt-7 md:shrink-0">
         {dashboardSections.map((section, index) => {
           const view =
             section.label === "Agenda"
@@ -132,7 +163,10 @@ export function DashboardSidebar({
               key={section.label}
               type="button"
               disabled={navigationLocked && view !== "settings"}
-              onClick={() => onChangeView(view)}
+              onClick={() => {
+                onChangeView(view);
+                setIsMobileMenuOpen(false);
+              }}
               className={`block w-full rounded-md px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-35 ${
                 isActive
                   ? "bg-white/10 font-medium text-white"
@@ -148,7 +182,12 @@ export function DashboardSidebar({
                     className="h-5 w-5 shrink-0 opacity-90 invert"
                   />
                 )}
-                <span>{section.label}</span>
+                <span className="min-w-0 flex-1">{section.label}</span>
+                {view === "agenda" && unreadReservationsCount > 0 && (
+                  <span className="ml-auto grid min-w-5 place-items-center rounded-full bg-[var(--color-accent)] px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-[var(--color-button-text)]">
+                    {unreadReservationsCount > 9 ? "9+" : unreadReservationsCount}
+                  </span>
+                )}
               </span>
             </button>
           );
@@ -158,16 +197,19 @@ export function DashboardSidebar({
       <button
         type="button"
         disabled={navigationLocked}
-        onClick={onOpenManualAppointment}
-        className={`mt-6 w-full shrink-0 rounded-md bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-button-text)] md:mt-5 ${buttonMotionClass}`}
+        onClick={() => {
+          onOpenManualAppointment();
+          setIsMobileMenuOpen(false);
+        }}
+        className="dashboard-sidebar-new-turn landing-cta mt-6 w-full shrink-0 rounded-md bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 md:mt-5"
       >
         + Nuevo turno
       </button>
 
-      <div className="mt-6 border-t border-white/12 pt-5 md:mt-auto md:shrink-0 md:pt-5">
-        <div className="mb-5 rounded-xl border border-white/12 bg-white/[0.04] p-3">
+      <div className="dashboard-sidebar-footer mt-6 border-t border-white/12 pt-5 md:mt-auto md:shrink-0 md:pt-5">
+        <div className="dashboard-sidebar-organization mb-5 rounded-xl border border-white/12 bg-white/[0.04] p-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-white/10">
+            <div className="dashboard-sidebar-org-avatar flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-white/10">
               {hasLogo ? (
                 <img
                   src={`${getApiUrl("/api/v1/organizations/current/logo")}?v=${logoVersion}`}
@@ -208,8 +250,11 @@ export function DashboardSidebar({
           <button
             type="button"
             disabled={navigationLocked}
-            onClick={onOpenBillingPlans}
-            className="w-full rounded-md border border-[var(--color-accent)] bg-[rgba(253,134,6,0.1)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent)] hover:bg-[rgba(253,134,6,0.18)] disabled:cursor-not-allowed disabled:opacity-35"
+            onClick={() => {
+              onOpenBillingPlans();
+              setIsMobileMenuOpen(false);
+            }}
+            className="dashboard-sidebar-plan-button landing-link w-full rounded-md border border-[var(--color-accent)] bg-[rgba(253,134,6,0.1)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[rgba(253,134,6,0.18)] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-35"
           >
             Mejorar plan
           </button>
@@ -219,11 +264,12 @@ export function DashboardSidebar({
           type="button"
           disabled={isLoggingOut}
           onClick={() => void handleLogout()}
-          className="mt-5 w-full rounded-md border border-white/20 px-4 py-2.5 text-sm font-medium text-white/72 hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
+          className="dashboard-sidebar-logout mt-5 w-full rounded-md border border-white/20 px-4 py-2.5 text-sm font-medium text-white/72 hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
         >
           {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
         </button>
       </div>
     </aside>
+    </>
   );
 }

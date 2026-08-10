@@ -4,6 +4,8 @@ import {
   useDeferredValue,
   useCallback,
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type ReactNode
 } from "react";
@@ -44,12 +46,14 @@ import {
 import { type DashboardAppointment } from "./dashboard.data";
 import {
   getDashboardAppointments,
+  getRecentDashboardReservations,
   updateDashboardAppointmentStatus
 } from "./dashboard.api";
 import type { DashboardView } from "./dashboard.types";
 import { getSubscription } from "../billing/billing.api";
 import { BillingSettings } from "./BillingSettings";
 import { canAccessDashboardView } from "./dashboard.permissions";
+import notificationSoundUrl from "../../components/assets/audio/notification-sound.mp3";
 
 const DashboardAgendaView = lazy(() =>
   import("./DashboardAgendaView").then((module) => ({
@@ -95,6 +99,25 @@ const dashboardViews: DashboardView[] = [
   "availability",
   "settings"
 ];
+const emptyDashboardAppointments: DashboardAppointment[] = [];
+
+function reservationSeenStorageKey(organizationId: string) {
+  return `turnosi.dashboard.reservationsSeenUntil.${organizationId}`;
+}
+
+function readReservationSeenUntil(organizationId?: string) {
+  if (!organizationId || typeof window === "undefined") return 0;
+  return Number(window.localStorage.getItem(reservationSeenStorageKey(organizationId)) ?? 0);
+}
+
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "R";
+}
 
 function isSameDate(firstDate: Date, secondDate: Date) {
   return (
@@ -149,6 +172,16 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   const [pendingStatusChange, setPendingStatusChange] =
     useState<StatusChangeDraft | null>(null);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [reservationSeenUntil, setReservationSeenUntil] = useState(0);
+  const [notificationFallbackSince] = useState(
+    () => Date.now() - 24 * 60 * 60 * 1000
+  );
+  const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastSoundReservationIdRef = useRef<string | null>(null);
+  const notificationFeedLoadedRef = useRef(false);
+  const hiddenToastReservationIdRef = useRef<string | null>(null);
+  const [, refreshHiddenToast] = useState(0);
+  const [isReservationToastLeaving, setIsReservationToastLeaving] = useState(false);
   const session = useSessionQuery();
   const subscriptionQuery = useQuery({
     queryKey: ["billing", "subscription"],
@@ -176,7 +209,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
       Boolean(session.data?.data.organizations?.[0]) &&
       session.data?.data.organizations?.[0]?.onboardingCompleted !== false
   });
-  const allAppointments = appointmentsQuery.data ?? [];
+  const allAppointments = appointmentsQuery.data ?? emptyDashboardAppointments;
 
   const handleEscape = useCallback((event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -460,10 +493,99 @@ export function DashboardPage({ brand }: DashboardPageProps) {
       setPendingDashboardView(view);
       return;
     }
+    if (view === "agenda") markReservationNotificationsSeen();
     setActiveView(view);
   }
 
   const currentOrganization = session.data?.data.organizations?.[0];
+  const storedReservationSeenUntil = readReservationSeenUntil(
+    currentOrganization?.id
+  );
+  const effectiveReservationSeenUntil = Math.max(
+    reservationSeenUntil,
+    storedReservationSeenUntil
+  );
+  const notificationSinceMs =
+    effectiveReservationSeenUntil || notificationFallbackSince;
+  const notificationSinceIso = new Date(notificationSinceMs).toISOString();
+  const recentReservationsQuery = useQuery({
+    queryKey: queryKeys.recentReservations(notificationSinceIso),
+    queryFn: () => getRecentDashboardReservations(new Date(notificationSinceMs)),
+    staleTime: 0,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    enabled:
+      Boolean(currentOrganization) &&
+      currentOrganization?.onboardingCompleted !== false
+  });
+  const reservationNotificationSource =
+    recentReservationsQuery.data ?? allAppointments;
+  const newReservations = useMemo(
+    () => {
+      const uniqueAppointments = new Map<string, DashboardAppointment>();
+      [...reservationNotificationSource, ...allAppointments].forEach(
+        (appointment) => uniqueAppointments.set(appointment.id, appointment)
+      );
+      return Array.from(uniqueAppointments.values())
+        .filter((appointment) => {
+          if (appointment.channel !== "web" || !appointment.createdAt) return false;
+          if (appointment.status === "Cancelado") return false;
+          return Date.parse(appointment.createdAt) > effectiveReservationSeenUntil;
+        })
+        .sort(
+          (first, second) =>
+            Date.parse(second.createdAt ?? "") - Date.parse(first.createdAt ?? "")
+        );
+    },
+    [allAppointments, effectiveReservationSeenUntil, reservationNotificationSource]
+  );
+  const latestNewReservation = newReservations[0];
+
+  useEffect(() => {
+    const latestReservationId = latestNewReservation?.id;
+    if (!recentReservationsQuery.isFetched) return;
+
+    if (!notificationFeedLoadedRef.current) {
+      notificationFeedLoadedRef.current = true;
+      lastSoundReservationIdRef.current = latestReservationId ?? null;
+      return;
+    }
+    if (!latestReservationId || lastSoundReservationIdRef.current === latestReservationId) {
+      return;
+    }
+
+    lastSoundReservationIdRef.current = latestReservationId;
+    hiddenToastReservationIdRef.current = null;
+    setIsReservationToastLeaving(false);
+    refreshHiddenToast((current) => current + 1);
+    const audio =
+      notificationAudioRef.current ?? new Audio(notificationSoundUrl);
+    notificationAudioRef.current = audio;
+    audio.volume = 0.55;
+    audio.currentTime = 0;
+    void audio.play().catch(() => undefined);
+  }, [latestNewReservation?.id, recentReservationsQuery.isFetched]);
+  const shouldShowReservationToast =
+    Boolean(latestNewReservation) &&
+    hiddenToastReservationIdRef.current !== latestNewReservation?.id;
+
+  useEffect(() => {
+    if (!shouldShowReservationToast || !latestNewReservation?.id) return;
+    let hideTimeoutId: number | undefined;
+    const timeoutId = window.setTimeout(() => {
+      setIsReservationToastLeaving(true);
+      hideTimeoutId = window.setTimeout(() => {
+        hiddenToastReservationIdRef.current = latestNewReservation.id;
+        setIsReservationToastLeaving(false);
+        refreshHiddenToast((current) => current + 1);
+      }, 220);
+    }, 10_000);
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (hideTimeoutId) window.clearTimeout(hideTimeoutId);
+    };
+  }, [latestNewReservation?.id, shouldShowReservationToast]);
   const effectiveActiveView = canAccessDashboardView(
     currentOrganization?.role,
     activeView
@@ -474,6 +596,30 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     currentOrganization?.role === "owner" &&
     subscriptionQuery.isSuccess &&
     subscriptionQuery.data?.status !== "authorized";
+
+  function markReservationNotificationsSeen() {
+    if (!currentOrganization || newReservations.length === 0) return;
+    const latestSeen = Math.max(
+      ...newReservations.map((appointment) =>
+        Date.parse(appointment.createdAt ?? new Date().toISOString())
+      )
+    );
+    window.localStorage.setItem(
+      reservationSeenStorageKey(currentOrganization.id),
+      String(latestSeen)
+    );
+    setReservationSeenUntil(latestSeen);
+  }
+
+  function openLatestReservation() {
+    if (latestNewReservation?.startsAt) {
+      setSelectedDate(new Date(latestNewReservation.startsAt));
+      setScheduleView("day");
+    }
+    markReservationNotificationsSeen();
+    void queryClient.invalidateQueries({ queryKey: ["appointments"], exact: false });
+    changeDashboardView("agenda");
+  }
 
   if (requiresSubscription) {
     return <Navigate to="/planes" replace />;
@@ -488,6 +634,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           navigationLocked={onboardingRequired}
           subscription={subscriptionQuery.data}
           role={currentOrganization?.role}
+          unreadReservationsCount={newReservations.length}
           onOpenBillingPlans={() => setShowBillingPlans(true)}
           onOpenManualAppointment={() => setShowManualAppointment(true)}
           onChangeView={changeDashboardView}
@@ -656,6 +803,54 @@ export function DashboardPage({ brand }: DashboardPageProps) {
             setActiveView("agenda");
           }}
         />
+      )}
+      {shouldShowReservationToast && latestNewReservation && (
+        <div
+          role="status"
+          className="fixed bottom-4 left-4 right-4 z-[75] mx-auto sm:left-1/2 sm:right-auto sm:w-full sm:max-w-sm sm:-translate-x-1/2"
+        >
+          <button
+            type="button"
+            onClick={openLatestReservation}
+            className={`dashboard-reservation-toast group w-full overflow-hidden rounded-xl border border-[rgba(253,134,6,0.34)] bg-[linear-gradient(135deg,#211735_0%,#2d2046_62%,#3a251f_100%)] p-3 text-left text-white shadow-[0_14px_34px_rgba(32,24,54,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_38px_rgba(32,24,54,0.2)] ${
+              isReservationToastLeaving ? "dashboard-reservation-toast-out" : ""
+            }`}
+          >
+            <div className="flex items-start gap-3 pr-8">
+              <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-accent)] text-sm font-extrabold text-[var(--color-button-text)]">
+                {getInitials(latestNewReservation.client)}
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#211735] bg-[#49d17a]" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2 text-sm font-extrabold text-white">
+                  {newReservations.length > 1
+                    ? `${newReservations.length} reservas nuevas`
+                    : "Nueva reserva recibida"}
+                  <span className="h-2 w-2 rounded-full bg-[#49d17a]" />
+                </span>
+                <span className="mt-1 block truncate text-xs font-semibold text-white/82">
+                  {latestNewReservation.service} ·{" "}
+                  {latestNewReservation.startsAt
+                    ? format(new Date(latestNewReservation.startsAt), "EEE dd 'a las' HH:mm", {
+                        locale: es
+                      })
+                    : latestNewReservation.time}
+                </span>
+                <span className="mt-0.5 block text-xs text-white/58">
+                  Desde tu página pública
+                </span>
+              </span>
+            </div>
+          </button>
+          <button
+            type="button"
+            aria-label="Marcar reservas como vistas"
+            onClick={markReservationNotificationsSeen}
+            className="absolute right-2.5 top-2.5 grid h-7 w-7 place-items-center rounded-full text-lg leading-none text-white/62 transition-all duration-200 hover:rotate-90 hover:bg-white/12 hover:text-white"
+          >
+            ×
+          </button>
+        </div>
       )}
       {pendingDashboardView && (
         <div className="viewport-overlay modal-overlay-enter z-[80] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">

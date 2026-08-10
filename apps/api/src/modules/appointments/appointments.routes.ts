@@ -9,6 +9,7 @@ import { organizationParamsSchema } from "../../lib/schemas.js";
 import { softDelete, restore } from "../../lib/soft-delete.js";
 import { authRateLimit, authenticatedRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
+import { visibleOperationalAppointmentWhere } from "./appointment-visibility.js";
 import {
   appointmentsQuerySchema,
   createAppointmentSchema,
@@ -36,7 +37,8 @@ appointmentsRouter.get("/", authenticatedRateLimit, async (request, response) =>
             ...(to ? { lte: new Date(to) } : {})
           }
         }
-      : {})
+      : {}),
+    AND: [visibleOperationalAppointmentWhere]
   };
 
   const [appointments, total] = await Promise.all([

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button, Card, CardBody, CardHeader } from "../../components/ui";
+import { ApiError } from "../../lib/api";
 import { useSessionQuery } from "../auth/auth.queries";
 import {
   createSubscription,
@@ -61,8 +62,12 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
         plan,
         effectivePayerEmail.trim()
       ));
-    } catch {
-      setMessage("No pudimos iniciar el pago. Revisá la configuración de Mercado Pago.");
+    } catch (error) {
+      setMessage(
+        error instanceof ApiError && error.code === "SUBSCRIPTION_ALREADY_ACTIVE"
+          ? "Ya tenés un plan pago activo. Si querés cambiarlo, primero hay que cancelar o reemplazar la suscripción actual."
+          : "No pudimos iniciar el pago. Revisá la configuración de Mercado Pago."
+      );
       setSelectedPlan(null);
       return;
     }

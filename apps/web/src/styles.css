@@ -231,16 +231,122 @@ select,
   overflow: hidden;
 }
 
+@media (min-width: 768px) and (max-height: 720px) {
+  .dashboard-shell {
+    padding-left: 300px;
+  }
+
+  .dashboard-sidebar.dot-pattern-corner {
+    width: 300px;
+    padding: 0.85rem 0.75rem 0.7rem;
+  }
+
+  .dashboard-sidebar-brand img {
+    height: 4.4rem !important;
+  }
+
+  .dashboard-sidebar-nav {
+    margin-top: 1rem !important;
+  }
+
+  .dashboard-sidebar-nav button {
+    padding-block: 0.42rem;
+    font-size: 0.86rem;
+  }
+
+  .dashboard-sidebar-nav img {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .dashboard-sidebar-new-turn {
+    margin-top: 0.9rem !important;
+    padding-block: 0.68rem !important;
+  }
+
+  .dashboard-sidebar-footer {
+    padding-top: 0.8rem !important;
+  }
+
+  .dashboard-sidebar-organization {
+    margin-bottom: 0.75rem !important;
+    padding: 0.65rem !important;
+  }
+
+  .dashboard-sidebar-org-avatar {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+  }
+
+  .dashboard-sidebar-plan-button,
+  .dashboard-sidebar-logout {
+    padding-block: 0.64rem !important;
+  }
+
+  .dashboard-sidebar-logout {
+    margin-top: 0.7rem !important;
+  }
+
+  .settings-tabs-shell .settings-mobile-tabs {
+    width: max-content;
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 620px) {
+  .dashboard-sidebar.dot-pattern-corner {
+    padding-top: 0.65rem;
+    padding-bottom: 0.55rem;
+  }
+
+  .dashboard-sidebar-brand img {
+    height: 3.8rem !important;
+  }
+
+  .dashboard-sidebar-nav {
+    margin-top: 0.65rem !important;
+  }
+
+  .dashboard-sidebar-nav button {
+    padding-block: 0.34rem;
+  }
+
+  .dashboard-sidebar-new-turn {
+    margin-top: 0.7rem !important;
+    padding-block: 0.58rem !important;
+  }
+
+  .dashboard-sidebar-footer {
+    padding-top: 0.65rem !important;
+  }
+
+  .dashboard-sidebar-organization {
+    margin-bottom: 0.55rem !important;
+    padding: 0.55rem !important;
+  }
+
+  .dashboard-sidebar-plan-button,
+  .dashboard-sidebar-logout {
+    padding-block: 0.55rem !important;
+  }
+
+  .dashboard-sidebar-logout {
+    margin-top: 0.55rem !important;
+  }
+}
+
 @media (max-width: 767px) {
   .dashboard-shell {
     padding-left: 0;
   }
 
   .dashboard-sidebar.dot-pattern-corner {
-    position: relative;
-    inset: auto;
-    width: auto;
-    height: auto;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(86vw, 320px);
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 
@@ -1003,6 +1109,33 @@ textarea {
   animation: booking-skeleton 1.35s ease-in-out infinite;
 }
 
+.dashboard-reservation-toast {
+  animation: reservation-toast-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dashboard-reservation-toast-out {
+  animation: reservation-toast-out 220ms ease-in both;
+}
+
+@keyframes reservation-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes reservation-toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
 @keyframes booking-rise {
   from {
     opacity: 0;
@@ -1084,6 +1217,11 @@ textarea {
   }
 
   .booking-skeleton::after {
+    animation: none;
+  }
+
+  .dashboard-reservation-toast,
+  .dashboard-reservation-toast-out {
     animation: none;
   }
 
