@@ -257,17 +257,31 @@ export function DashboardTeamView() {
                   key={member.id}
                   className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_8px_22px_rgba(32,24,54,0.035)]"
                 >
-                  <div className="grid gap-3 p-3 xl:grid-cols-[minmax(260px,1.05fr)_minmax(0,1fr)_auto] xl:items-center">
+                  <div className="grid gap-3 p-3 xl:grid-cols-[minmax(260px,1.05fr)_minmax(0,1.25fr)] xl:items-center">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-sm font-semibold text-[var(--color-button-text)]">
                         {memberInitials(member)}
                       </span>
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate font-semibold text-[var(--color-ink)]">
-                            {member.name}
-                          </p>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate font-semibold text-[var(--color-ink)]">{member.name}</p>
                           <RoleBadge role={member.role} />
+                          {canEditMember && (
+                            <button
+                              type="button"
+                              title="Editar integrante"
+                              aria-label={`Editar a ${member.name}`}
+                              className="group inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent text-[var(--color-ink)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--color-border-strong)] hover:bg-white/75 hover:shadow-sm active:translate-y-0"
+                              onClick={() => setEditingId(member.id)}
+                            >
+                              <img
+                                src={pencilIcon}
+                                alt=""
+                                aria-hidden="true"
+                                className="h-4 w-4 opacity-70 transition duration-200 group-hover:-rotate-6 group-hover:scale-110 group-hover:opacity-100"
+                              />
+                            </button>
+                          )}
                         </div>
                         <p className="mt-1 truncate text-sm text-[var(--color-muted-strong)]">
                           {member.username ? `@${member.username}` : member.email}
@@ -285,40 +299,24 @@ export function DashboardTeamView() {
                       <TeamInfoLine label="Próximos" value={`${member.upcomingAssignedCount} turnos`} />
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-end xl:justify-center">
-                      <div className="flex flex-wrap gap-1 xl:justify-end">
+                    <div className="flex flex-wrap items-center justify-between gap-2 xl:col-span-2 xl:border-t xl:border-[var(--color-border)] xl:pt-2">
+                      <div className="flex flex-wrap gap-1">
                         <StatusLabel active={member.bookingsEnabled} label="Toma turnos" />
                         <StatusLabel active={member.visibleInPublicBooking} label="Visible online" />
                       </div>
                       {canEditMember ? (
-                        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-                          <button
+                        member.role !== "owner" && (
+                          <Button
                             type="button"
-                            title="Editar integrante"
-                            aria-label={`Editar a ${member.name}`}
-                            className="group inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-strong)] text-[var(--color-ink)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/75 hover:shadow-md active:translate-y-0"
-                            onClick={() => setEditingId(member.id)}
+                            className="h-8 px-3 text-xs"
+                            onClick={() => {
+                              setPasswordResetMember(member);
+                              setPasswordDraft("");
+                            }}
                           >
-                            <img
-                              src={pencilIcon}
-                              alt=""
-                              aria-hidden="true"
-                              className="h-[18px] w-[18px] opacity-75 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
-                            />
-                          </button>
-                          {member.role !== "owner" && (
-                            <Button
-                              type="button"
-                              className="h-9 px-3"
-                              onClick={() => {
-                                setPasswordResetMember(member);
-                                setPasswordDraft("");
-                              }}
-                            >
-                              Cambiar clave
-                            </Button>
-                          )}
-                        </div>
+                            Cambiar clave
+                          </Button>
+                        )
                       ) : (
                         <span className="rounded-md border border-[var(--color-border)] px-3 py-2 text-center text-xs font-semibold text-[var(--color-muted-strong)]">
                           Solo lectura
@@ -677,9 +675,9 @@ function RoleBadge({ role }: { role: TeamMember["role"] }) {
   const isOwner = role === "owner";
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+      className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.04em] ${
         isOwner
-          ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-accent)]"
+          ? "bg-[rgba(253,134,6,0.09)] text-[var(--color-accent)]"
           : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
       }`}
     >

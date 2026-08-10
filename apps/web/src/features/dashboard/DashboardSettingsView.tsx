@@ -960,7 +960,7 @@ function centsToMoney(value: number | null) {
     } as Partial<Record<SettingsTab, string>>)[activeTab] ?? null;
 
   return (
-    <section className="min-w-0 max-w-full overflow-x-clip space-y-4 pb-2 sm:space-y-5">
+    <section className="min-w-0 max-w-full overflow-x-clip space-y-3 sm:space-y-4">
       {isOnboarding &&
         sessionQuery.data &&
         !sessionQuery.data.data.user.onboardingGuideSeen && (
@@ -1018,7 +1018,7 @@ function centsToMoney(value: number | null) {
             </section>
           </div>
         )}
-      <nav className="flex w-full max-w-full snap-x gap-1 overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-1 shadow-[0_10px_26px_rgba(32,24,54,0.04)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:grid 2xl:grid-cols-5 2xl:overflow-hidden">
+      <nav className="flex w-full snap-x gap-1 overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-0.5 shadow-[0_8px_20px_rgba(32,24,54,0.035)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:grid 2xl:max-w-[calc(100%-360px)] 2xl:grid-cols-5 2xl:overflow-hidden">
         {([
           ["business", "Negocio", "Negocio", settingsNavBusinessIcon],
           ["contact", "Contacto", "Contacto", contactPhoneIcon],
@@ -1037,7 +1037,7 @@ function centsToMoney(value: number | null) {
               }
               setActiveTab(value);
             }}
-            className={`group flex min-w-[150px] snap-start items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold transition-colors 2xl:min-w-0 2xl:px-4 ${
+            className={`group flex min-w-[132px] snap-start items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-bold transition-colors 2xl:min-w-0 2xl:px-3 ${
               index > 0 ? "2xl:border-l 2xl:border-[var(--color-border)]" : ""
             } ${
               activeTab === value
@@ -1151,16 +1151,10 @@ function centsToMoney(value: number | null) {
               {message}
             </p>
           )}
-          <CardBody
-            className={
-              activeTab === "business"
-                ? "grid gap-4 p-4 sm:p-5 md:grid-cols-2"
-                : "grid gap-4 p-4 sm:p-5 md:grid-cols-2"
-            }
-          >
+          <CardBody className="grid gap-3 p-3 sm:p-4 md:grid-cols-2">
             {activeTab === "business" && (
               <>
-                <section className="grid gap-5 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+                <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-3 md:col-span-2 sm:p-4 xl:grid-cols-[300px_minmax(0,1fr)]">
                   <div className="min-w-0">
                     <div>
                       <div className="mb-2 flex items-center gap-2 text-sm">
@@ -1287,7 +1281,7 @@ function centsToMoney(value: number | null) {
                   </div>
                 </section>
 
-                <section className="rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
+                <section className="rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-3 md:col-span-2 sm:p-4">
                   <div className="flex items-start gap-3">
                     <SettingsSectionIcon icon={galleryIcon} />
                     <div className="min-w-0 flex-1">
@@ -1385,7 +1379,7 @@ function centsToMoney(value: number | null) {
                       );
                       if (emptySlot === undefined) {
                         return (
-                          <div className="grid aspect-[16/9] min-h-24 place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.025)] px-4 text-center">
+                          <div className="grid h-full min-h-[9.85rem] place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.72)] px-4 text-center lg:min-h-[9.15rem] xl:min-h-[9.85rem]">
                             <span>
                               <span className="block text-sm font-semibold text-[var(--color-ink)]">
                                 Máximo alcanzado

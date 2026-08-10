@@ -498,7 +498,11 @@ export function DashboardPage({ brand }: DashboardPageProps) {
             activeView={effectiveActiveView}
           />
 
-          <div className="min-w-0 max-w-full space-y-4 overflow-x-clip px-5 pb-10 pt-4 sm:px-7 sm:pb-12">
+          <div
+            className={`min-w-0 max-w-full space-y-4 overflow-x-clip pb-10 pt-4 sm:pb-12 ${
+              effectiveActiveView === "settings" ? "px-3 sm:px-5" : "px-5 sm:px-7"
+            }`}
+          >
             {billingError && (
               <div className="rounded-lg border border-[#e7b9b2] bg-[#fde8e5] px-4 py-3 text-sm font-medium text-[#9f1f16]">
                 {billingError}
