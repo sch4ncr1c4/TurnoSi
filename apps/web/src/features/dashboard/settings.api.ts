@@ -2,6 +2,7 @@ import { ApiError, apiRequest, getApiUrl } from "../../lib/api";
 import type {
   OrganizationSettings,
   OrganizationSettingsInput,
+  OrganizationSettingsSectionData,
   OrganizationSettingsSection
 } from "./settings.types";
 
@@ -9,6 +10,16 @@ export async function getOrganizationSettings() {
   const response = await apiRequest<{ success: true; data: OrganizationSettings }>(
     "/api/v1/organizations/current/settings"
   );
+  return response.data;
+}
+
+export async function getOrganizationSettingsSection(
+  section: OrganizationSettingsSection
+) {
+  const response = await apiRequest<{
+    success: true;
+    data: OrganizationSettingsSectionData;
+  }>(`/api/v1/organizations/current/settings/${section}`);
   return response.data;
 }
 

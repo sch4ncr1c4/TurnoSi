@@ -27,6 +27,18 @@ export type OrganizationSettings = {
     focusY: number;
     zoom: number;
   }[];
+  completion?: OrganizationSettingsCompletion;
+};
+
+export type OrganizationSettingsCompletion = {
+  business: boolean;
+  contact: boolean;
+  page: boolean;
+  payments: boolean;
+};
+
+export type OrganizationSettingsSectionData = Partial<OrganizationSettings> & {
+  completion: OrganizationSettingsCompletion;
 };
 
 export type OrganizationSettingsInput = Partial<Omit<

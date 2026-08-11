@@ -1,11 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-import { ApiHealthBadge } from "../../components/system/ApiHealthBadge";
 import { billingPlans } from "../billing/billing.plans";
 import {
-  previewRows,
-  sectors
+  previewRows
 } from "./landing.data";
 
 type LandingPageProps = {
@@ -41,7 +39,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
   useEffect(() => {
     function handleScroll() {
-      setIsScrolled(window.scrollY > 8);
+      setIsScrolled(window.scrollY > 12);
     }
 
     handleScroll();
@@ -77,14 +75,20 @@ export function LandingPage({ brand }: LandingPageProps) {
 
   return (
     <div className="min-h-screen w-full bg-[var(--color-page)]">
-      <header
-        className={`sticky top-0 z-40 bg-[var(--color-ink)] text-[var(--color-button-text)] backdrop-blur-sm transition-[border-radius] duration-300 ${
-          isScrolled ? "rounded-none" : "rounded-t-[28px]"
-        }`}
-      >
-        <div className="px-5 py-3 sm:px-7">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0 [&_img]:h-14 sm:[&_img]:h-16">{brand}</div>
+      <main>
+        <section
+          id="inicio"
+          className="landing-hero-shell relative z-10 scroll-mt-24 overflow-hidden border-b border-[var(--color-border)] pt-[118px] text-[var(--color-button-text)] sm:pt-[126px]"
+        >
+          <div aria-hidden="true" className="landing-hero-glow" />
+          <header
+            className={`landing-hero-nav fixed z-50 ${
+              isScrolled ? "landing-hero-nav--floating" : ""
+            } ${isMenuOpen ? "landing-hero-nav--open" : ""}`}
+          >
+            <div className="px-5 py-3 sm:px-7">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 [&_img]:h-14 sm:[&_img]:h-16">{brand}</div>
 
             <nav className="hidden items-center gap-6 whitespace-nowrap text-sm font-medium text-white/78 min-[949px]:flex">
               {navigationLinks.map((link) => (
@@ -150,7 +154,7 @@ export function LandingPage({ brand }: LandingPageProps) {
             }`}
           >
             <div className="overflow-hidden">
-              <div className="mt-3 border-t border-white/10 pt-3">
+              <div className="landing-mobile-menu mt-3 border-t border-white/10 pt-3">
                 <nav className="grid gap-1 text-sm font-medium text-white/78">
                   {navigationLinks.map((link) => (
                     <a
@@ -186,51 +190,30 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </header>
-
-      <main>
-        <section id="inicio" className="relative scroll-mt-24 overflow-hidden rounded-b-[28px] border-b border-[var(--color-border)] bg-[var(--color-ink)] text-[var(--color-button-text)]">
-          <div
-            aria-hidden="true"
-            className="landing-hero-pattern pointer-events-none absolute bottom-0 left-0 h-64 w-80 opacity-24 sm:h-80 sm:w-[34rem]"
-            style={{
-              backgroundImage:
-                "radial-gradient(rgba(255,250,244,0.28) 1px, transparent 1px)",
-              backgroundSize: "14px 14px",
-              maskImage:
-                "linear-gradient(35deg, black 0%, black 34%, rgba(0,0,0,0.55) 48%, transparent 70%)",
-              WebkitMaskImage:
-                "linear-gradient(35deg, black 0%, black 34%, rgba(0,0,0,0.55) 48%, transparent 70%)"
-            }}
-          />
-          <div className="grid min-h-[unset] w-full min-w-0 gap-6 px-4 py-6 sm:px-7 sm:py-10 lg:min-h-[560px] lg:grid-cols-[minmax(0,0.88fr)_minmax(460px,1.12fr)] lg:items-center lg:gap-8 lg:py-16">
-            <div className="landing-rise order-1 min-w-0 max-w-3xl lg:order-none">
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {sectors.map((sector) => (
-                  <span
-                    key={sector}
-                    className="rounded-md border border-white/16 px-2 py-0.5 text-[11px] font-medium text-white/72 sm:px-2.5 sm:py-1 sm:text-xs"
-                  >
-                    {sector}
-                  </span>
-                ))}
-                <ApiHealthBadge />
               </div>
+            </div>
+          </header>
 
-              <p className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold uppercase text-white/54 sm:mt-8 sm:text-xs">
+          <div className="relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1680px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-14 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.88fr)_minmax(460px,1.12fr)] xl:items-center xl:gap-8 xl:px-10 xl:py-16">
+            <div className="landing-rise order-1 min-w-0 max-w-3xl xl:order-none">
+              <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase text-white/54 sm:text-xs">
                 <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
                 Reservas online
               </p>
-              <h1 className="mt-3 max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] sm:text-5xl lg:max-w-4xl lg:text-6xl">
+              <h1 className="mt-3 max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] sm:text-5xl xl:max-w-4xl xl:text-6xl">
                 Gestioná tus turnos de forma{" "}
                 <span className="text-[var(--color-accent)]">simple</span>.
               </h1>
-              <p className="mt-4 max-w-full text-sm leading-7 text-white/70 sm:mt-5 sm:max-w-2xl sm:text-base sm:leading-8">
-                Organizá reservas, horarios, equipo y clientes desde un panel
-                claro, conectado con tu página pública.
-              </p>
+              <div className="mt-4 max-w-full space-y-2 text-sm leading-7 text-white/70 sm:mt-5 sm:max-w-xl sm:text-base sm:leading-8">
+                <p>
+                  Organizá reservas, horarios, equipo y clientes desde un panel
+                  claro.
+                </p>
+                <p>
+                  Tu página pública queda conectada para recibir turnos sin
+                  complicaciones.
+                </p>
+              </div>
 
               <div className="mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-row">
                 <a
@@ -250,92 +233,221 @@ export function LandingPage({ brand }: LandingPageProps) {
 
             <div
               id="product"
-              className="landing-rise landing-delay-1 order-2 min-w-0 lg:order-none"
+              className="landing-rise landing-delay-1 order-2 mx-auto w-full min-w-0 max-w-4xl xl:order-none xl:max-w-none"
             >
-              <div className="landing-product-card min-h-[420px] overflow-hidden rounded-2xl border border-white/14 bg-[#fbf4e6] text-[var(--color-ink)] shadow-[0_18px_54px_rgba(0,0,0,0.18)]">
-                <div className="min-w-0">
-                  <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] px-4 py-4">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                        Vista del producto
-                      </p>
-                      <h2 className="mt-1 text-xl font-semibold">
-                        Agenda de hoy
-                      </h2>
-                      <p className="text-xs text-[var(--color-muted)]">
-                        Miércoles 22 · Sede principal · 09:00 a 20:00
-                      </p>
-                    </div>
-                    <span className="inline-flex shrink-0 rounded-full bg-[rgba(253,134,6,0.14)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)]">
-                      8 confirmados
-                    </span>
-                  </div>
+              <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white">
+                <div className="landing-product-grid" />
 
-                  <div className="grid gap-3 p-4">
-                    <div className="min-w-0 space-y-3">
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          ["Turnos", "12"],
-                          ["Disponibles", "6"],
-                          ["Pendientes", "1"]
-                        ].map(([label, value]) => (
+                <div className="landing-product-board absolute -right-8 left-12 top-16 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[860px]:block">
+                  <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px]">
+                    <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
+                      <div className="mb-8 flex items-center gap-2">
+                        <span className="h-7 w-7 rounded-md border border-white/22" />
+                        <span className="h-4 w-20 rounded bg-white/18" />
+                      </div>
+                      {["Resumen", "Agenda", "Clientes", "Equipo", "Configuración"].map((item, index) => (
+                        <div
+                          key={item}
+                          className={`mb-2 rounded-md px-2 py-2 text-[10px] font-semibold ${
+                            index === 1 ? "bg-white/14 text-white" : "text-white/46"
+                          }`}
+                        >
+                          {item}
+                        </div>
+                      ))}
+                      <div className="mt-7 h-8 rounded-md bg-[var(--color-accent)]" />
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="h-5 w-44 rounded bg-[rgba(32,24,54,0.16)]" />
+                          <div className="mt-2 h-2.5 w-56 rounded bg-[rgba(32,24,54,0.08)]" />
+                        </div>
+                        <div className="flex gap-1.5">
+                          <span className="h-7 w-9 rounded bg-[var(--color-ink)]" />
+                          <span className="h-7 w-10 rounded border border-[var(--color-border)]" />
+                          <span className="h-7 w-9 rounded border border-[var(--color-border)]" />
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid grid-cols-3 gap-2">
+                        {[0, 1, 2].map((item) => (
                           <div
-                            key={label}
-                            className="landing-mockup-row rounded-xl border border-[var(--color-border)] bg-white/70 p-3"
+                            key={item}
+                            className="rounded-xl border border-[var(--color-border)] bg-white/58 p-3"
                           >
-                            <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)]">
-                              {label}
-                            </p>
-                            <p className="mt-1 text-xl font-semibold">{value}</p>
+                            <div className="h-3 w-14 rounded bg-[rgba(32,24,54,0.1)]" />
+                            <div className="mt-3 h-5 w-8 rounded bg-[rgba(32,24,54,0.18)]" />
                           </div>
                         ))}
                       </div>
 
-                      <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/74">
-                        <div className="grid grid-cols-[58px_minmax(0,1fr)] border-b border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)] sm:grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_86px]">
+                      <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white/62">
+                        <div className="landing-hero-table-row grid grid-cols-[56px_minmax(0,1fr)_minmax(0,0.7fr)_76px] gap-3 border-b border-[var(--color-border)] px-3 py-2 text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
                           <span>Hora</span>
                           <span>Turno</span>
-                          <span className="hidden sm:block">Responsable</span>
-                          <span className="hidden sm:block">Estado</span>
+                          <span className="landing-hero-responsible">Responsable</span>
+                          <span>Estado</span>
                         </div>
-                        {previewRows.map((row) => (
+
+                        {[0, 1, 2, 3].map((item) => (
                           <div
-                            key={row.time + row.service}
-                            className="landing-mockup-row grid grid-cols-[58px_minmax(0,1fr)] items-center border-b border-[var(--color-border)] px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_86px]"
+                            key={item}
+                            className="landing-hero-table-row grid grid-cols-[56px_minmax(0,1fr)_minmax(0,0.7fr)_76px] items-center gap-3 border-b border-[var(--color-border)] px-3 py-2.5 last:border-b-0"
                           >
-                            <span className="font-mono font-semibold text-[var(--color-accent)]">
-                              {row.time}
-                            </span>
-                            <span className="min-w-0">
-                              <span className="block truncate font-semibold">
-                                {row.service}
-                              </span>
-                              <span className="block truncate text-xs text-[var(--color-muted)]">
-                                {row.customer}
-                              </span>
-                            </span>
-                            <span className="hidden truncate text-xs text-[var(--color-muted-strong)] sm:block">
-                              {row.responsible}
-                            </span>
-                            <span className="hidden sm:block">
-                              <span
-                                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                                  row.status === "Pagado"
-                                    ? "bg-[rgba(64,145,91,0.12)] text-[#347548]"
-                                    : row.status === "En espera"
-                                      ? "bg-[rgba(253,134,6,0.14)] text-[var(--color-accent)]"
-                                      : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
-                                }`}
-                              >
-                                {row.status}
-                              </span>
-                            </span>
+                            <div className="h-3 w-9 rounded bg-[rgba(253,134,6,0.32)]" />
+                            <div>
+                              <div className="h-3 w-28 rounded bg-[rgba(32,24,54,0.15)]" />
+                              <div className="mt-2 h-2.5 w-20 rounded bg-[rgba(32,24,54,0.08)]" />
+                            </div>
+                            <div className="landing-hero-responsible h-3 w-24 rounded bg-[rgba(32,24,54,0.1)]" />
+                            <div className="h-5 rounded-full bg-[rgba(253,134,6,0.15)]" />
                           </div>
                         ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 border-l border-[var(--color-border)] bg-white/35 p-3">
+                      <div className="rounded-xl border border-[var(--color-border)] bg-white/58 p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="h-3.5 w-20 rounded bg-[rgba(32,24,54,0.14)]" />
+                          <div className="h-3 w-3 rounded-full bg-[var(--color-ink)]" />
+                        </div>
+                        <div className="mt-4 grid grid-cols-7 gap-1">
+                          {Array.from({ length: 28 }).map((_, index) => (
+                            <span
+                              key={index}
+                              className={`h-3.5 rounded ${
+                                index === 10
+                                  ? "bg-[var(--color-ink)]"
+                                  : index % 4 === 0
+                                    ? "bg-[#569165]/45"
+                                    : "bg-[rgba(32,24,54,0.08)]"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-[var(--color-border)] bg-white/58 p-3">
+                        <div className="h-4 w-24 rounded bg-[rgba(32,24,54,0.14)]" />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-3 w-full rounded bg-[rgba(32,24,54,0.1)]" />
+                          <div className="h-3 w-3/4 rounded bg-[rgba(32,24,54,0.08)]" />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                <div className="landing-product-mobile-board min-[860px]:hidden">
+                  <div className="grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
+                    <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
+                      <span className="block h-5 w-5 rounded-md border border-white/20" />
+                      <div className="mt-8 space-y-3">
+                        {["Resumen", "Agenda", "Clientes", "Equipo"].map((item, index) => (
+                          <span
+                            key={item}
+                            className={`block rounded-md px-2 py-1.5 text-[8px] font-semibold ${
+                              index === 1 ? "bg-white/14 text-white" : "text-white/42"
+                            }`}
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="mt-8 block h-7 rounded-md bg-[var(--color-accent)]" />
+                    </div>
+
+                    <div className="min-w-0 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="h-3.5 w-32 rounded bg-[rgba(32,24,54,0.16)]" />
+                          <div className="mt-2 h-2.5 w-44 max-w-full rounded bg-[rgba(32,24,54,0.08)]" />
+                        </div>
+                        <span className="h-6 w-6 rounded bg-[var(--color-ink)]" />
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        {[0, 1, 2].map((item) => (
+                          <div
+                            key={item}
+                            className="rounded-lg border border-[var(--color-border)] bg-white/62 p-2"
+                          >
+                            <div className="h-2 w-12 rounded bg-[rgba(32,24,54,0.1)]" />
+                            <div className="mt-2 h-4 w-7 rounded bg-[rgba(32,24,54,0.15)]" />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white/66">
+                        <div className="grid grid-cols-[42px_minmax(0,1fr)_54px] gap-2 border-b border-[var(--color-border)] px-2.5 py-2 text-[7px] font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
+                          <span>Hora</span>
+                          <span>Turno</span>
+                          <span>Estado</span>
+                        </div>
+                        {[0, 1, 2, 3].map((item) => (
+                          <div
+                            key={item}
+                            className="grid grid-cols-[42px_minmax(0,1fr)_54px] items-center gap-2 border-b border-[var(--color-border)] px-2.5 py-2.5 last:border-b-0"
+                          >
+                            <span className="h-2.5 w-8 rounded bg-[rgba(253,134,6,0.32)]" />
+                            <span>
+                              <span className="block h-2.5 w-24 max-w-full rounded bg-[rgba(32,24,54,0.14)]" />
+                              <span className="mt-1.5 block h-2 w-16 rounded bg-[rgba(32,24,54,0.08)]" />
+                            </span>
+                            <span className="h-4 rounded-full bg-[rgba(253,134,6,0.16)]" />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white/58 p-2">
+                        <div className="h-3 w-24 rounded bg-[rgba(32,24,54,0.12)]" />
+                        <div className="mt-2 grid grid-cols-7 gap-1">
+                          {Array.from({ length: 21 }).map((_, index) => (
+                            <span
+                              key={index}
+                              className={`h-2.5 rounded ${
+                                index === 10
+                                  ? "bg-[var(--color-ink)]"
+                                  : index % 4 === 0
+                                    ? "bg-[#569165]/45"
+                                    : "bg-[rgba(32,24,54,0.08)]"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="landing-mobile-reservation-toast">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-[rgba(253,134,6,0.16)] text-xs font-semibold text-[var(--color-accent)]">
+                      TS
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold text-white">Nueva reserva recibida</p>
+                      <div className="mt-1 h-2 w-28 rounded bg-white/18" />
+                    </div>
+                    <span className="h-2 w-2 rounded-full bg-[#72d59b]" />
+                  </div>
+                </div>
+
+                <div className="landing-reservation-toast">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[rgba(253,134,6,0.16)] text-sm font-semibold text-[var(--color-accent)]">
+                      TS
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-white">Nueva reserva recibida</p>
+                      <p className="mt-1 truncate text-[11px] text-white/58">
+                        Corte de pelo · Viernes 16:00
+                      </p>
+                    </div>
+                    <span className="h-2 w-2 rounded-full bg-[#72d59b]" />
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>

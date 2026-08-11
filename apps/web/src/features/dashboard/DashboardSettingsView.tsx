@@ -18,8 +18,12 @@ import {
   uploadOrganizationGalleryImage,
   uploadOrganizationLogo
 } from "./settings.api";
-import { useOrganizationSettingsQuery } from "./settings.queries";
-import type { OrganizationSettings } from "./settings.types";
+import { useOrganizationSettingsSectionQuery } from "./settings.queries";
+import type {
+  OrganizationSettings,
+  OrganizationSettingsCompletion,
+  OrganizationSettingsSection
+} from "./settings.types";
 import { argentinaProvinces } from "./dashboard.options";
 import businessIcon from "../../components/assets/icons/navigation/home.svg";
 import contactIcon from "../../components/assets/icons/navigation/team.svg";
@@ -134,6 +138,50 @@ const customBusinessCategory = "__custom__";
 
 type LocalSettings = typeof initialLocalSettings;
 type SettingsTab = "business" | "contact" | "page" | "payments" | "account";
+
+function getSettingsSection(tab: SettingsTab): OrganizationSettingsSection {
+  return tab === "account" ? "business" : tab;
+}
+
+function mergeOrganizationSettingsIntoLocal(
+  current: LocalSettings,
+  organization: Partial<OrganizationSettings>
+): LocalSettings {
+  const depositAmount =
+    organization.depositAmountCents === null || organization.depositAmountCents === undefined
+      ? ""
+      : String(organization.depositAmountCents / 100);
+
+  return {
+    ...current,
+    ...(organization.name !== undefined ? { businessName: organization.name } : {}),
+    ...(organization.category !== undefined ? { category: organization.category } : {}),
+    ...(organization.phone !== undefined
+      ? { phone: normalizeArgentinaPhone(organization.phone) }
+      : {}),
+    ...(organization.whatsapp !== undefined
+      ? { whatsapp: normalizeArgentinaPhone(organization.whatsapp) }
+      : {}),
+    ...(organization.publicEmail !== undefined ? { email: organization.publicEmail } : {}),
+    ...(organization.address !== undefined ? { address: organization.address } : {}),
+    ...(organization.city !== undefined ? { city: organization.city } : {}),
+    ...(organization.province !== undefined ? { province: organization.province } : {}),
+    ...(organization.instagram !== undefined ? { instagram: organization.instagram } : {}),
+    ...(organization.description !== undefined
+      ? { description: organization.description }
+      : {}),
+    ...(organization.mercadoPagoConnected !== undefined
+      ? { mercadoPagoConnected: organization.mercadoPagoConnected }
+      : {}),
+    ...(organization.depositEnabled !== undefined
+      ? { depositEnabled: organization.depositEnabled }
+      : {}),
+    ...(organization.depositAmountCents !== undefined
+      ? { depositAmount }
+      : {}),
+    mercadoPagoAccessToken: ""
+  };
+}
 type GalleryUploadState = {
   originalBytes?: number;
   optimizedBytes?: number;
@@ -180,14 +228,22 @@ export function DashboardSettingsView({
   const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
   const [showUnsavedState, setShowUnsavedState] = useState(false);
   const [organizationSlug, setOrganizationSlug] = useState("");
-  const settingsQuery = useOrganizationSettingsQuery();
+  const [loadedOrganizationSettings, setLoadedOrganizationSettings] = useState<
+    Partial<OrganizationSettings>
+  >({});
+  const [settingsCompletion, setSettingsCompletion] =
+    useState<OrganizationSettingsCompletion | null>(null);
+  const activeSettingsSection = getSettingsSection(activeTab);
+  const settingsQuery = useOrganizationSettingsSectionQuery(activeSettingsSection);
   const sessionQuery = useSessionQuery();
   const queryClient = useQueryClient();
   const hasGalleryFocusChanges =
     JSON.stringify(galleryFocus) !==
     JSON.stringify(
       [0, 1].map((slot) => {
-        const saved = settingsQuery.data?.galleryFocus.find((item) => item.slot === slot);
+        const saved = loadedOrganizationSettings.galleryFocus?.find(
+          (item) => item.slot === slot
+        );
         return {
           slot: slot as 0 | 1,
           focusX: saved?.focusX ?? 50,
@@ -233,54 +289,57 @@ export function DashboardSettingsView({
           : false;
 
   useEffect(() => {
-    if (settingsQuery.data) {
-        const organization = settingsQuery.data;
-        const loadedSettings = {
-          businessName: organization.name,
-          category: organization.category,
-          phone: normalizeArgentinaPhone(organization.phone),
-          whatsapp: normalizeArgentinaPhone(organization.whatsapp),
-          email: organization.publicEmail,
-          address: organization.address,
-          city: organization.city,
-          province: organization.province,
-          instagram: organization.instagram,
-          description: organization.description,
-          mercadoPagoAccessToken: "",
-          mercadoPagoConnected: organization.mercadoPagoConnected,
-          depositEnabled: organization.depositEnabled,
-          depositAmount: centsToMoney(organization.depositAmountCents)
-        };
-        // The form edits a local draft and persists only explicit saves.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSettings(loadedSettings);
-        setSavedSettings(loadedSettings);
-        setOrganizationSlug(organization.slug);
+    const organization = settingsQuery.data;
+    if (!organization) return;
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+        setLoadedOrganizationSettings((current) => ({ ...current, ...organization }));
+        setSettings((current) =>
+          mergeOrganizationSettingsIntoLocal(current, organization)
+        );
+        setSavedSettings((current) =>
+          mergeOrganizationSettingsIntoLocal(current, organization)
+        );
+        if (organization.completion) setSettingsCompletion(organization.completion);
+        if (organization.slug) setOrganizationSlug(organization.slug);
         if (organization.hasLogo) {
           setLogoPreview(
-            `${getApiUrl("/api/v1/organizations/current/logo")}?v=${Date.now()}`
+            `${getApiUrl("/api/v1/organizations/current/logo")}?v=${organization.logoVersion ?? Date.now()}`
           );
         }
-        setGalleryPreviews([
-          organization.galleryImageSlots.includes(0)
-            ? `${getApiUrl("/api/v1/organizations/current/gallery/0")}?v=${Date.now()}`
-            : "",
-          organization.galleryImageSlots.includes(1)
-            ? `${getApiUrl("/api/v1/organizations/current/gallery/1")}?v=${Date.now()}`
-            : ""
-        ]);
-        setGalleryFocus(
-          [0, 1].map((slot) => {
-            const saved = organization.galleryFocus.find((item) => item.slot === slot);
-            return {
-              slot: slot as 0 | 1,
-              focusX: saved?.focusX ?? 50,
-              focusY: saved?.focusY ?? 50,
-              zoom: saved?.zoom ?? 100
-            };
-          })
-        );
-    }
+        if (organization.galleryImageSlots && organization.galleryVersions) {
+          const galleryVersionBySlot = new Map(
+            organization.galleryVersions.map((item) => [item.slot, item.version])
+          );
+          setGalleryPreviews([
+            organization.galleryImageSlots.includes(0)
+              ? `${getApiUrl("/api/v1/organizations/current/gallery/0")}?v=${galleryVersionBySlot.get(0) ?? Date.now()}`
+              : "",
+            organization.galleryImageSlots.includes(1)
+              ? `${getApiUrl("/api/v1/organizations/current/gallery/1")}?v=${galleryVersionBySlot.get(1) ?? Date.now()}`
+              : ""
+          ]);
+        }
+        if (organization.galleryFocus) {
+          setGalleryFocus(
+            [0, 1].map((slot) => {
+              const saved = organization.galleryFocus?.find((item) => item.slot === slot);
+              return {
+                slot: slot as 0 | 1,
+                focusX: saved?.focusX ?? 50,
+                focusY: saved?.focusY ?? 50,
+                zoom: saved?.zoom ?? 100
+              };
+            })
+          );
+        }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [settingsQuery.data]);
 
   useEffect(() => {
@@ -342,11 +401,6 @@ function moneyToCents(value: string) {
   const amount = Number(normalized);
   if (!Number.isFinite(amount) || amount <= 0) return null;
   return Math.round(amount * 100);
-}
-
-function centsToMoney(value: number | null) {
-  if (!value) return "";
-  return String(value / 100);
 }
 
   function updateSetting<K extends keyof LocalSettings>(field: K, value: LocalSettings[K]) {
@@ -599,7 +653,10 @@ function centsToMoney(value: number | null) {
       }
       const refreshedSettings = await settingsQuery.refetch();
       const latestSettings = refreshedSettings.data;
-      if (latestSettings) {
+      if (
+        latestSettings?.galleryVersions &&
+        latestSettings.galleryImageSlots
+      ) {
         const galleryVersionBySlot = new Map(
           latestSettings.galleryVersions.map((item) => [item.slot, item.version])
         );
@@ -664,29 +721,35 @@ function centsToMoney(value: number | null) {
     },
     {
       label: "Datos del local",
-      done: Boolean(
-        savedSettings.businessName &&
-          savedSettings.category &&
-          savedSettings.description
-      ),
+      done:
+        settingsCompletion?.business ??
+        Boolean(
+          savedSettings.businessName &&
+            savedSettings.category &&
+            savedSettings.description
+        ),
       tab: "business"
     },
     {
       label: "Contacto",
-      done: Boolean(
-        savedSettings.phone &&
-          savedSettings.whatsapp &&
-          savedSettings.email
-      ),
+      done:
+        settingsCompletion?.contact ??
+        Boolean(
+          savedSettings.phone &&
+            savedSettings.whatsapp &&
+            savedSettings.email
+        ),
       tab: "contact"
     },
     {
       label: "Página pública",
-      done: Boolean(
-        savedSettings.address &&
-        savedSettings.city &&
-          savedSettings.province
-      ),
+      done:
+        settingsCompletion?.page ??
+        Boolean(
+          savedSettings.address &&
+          savedSettings.city &&
+            savedSettings.province
+        ),
       tab: "page"
     }
   ];
@@ -701,25 +764,33 @@ function centsToMoney(value: number | null) {
     {
       icon: businessIcon,
       label: "Información del negocio",
-      done: Boolean(savedSettings.businessName && savedSettings.category && savedSettings.description),
+      done:
+        settingsCompletion?.business ??
+        Boolean(savedSettings.businessName && savedSettings.category && savedSettings.description),
       tab: "business"
     },
     {
       icon: contactIcon,
       label: "Contacto",
-      done: Boolean(savedSettings.phone && savedSettings.whatsapp && savedSettings.email),
+      done:
+        settingsCompletion?.contact ??
+        Boolean(savedSettings.phone && savedSettings.whatsapp && savedSettings.email),
       tab: "contact"
     },
     {
       icon: pageIcon,
       label: "Página pública",
-      done: Boolean(savedSettings.address && savedSettings.city && savedSettings.province && publicSlug),
+      done:
+        settingsCompletion?.page ??
+        Boolean(savedSettings.address && savedSettings.city && savedSettings.province && publicSlug),
       tab: "page"
     },
     {
       icon: paymentsWalletIcon,
       label: "Cobros",
-      done: Boolean(settings.mercadoPagoConnected || !settings.depositEnabled),
+      done:
+        settingsCompletion?.payments ??
+        Boolean(settings.mercadoPagoConnected || !settings.depositEnabled),
       tab: "payments"
     },
     {
@@ -835,7 +906,7 @@ function centsToMoney(value: number | null) {
       if (next[slot].startsWith("blob:")) URL.revokeObjectURL(next[slot]);
       next[slot] = file
         ? URL.createObjectURL(file)
-        : settingsQuery.data?.galleryImageSlots.includes(slot)
+        : loadedOrganizationSettings.galleryImageSlots?.includes(slot)
           ? `${getApiUrl(`/api/v1/organizations/current/gallery/${slot}`)}?v=${Date.now()}`
           : "";
       return next;
@@ -870,7 +941,9 @@ function centsToMoney(value: number | null) {
   async function confirmRemoveGalleryImage() {
     if (galleryDeleteSlot === null || isDeletingGalleryImage) return;
     const slot = galleryDeleteSlot;
-    const hadSavedImage = Boolean(settingsQuery.data?.galleryImageSlots.includes(slot));
+    const hadSavedImage = Boolean(
+      loadedOrganizationSettings.galleryImageSlots?.includes(slot)
+    );
 
     setIsDeletingGalleryImage(true);
     setMessage("");
@@ -940,21 +1013,23 @@ function centsToMoney(value: number | null) {
       { progress: 0, status: "idle" }
     ]);
     setLogoPreview(
-      settingsQuery.data?.hasLogo
+      loadedOrganizationSettings.hasLogo
         ? `${getApiUrl("/api/v1/organizations/current/logo")}?v=${Date.now()}`
         : ""
     );
     setGalleryPreviews([
-      settingsQuery.data?.galleryImageSlots.includes(0)
+      loadedOrganizationSettings.galleryImageSlots?.includes(0)
         ? `${getApiUrl("/api/v1/organizations/current/gallery/0")}?v=${Date.now()}`
         : "",
-      settingsQuery.data?.galleryImageSlots.includes(1)
+      loadedOrganizationSettings.galleryImageSlots?.includes(1)
         ? `${getApiUrl("/api/v1/organizations/current/gallery/1")}?v=${Date.now()}`
         : ""
     ]);
     setGalleryFocus(
       [0, 1].map((slot) => {
-        const saved = settingsQuery.data?.galleryFocus.find((item) => item.slot === slot);
+        const saved = loadedOrganizationSettings.galleryFocus?.find(
+          (item) => item.slot === slot
+        );
         return {
           slot: slot as 0 | 1,
           focusX: saved?.focusX ?? 50,

@@ -58,6 +58,39 @@ type SettingsUpdateData = {
   }[];
 };
 
+type SettingsSection = "business" | "contact" | "page" | "payments";
+
+type SettingsCompletionSource = {
+  name: string | null;
+  category: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  publicEmail: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  description: string | null;
+  mercadoPagoAccessTokenEncrypted: string | null;
+  depositEnabled: boolean;
+};
+
+function buildSettingsCompletion(organization: SettingsCompletionSource) {
+  return {
+    business: Boolean(
+      organization.name && organization.category && organization.description
+    ),
+    contact: Boolean(
+      organization.phone && organization.whatsapp && organization.publicEmail
+    ),
+    page: Boolean(
+      organization.address && organization.city && organization.province
+    ),
+    payments: Boolean(
+      organization.mercadoPagoAccessTokenEncrypted || !organization.depositEnabled
+    )
+  };
+}
+
 async function updateCurrentOrganizationSettings({
   action,
   data,
@@ -465,6 +498,7 @@ organizationsRouter.get("/current/settings", async (request, response) => {
     depositEnabled: organization.depositEnabled,
     depositAmountCents: organization.depositAmountCents,
     onboardingCompleted: Boolean(organization.onboardingCompletedAt),
+    completion: buildSettingsCompletion(organization),
     hasLogo: Boolean(organization.logo),
     logoVersion: organization.logo?.updatedAt.getTime() ?? null,
     galleryImageSlots: organization.galleryImages.map((image) => image.slot).sort(),
@@ -483,6 +517,124 @@ organizationsRouter.get("/current/settings", async (request, response) => {
       }))
       .sort((first, second) => first.slot - second.slot)
   }));
+});
+
+organizationsRouter.get("/current/settings/:section", async (request, response) => {
+  const section = updateOrganizationSettingsSectionSchema.parse(
+    request.params.section
+  ) as SettingsSection;
+  const tenant = request.tenant!;
+  if (tenant.role !== "owner" && tenant.role !== "admin") {
+    response.status(403).json({
+      success: false,
+      message: "Insufficient permissions",
+      code: "FORBIDDEN"
+    });
+    return;
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: tenant.organizationId },
+    select: {
+      name: true,
+      slug: true,
+      category: true,
+      phone: true,
+      whatsapp: true,
+      publicEmail: true,
+      address: true,
+      city: true,
+      province: true,
+      instagram: true,
+      description: true,
+      mercadoPagoAccessTokenEncrypted: true,
+      depositEnabled: true,
+      depositAmountCents: true,
+      onboardingCompletedAt: true,
+      ...(section === "business"
+        ? {
+            logo: { select: { organizationId: true, updatedAt: true } },
+            galleryImages: {
+              select: {
+                slot: true,
+                focusX: true,
+                focusY: true,
+                zoom: true,
+                updatedAt: true
+              }
+            }
+          }
+        : {})
+    }
+  });
+
+  if (!organization) {
+    response.status(404).json({
+      success: false,
+      message: "Organization not found",
+      code: "NOT_FOUND"
+    });
+    return;
+  }
+
+  const completion = buildSettingsCompletion(organization);
+  const base = {
+    slug: organization.slug,
+    onboardingCompleted: Boolean(organization.onboardingCompletedAt),
+    completion
+  };
+
+  if (section === "business") {
+    const galleryImages = "galleryImages" in organization ? organization.galleryImages : [];
+    response.json(ok({
+      ...base,
+      name: organization.name,
+      category: organization.category ?? "",
+      description: organization.description ?? "",
+      hasLogo: Boolean("logo" in organization && organization.logo),
+      logoVersion:
+        "logo" in organization ? organization.logo?.updatedAt.getTime() ?? null : null,
+      galleryImageSlots: galleryImages.map((image) => image.slot).sort(),
+      galleryVersions: galleryImages
+        .map((image) => ({ slot: image.slot, version: image.updatedAt.getTime() }))
+        .sort((first, second) => first.slot - second.slot),
+      galleryFocus: galleryImages
+        .map((image) => ({
+          slot: image.slot,
+          focusX: image.focusX,
+          focusY: image.focusY,
+          zoom: image.zoom
+        }))
+        .sort((first, second) => first.slot - second.slot)
+    }));
+    return;
+  }
+
+  if (section === "contact") {
+    response.json(ok({
+      ...base,
+      phone: organization.phone ?? "",
+      whatsapp: organization.whatsapp ?? "",
+      publicEmail: organization.publicEmail ?? "",
+      address: organization.address ?? "",
+      city: organization.city ?? "",
+      province: organization.province ?? "",
+      instagram: organization.instagram ?? ""
+    }));
+    return;
+  }
+
+  if (section === "payments") {
+    response.json(ok({
+      ...base,
+      mercadoPagoConnected: Boolean(organization.mercadoPagoAccessTokenEncrypted),
+      depositEnabled: organization.depositEnabled,
+      depositAmountCents: organization.depositAmountCents
+    }));
+    return;
+  }
+
+  response.json(ok(base));
 });
 
 organizationsRouter.patch("/current/settings/:section", authRateLimit, async (request, response) => {

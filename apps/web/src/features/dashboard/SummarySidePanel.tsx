@@ -1,4 +1,5 @@
 import type { DashboardAppointment } from "./dashboard.data";
+import { statusDotClassName, statusGuide } from "./dashboard.constants";
 import {
   DashboardCalendarCard
 } from "./DashboardCalendarCard";
@@ -35,6 +36,7 @@ export function SummarySidePanel({
         onSelectAppointment={onSelectAppointment}
         onViewAgenda={onViewAgenda}
       />
+      <SummaryStatusGuideCard />
     </aside>
   );
 }
@@ -99,6 +101,34 @@ function SummaryUpcomingCard({
             No hay turnos en las próximas 2 horas.
           </p>
         )}
+      </div>
+    </article>
+  );
+}
+
+function SummaryStatusGuideCard() {
+  return (
+    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+      <h2 className="text-base font-semibold">Estados</h2>
+      <div className="mt-3 grid gap-2">
+        {statusGuide.map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center gap-2.5 rounded-md border border-[var(--color-border)] bg-white/55 px-2.5 py-2"
+          >
+            <span
+              className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusDotClassName[item.label]}`}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                {item.label}
+              </p>
+              <p className="text-xs text-[var(--color-muted-strong)]">
+                {item.description}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </article>
   );

@@ -4,7 +4,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Brand } from "../components/brand/Brand";
 import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { PageLoader } from "../components/layout/PageLoader";
-import { PageShell } from "../components/layout/PageShell";
 import { ROUTES } from "./routes";
 import { AuthGuard } from "../features/auth/AuthGuard";
 
@@ -43,11 +42,7 @@ export function App() {
         <Routes>
           <Route
             path={ROUTES.home}
-            element={
-              <PageShell>
-                <LandingPage brand={<Brand boxed />} />
-              </PageShell>
-            }
+            element={<LandingPage brand={<Brand boxed />} />}
           />
           <Route
             path={ROUTES.login}

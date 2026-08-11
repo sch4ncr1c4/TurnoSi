@@ -2,8 +2,6 @@ import {
   activeDayLabel,
   appointmentFilterOptions,
   buttonMotionClass,
-  statusDotClassName,
-  statusGuide,
   type AppointmentFilter,
   type ScheduleView
 } from "./dashboard.constants";
@@ -114,25 +112,6 @@ export function SummaryFilters({
               Limpiar
             </button>
           )}
-        </div>
-      </div>
-
-      <div className="mt-3 border-t border-[var(--color-border)] pt-3">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
-          Estados
-        </p>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--color-muted-strong)]">
-          {statusGuide.map((item) => (
-            <span key={item.label} className="inline-flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${statusDotClassName[item.label]}`} />
-              <span>
-                <strong className="font-medium text-[var(--color-ink)]">
-                  {item.label}
-                </strong>{" "}
-                {item.description}
-              </span>
-            </span>
-          ))}
         </div>
       </div>
     </div>

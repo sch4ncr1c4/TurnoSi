@@ -1,6 +1,8 @@
 export const queryKeys = {
   session: ["session"] as const,
   organizationSettings: ["organization", "settings"] as const,
+  organizationSettingsSection: (section: string) =>
+    ["organization", "settings", section] as const,
   organizationBranches: ["organization", "branches"] as const,
   appointments: (month: string) => ["appointments", month] as const,
   recentReservations: (since: string) => ["appointments", "recent", since] as const,
