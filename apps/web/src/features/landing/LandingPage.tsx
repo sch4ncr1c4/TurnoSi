@@ -114,7 +114,7 @@ export function LandingPage({ brand }: LandingPageProps) {
       <main>
         <section
           id="inicio"
-          className="landing-hero-shell relative z-10 scroll-mt-24 overflow-hidden border-b border-[var(--color-border)] pt-[118px] text-[var(--color-button-text)] sm:pt-[126px]"
+          className="landing-hero-shell relative z-10 scroll-mt-24 overflow-hidden border-b border-[var(--color-border)] pt-[76px] text-[var(--color-button-text)] sm:pt-[70px]"
         >
           <header
             className={`landing-hero-nav fixed z-50 ${
@@ -292,8 +292,6 @@ export function LandingPage({ brand }: LandingPageProps) {
               className="landing-rise landing-delay-1 order-2 mx-auto w-full min-w-0 max-w-4xl xl:order-none xl:mt-24 xl:max-w-[900px] xl:-translate-x-2 xl:justify-self-start 2xl:max-w-[960px] 2xl:translate-x-0"
             >
               <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white xl:min-h-[470px]">
-                <div className="landing-product-grid" />
-
                 <div className="landing-product-board absolute -right-2 left-6 top-12 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[1080px]:block">
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">

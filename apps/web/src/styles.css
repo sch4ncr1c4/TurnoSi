@@ -597,8 +597,39 @@ textarea {
 
 .landing-hero-shell {
   background:
-    radial-gradient(circle at 28% 62%, rgba(116, 91, 170, 0.18), transparent 32%),
+    radial-gradient(circle at 71% 48%, rgba(255, 255, 255, 0.095), transparent 25%),
+    radial-gradient(circle at 76% 46%, rgba(255, 255, 255, 0.06), transparent 30%),
     var(--color-ink);
+}
+
+.landing-hero-shell::before,
+.landing-hero-shell::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.landing-hero-shell::before {
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 84% 48%, transparent 42%, rgba(255, 132, 0, 0.12) 42.12%, transparent 42.42%),
+    radial-gradient(ellipse at 82% 46%, transparent 54%, rgba(255, 255, 255, 0.05) 54.12%, transparent 54.36%),
+    radial-gradient(circle at 50% 45%, transparent 48%, rgba(7, 4, 18, 0.38) 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 48%, #000 68%, #000 100%);
+}
+
+.landing-hero-shell::after {
+  right: -22%;
+  top: 7%;
+  z-index: 0;
+  width: min(980px, 86vw);
+  aspect-ratio: 1;
+  opacity: 0.05;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  transform: rotate(-14deg);
+  mask-image: linear-gradient(120deg, transparent 0%, #000 28%, #000 58%, transparent 78%);
 }
 
 .landing-hero-nav {
@@ -746,16 +777,29 @@ textarea {
   overflow: visible;
 }
 
-.landing-product-grid {
+.landing-product-scene::before,
+.landing-product-scene::after {
+  content: "";
   position: absolute;
-  inset: 2% -5% 0 8%;
   z-index: 0;
-  opacity: 0.08;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: linear-gradient(110deg, transparent, #000 18%, #000 72%, transparent);
+  pointer-events: none;
+  border: 1.2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  mask-image: linear-gradient(104deg, transparent 0%, #000 18%, #000 56%, transparent 78%);
+}
+
+.landing-product-scene::before {
+  inset: -4% -2% 16% 4%;
+  transform: rotate(-11deg);
+}
+
+.landing-product-scene::after {
+  inset: 18% -8% 18% 12%;
+  opacity: 0.07;
+  border-color: rgba(255, 255, 255, 0.05);
+  border-width: 1px;
+  transform: rotate(-13deg);
+  mask-image: linear-gradient(104deg, transparent 0%, transparent 18%, #000 36%, #000 62%, transparent 78%);
 }
 
 .landing-product-board {
