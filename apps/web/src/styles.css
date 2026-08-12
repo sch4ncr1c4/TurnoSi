@@ -27,8 +27,13 @@ html {
   scroll-behavior: smooth;
   scrollbar-gutter: auto;
   overflow-y: scroll;
+  overscroll-behavior-y: none;
   scrollbar-color: rgba(32, 24, 54, 0.22) transparent;
   scrollbar-width: thin;
+}
+
+body {
+  overscroll-behavior-y: none;
 }
 
 ::-webkit-scrollbar {
@@ -824,12 +829,12 @@ textarea {
 
 @media (max-width: 948px) {
   .landing-hero-shell {
-    padding-top: 112px !important;
+    padding-top: calc(112px + env(safe-area-inset-top)) !important;
   }
 
   .landing-hero-nav {
     position: fixed;
-    top: 10px;
+    top: calc(10px + env(safe-area-inset-top));
     left: 50%;
     right: auto;
     width: calc(100% - 24px);
@@ -843,7 +848,7 @@ textarea {
   }
 
   .landing-hero-nav--floating {
-    top: 10px;
+    top: calc(10px + env(safe-area-inset-top));
     width: calc(100% - 24px);
     max-width: none;
     transform: translateX(-50%);
