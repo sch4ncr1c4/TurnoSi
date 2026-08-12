@@ -31,6 +31,11 @@ html {
   scrollbar-width: thin;
 }
 
+html:has(.landing-hero-shell),
+body:has(.landing-hero-shell) {
+  background: var(--color-ink);
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

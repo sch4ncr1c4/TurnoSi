@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { billingPlans } from "../billing/billing.plans";
@@ -37,6 +37,27 @@ const navigationLinks = [
 export function LandingPage({ brand }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  useLayoutEffect(() => {
+    const previousHtmlBackground = document.documentElement.style.backgroundColor;
+    const previousBodyBackground = document.body.style.backgroundColor;
+    const previousScrollRestoration = window.history.scrollRestoration;
+    const shouldResetScroll = window.matchMedia("(min-width: 949px)").matches;
+
+    document.documentElement.style.backgroundColor = "#201836";
+    document.body.style.backgroundColor = "#201836";
+
+    if (shouldResetScroll && !window.location.hash) {
+      window.history.scrollRestoration = "manual";
+      window.scrollTo(0, 0);
+    }
+
+    return () => {
+      document.documentElement.style.backgroundColor = previousHtmlBackground;
+      document.body.style.backgroundColor = previousBodyBackground;
+      window.history.scrollRestoration = previousScrollRestoration;
+    };
+  }, []);
 
   useEffect(() => {
     function handleScroll() {
