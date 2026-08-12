@@ -258,7 +258,7 @@ export function LandingPage({ brand }: LandingPageProps) {
             <div className="landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left xl:order-none xl:mx-0 xl:translate-x-12 xl:justify-self-center 2xl:translate-x-16">
               <h1 className="max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-[660px] xl:text-6xl">
                 Gestioná tus turnos de forma{" "}
-                <span className="text-[var(--color-accent)]">simple</span>.
+                <span className="text-white">simple</span>.
               </h1>
               <div className="mx-auto mt-4 max-w-full space-y-2 text-sm leading-7 text-white/70 [text-wrap:balance] sm:mx-0 sm:mt-5 sm:max-w-xl sm:text-base sm:leading-8">
                 <p>
