@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { billingPlans } from "../billing/billing.plans";
-import turnosiLogo from "../../components/assets/logos/turnosi-horizontal.svg";
+import turnosiLogo from "@/components/assets/logos/turnosi-horizontal.svg";
 import {
   previewRows
 } from "./landing.data";
@@ -195,13 +195,9 @@ export function LandingPage({ brand }: LandingPageProps) {
             </div>
           </header>
 
-          <div className="relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1680px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-14 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.88fr)_minmax(460px,1.12fr)] xl:items-center xl:gap-8 xl:px-10 xl:py-16">
-            <div className="landing-rise order-1 mx-auto min-w-0 max-w-3xl text-center sm:text-left xl:order-none xl:mx-0">
-              <p className="inline-flex items-center justify-center gap-2 text-[11px] font-semibold uppercase text-white/54 sm:justify-start sm:text-xs">
-                <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-                Reservas online
-              </p>
-              <h1 className="mt-3 max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-4xl xl:text-6xl">
+          <div className="landing-hero-content relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1460px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-12 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] xl:items-center xl:gap-12 xl:px-8 xl:py-12 2xl:gap-16">
+            <div className="landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left xl:order-none xl:mx-0 xl:translate-x-12 xl:justify-self-center 2xl:translate-x-16">
+              <h1 className="max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-[660px] xl:text-6xl">
                 Gestioná tus turnos de forma{" "}
                 <span className="text-[var(--color-accent)]">simple</span>.
               </h1>
@@ -234,12 +230,12 @@ export function LandingPage({ brand }: LandingPageProps) {
 
             <div
               id="product"
-              className="landing-rise landing-delay-1 order-2 mx-auto w-full min-w-0 max-w-4xl xl:order-none xl:max-w-none"
+              className="landing-rise landing-delay-1 order-2 mx-auto w-full min-w-0 max-w-4xl xl:order-none xl:mt-24 xl:max-w-[900px] xl:-translate-x-2 xl:justify-self-start 2xl:max-w-[960px] 2xl:translate-x-0"
             >
-              <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white">
+              <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white xl:min-h-[470px]">
                 <div className="landing-product-grid" />
 
-                <div className="landing-product-board absolute -right-8 left-12 top-16 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[860px]:block">
+                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[1080px]:block">
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
                       <div className="mb-8 flex items-center gap-2">
@@ -340,7 +336,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                 </div>
 
-                <div className="landing-product-mobile-board min-[860px]:hidden">
+                <div className="landing-product-mobile-board min-[1080px]:hidden">
                   <div className="grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
                       <img src={turnosiLogo} alt="TurnoSi" className="h-5 w-auto min-w-[58px] opacity-95" />
@@ -433,7 +429,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                 </div>
 
-                <div className="landing-reservation-toast">
+                <div className="landing-reservation-toast hidden min-[1080px]:block">
                   <div className="flex items-center gap-3">
                     <span className="grid h-9 w-9 place-items-center rounded-full bg-[rgba(253,134,6,0.16)] text-sm font-semibold text-[var(--color-accent)]">
                       TS
