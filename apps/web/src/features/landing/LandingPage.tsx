@@ -70,6 +70,20 @@ export function LandingPage({ brand }: LandingPageProps) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsMenuOpen(false);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
   function closeMenu() {
     setIsMenuOpen(false);
   }
@@ -81,17 +95,34 @@ export function LandingPage({ brand }: LandingPageProps) {
           id="inicio"
           className="landing-hero-shell relative z-10 scroll-mt-24 overflow-hidden border-b border-[var(--color-border)] pt-[118px] text-[var(--color-button-text)] sm:pt-[126px]"
         >
-          <div aria-hidden="true" className="landing-hero-glow" />
           <header
             className={`landing-hero-nav fixed z-50 ${
               isScrolled ? "landing-hero-nav--floating" : ""
-            } ${isMenuOpen ? "landing-hero-nav--open" : ""}`}
+            }`}
           >
-            <div className="px-5 py-3 sm:px-7">
+            <div
+              className={`landing-hero-nav__inner ${
+                isScrolled
+                  ? "landing-hero-nav__inner--compact px-4 py-2 sm:px-5"
+                  : "px-5 py-3 sm:px-7"
+              }`}
+            >
               <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 [&_img]:h-14 sm:[&_img]:h-16">{brand}</div>
+                <div
+                  className={`landing-hero-nav__brand min-w-0 ${
+                    isScrolled
+                      ? "landing-hero-nav__brand--compact [&_img]:h-11 sm:[&_img]:h-12"
+                      : "[&_img]:h-14 sm:[&_img]:h-16"
+                  }`}
+                >
+                  {brand}
+                </div>
 
-            <nav className="hidden items-center gap-6 whitespace-nowrap text-sm font-medium text-white/78 min-[949px]:flex">
+            <nav
+              className={`landing-hero-nav__links hidden items-center whitespace-nowrap font-medium text-white/78 min-[949px]:flex ${
+                isScrolled ? "landing-hero-nav__links--compact gap-5 text-[0.92rem]" : "gap-6 text-sm"
+              }`}
+            >
               {navigationLinks.map((link) => (
                 <a
                   key={link.href}
@@ -104,17 +135,25 @@ export function LandingPage({ brand }: LandingPageProps) {
               ))}
             </nav>
 
-            <div className="hidden items-center justify-end gap-2 min-[949px]:flex">
+            <div
+              className={`landing-hero-nav__actions hidden items-center justify-end min-[949px]:flex ${
+                isScrolled ? "landing-hero-nav__actions--compact gap-1.5" : "gap-2"
+              }`}
+            >
               <a
                 href="/login"
-                className="group relative px-2 py-2 text-sm font-semibold text-white/82 transition-colors duration-200 hover:text-[var(--color-accent)]"
+                className={`landing-hero-nav__login group relative font-semibold text-white/82 transition-colors duration-200 hover:text-[var(--color-accent)] ${
+                  isScrolled ? "landing-hero-nav__login--compact px-2 py-1.5 text-[0.92rem]" : "px-2 py-2 text-sm"
+                }`}
               >
                 Ingresar
                 <span className="absolute bottom-0 left-2 h-0.5 w-[calc(100%-1rem)] origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
               </a>
               <a
                 href="/register"
-                className="rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+                className={`landing-hero-nav__cta rounded-md bg-[var(--color-accent)] font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 ${
+                  isScrolled ? "landing-hero-nav__cta--compact px-3.5 py-1.5 text-[0.92rem]" : "px-4 py-2 text-sm"
+                }`}
               >
                 Crear cuenta
               </a>
@@ -146,23 +185,21 @@ export function LandingPage({ brand }: LandingPageProps) {
               </span>
             </button>
           </div>
-
           <div
-            className={`grid transition-[grid-template-rows,opacity] duration-200 min-[949px]:hidden ${
-              isMenuOpen
-                ? "grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0"
+            className={`landing-mobile-menu min-[949px]:hidden ${
+              isMenuOpen ? "landing-mobile-menu--open" : ""
             }`}
+            aria-hidden={!isMenuOpen}
           >
-            <div className="overflow-hidden">
-              <div className="landing-mobile-menu mt-3 border-t border-white/10 pt-3">
-                <nav className="grid gap-1 text-sm font-medium text-white/78">
-                  {navigationLinks.map((link) => (
+            <div className="landing-mobile-menu-panel">
+              <nav className="grid gap-1.5 text-sm font-medium text-white/78">
+                  {navigationLinks.map((link, index) => (
                     <a
                       key={link.href}
                       href={link.href}
                       onClick={closeMenu}
-                      className="group relative rounded-md px-3 py-2.5 transition-colors duration-200 hover:bg-white/8 hover:text-[var(--color-accent)]"
+                      style={{ transitionDelay: isMenuOpen ? `${35 + index * 25}ms` : "0ms" }}
+                      className="landing-mobile-menu-item group relative rounded-md px-3 py-3 transition-colors duration-200 hover:bg-white/8 hover:text-[var(--color-accent)]"
                     >
                       <span className="relative inline-block">
                         {link.label}
@@ -172,11 +209,12 @@ export function LandingPage({ brand }: LandingPageProps) {
                   ))}
                 </nav>
 
-                <div className="mt-3 grid gap-2 border-t border-white/10 pt-3">
+                <div className="mt-4 grid gap-2 border-t border-white/10 pt-3">
                   <a
                     href="/login"
                     onClick={closeMenu}
-                    className="group relative rounded-md border border-white/18 px-3 py-2.5 text-center text-sm font-medium text-white transition-colors duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    style={{ transitionDelay: isMenuOpen ? "170ms" : "0ms" }}
+                    className="landing-mobile-menu-item group relative rounded-md border border-white/18 px-3 py-2.5 text-center text-sm font-medium text-white transition-colors duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                   >
                     Ingresar
                     <span className="absolute bottom-1.5 left-1/2 h-0.5 w-10 -translate-x-1/2 origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
@@ -184,15 +222,15 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <a
                     href="/register"
                     onClick={closeMenu}
-                    className="rounded-md bg-[var(--color-accent)] px-3 py-2.5 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+                    style={{ transitionDelay: isMenuOpen ? "195ms" : "0ms" }}
+                    className="landing-mobile-menu-item rounded-md bg-[var(--color-accent)] px-3 py-2.5 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
                   >
                     Crear cuenta
                   </a>
                 </div>
-              </div>
             </div>
-              </div>
-            </div>
+          </div>
+        </div>
           </header>
 
           <div className="landing-hero-content relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1460px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-12 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] xl:items-center xl:gap-12 xl:px-8 xl:py-12 2xl:gap-16">
