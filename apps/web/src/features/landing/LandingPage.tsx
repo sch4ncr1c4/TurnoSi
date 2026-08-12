@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { billingPlans } from "../billing/billing.plans";
+import turnosiLogo from "../../components/assets/logos/turnosi-horizontal.svg";
 import {
   previewRows
 } from "./landing.data";
@@ -195,16 +196,16 @@ export function LandingPage({ brand }: LandingPageProps) {
           </header>
 
           <div className="relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1680px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-14 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.88fr)_minmax(460px,1.12fr)] xl:items-center xl:gap-8 xl:px-10 xl:py-16">
-            <div className="landing-rise order-1 min-w-0 max-w-3xl xl:order-none">
-              <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase text-white/54 sm:text-xs">
+            <div className="landing-rise order-1 mx-auto min-w-0 max-w-3xl text-center sm:text-left xl:order-none xl:mx-0">
+              <p className="inline-flex items-center justify-center gap-2 text-[11px] font-semibold uppercase text-white/54 sm:justify-start sm:text-xs">
                 <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
                 Reservas online
               </p>
-              <h1 className="mt-3 max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] sm:text-5xl xl:max-w-4xl xl:text-6xl">
+              <h1 className="mt-3 max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-4xl xl:text-6xl">
                 Gestioná tus turnos de forma{" "}
                 <span className="text-[var(--color-accent)]">simple</span>.
               </h1>
-              <div className="mt-4 max-w-full space-y-2 text-sm leading-7 text-white/70 sm:mt-5 sm:max-w-xl sm:text-base sm:leading-8">
+              <div className="mx-auto mt-4 max-w-full space-y-2 text-sm leading-7 text-white/70 [text-wrap:balance] sm:mx-0 sm:mt-5 sm:max-w-xl sm:text-base sm:leading-8">
                 <p>
                   Organizá reservas, horarios, equipo y clientes desde un panel
                   claro.
@@ -242,8 +243,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
                       <div className="mb-8 flex items-center gap-2">
-                        <span className="h-7 w-7 rounded-md border border-white/22" />
-                        <span className="h-4 w-20 rounded bg-white/18" />
+                        <img src={turnosiLogo} alt="TurnoSi" className="h-6 w-auto opacity-95" />
                       </div>
                       {["Resumen", "Agenda", "Clientes", "Equipo", "Configuración"].map((item, index) => (
                         <div
@@ -343,7 +343,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 <div className="landing-product-mobile-board min-[860px]:hidden">
                   <div className="grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
-                      <span className="block h-5 w-5 rounded-md border border-white/20" />
+                      <img src={turnosiLogo} alt="TurnoSi" className="h-5 w-auto min-w-[58px] opacity-95" />
                       <div className="mt-8 space-y-3">
                         {["Resumen", "Agenda", "Clientes", "Equipo"].map((item, index) => (
                           <span
