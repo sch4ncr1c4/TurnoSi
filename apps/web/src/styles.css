@@ -27,13 +27,8 @@ html {
   scroll-behavior: smooth;
   scrollbar-gutter: auto;
   overflow-y: scroll;
-  overscroll-behavior-y: none;
   scrollbar-color: rgba(32, 24, 54, 0.22) transparent;
   scrollbar-width: thin;
-}
-
-body {
-  overscroll-behavior-y: none;
 }
 
 ::-webkit-scrollbar {
@@ -839,19 +834,21 @@ textarea {
     right: auto;
     width: calc(100% - 24px);
     max-width: none;
-    transform: translateX(-50%);
+    backface-visibility: hidden;
+    transform: translate3d(-50%, 0, 0);
     background: rgb(32, 24, 54);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
     box-shadow: 0 18px 48px rgba(7, 4, 18, 0.22);
     backdrop-filter: none;
+    will-change: transform;
   }
 
   .landing-hero-nav--floating {
     top: calc(10px + env(safe-area-inset-top));
     width: calc(100% - 24px);
     max-width: none;
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
     border-radius: 18px;
   }
 
