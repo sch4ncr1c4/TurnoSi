@@ -597,8 +597,8 @@ textarea {
 
 .landing-hero-shell {
   background:
-    radial-gradient(circle at 71% 48%, rgba(255, 255, 255, 0.095), transparent 25%),
-    radial-gradient(circle at 76% 46%, rgba(255, 255, 255, 0.06), transparent 30%),
+    radial-gradient(circle at 77% 48%, rgba(255, 255, 255, 0.095), transparent 24%),
+    radial-gradient(circle at 82% 46%, rgba(255, 255, 255, 0.06), transparent 29%),
     var(--color-ink);
 }
 
@@ -613,14 +613,16 @@ textarea {
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(ellipse at 84% 48%, transparent 42%, rgba(255, 132, 0, 0.12) 42.12%, transparent 42.42%),
-    radial-gradient(ellipse at 82% 46%, transparent 54%, rgba(255, 255, 255, 0.05) 54.12%, transparent 54.36%),
+    radial-gradient(ellipse at 90% 48%, transparent 42%, rgba(255, 132, 0, 0.12) 42.12%, transparent 42.42%),
+    radial-gradient(ellipse at 88% 46%, transparent 54%, rgba(255, 255, 255, 0.05) 54.12%, transparent 54.36%),
     radial-gradient(circle at 50% 45%, transparent 48%, rgba(7, 4, 18, 0.38) 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, transparent 48%, #000 68%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 54%, #000 72%, #000 100%);
+  transform-origin: 82% 48%;
+  animation: landing-orbit-drift 18s ease-in-out infinite;
 }
 
 .landing-hero-shell::after {
-  right: -22%;
+  right: -29%;
   top: 7%;
   z-index: 0;
   width: min(980px, 86vw);
@@ -630,6 +632,8 @@ textarea {
   border-radius: 50%;
   transform: rotate(-14deg);
   mask-image: linear-gradient(120deg, transparent 0%, #000 28%, #000 58%, transparent 78%);
+  transform-origin: 50% 50%;
+  animation: landing-orbit-ring 24s ease-in-out infinite;
 }
 
 .landing-hero-nav {
@@ -789,17 +793,19 @@ textarea {
 }
 
 .landing-product-scene::before {
-  inset: -4% -2% 16% 4%;
+  inset: -4% -8% 16% 11%;
   transform: rotate(-11deg);
+  animation: landing-product-orbit-primary 16s ease-in-out infinite;
 }
 
 .landing-product-scene::after {
-  inset: 18% -8% 18% 12%;
+  inset: 18% -14% 18% 18%;
   opacity: 0.07;
   border-color: rgba(255, 255, 255, 0.05);
   border-width: 1px;
   transform: rotate(-13deg);
   mask-image: linear-gradient(104deg, transparent 0%, transparent 18%, #000 36%, #000 62%, transparent 78%);
+  animation: landing-product-orbit-secondary 20s ease-in-out infinite;
 }
 
 .landing-product-board {
@@ -1062,6 +1068,58 @@ textarea {
   to {
     opacity: 0.24;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes landing-orbit-drift {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 0.82;
+    transform: translate3d(18px, -8px, 0) scale(1.025);
+  }
+}
+
+@keyframes landing-orbit-ring {
+  0%,
+  100% {
+    opacity: 0.05;
+    transform: rotate(-14deg) translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 0.075;
+    transform: rotate(-12deg) translate3d(-10px, 8px, 0) scale(1.018);
+  }
+}
+
+@keyframes landing-product-orbit-primary {
+  0%,
+  100% {
+    opacity: 1;
+    transform: rotate(-11deg) translate3d(0, 0, 0);
+  }
+
+  50% {
+    opacity: 0.78;
+    transform: rotate(-10deg) translate3d(10px, -5px, 0);
+  }
+}
+
+@keyframes landing-product-orbit-secondary {
+  0%,
+  100% {
+    opacity: 0.07;
+    transform: rotate(-13deg) translate3d(0, 0, 0);
+  }
+
+  50% {
+    opacity: 0.045;
+    transform: rotate(-14deg) translate3d(-8px, 5px, 0);
   }
 }
 
@@ -1575,6 +1633,10 @@ textarea {
   .landing-feature-card,
   .landing-reservation-toast,
   .landing-product-card,
+  .landing-hero-shell::before,
+  .landing-hero-shell::after,
+  .landing-product-scene::before,
+  .landing-product-scene::after,
   .landing-mockup-row,
   .landing-scroll-reveal {
     animation: none;
