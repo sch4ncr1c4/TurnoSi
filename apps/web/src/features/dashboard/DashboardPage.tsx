@@ -600,7 +600,6 @@ export function DashboardPage({ brand }: DashboardPageProps) {
       reservationSeenStorageKey(currentOrganization.id),
       String(backendSeenUntil)
     );
-    setReservationSeenUntil((current) => Math.max(current, backendSeenUntil));
   }, [currentOrganization, reservationNotificationStateQuery.data]);
 
   useEffect(() => {
@@ -616,7 +615,6 @@ export function DashboardPage({ brand }: DashboardPageProps) {
       reservationSeenStorageKey(currentOrganization.id),
       String(seenUntilToSync)
     );
-    setReservationSeenUntil((current) => Math.max(current, seenUntilToSync));
     queryClient.setQueryData(
       queryKeys.reservationNotifications(currentOrganization.id),
       seenUntilToSync
