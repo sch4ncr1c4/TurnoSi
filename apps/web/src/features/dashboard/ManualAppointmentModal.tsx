@@ -311,7 +311,7 @@ export function ManualAppointmentModal({
             </section>
           </div>
 
-          <aside className="h-fit rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.82)] p-4 lg:sticky lg:top-4">
+          <aside className="h-fit rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 lg:sticky lg:top-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
               Resumen
             </p>

@@ -159,7 +159,7 @@ export function AccountAccessSettings({
       <CardBody className="space-y-4 p-4 sm:p-5">
         <form
           onSubmit={saveProfile}
-          className="grid max-w-4xl gap-4 rounded-xl border border-[var(--color-border)] bg-white/35 p-4 md:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,240px)_minmax(0,240px)_minmax(0,320px)]"
+          className="grid max-w-4xl gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 md:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,240px)_minmax(0,240px)_minmax(0,320px)]"
         >
           <AccountField
             label="Nombre del propietario"
@@ -190,7 +190,7 @@ export function AccountAccessSettings({
             onChange={(email) => setProfile((current) => ({ ...current, email }))}
           />
           {isProfileEditing && (
-            <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] bg-white/35 px-3 py-3 md:col-span-2 xl:col-span-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] bg-[#ffffff] px-3 py-3 md:col-span-2 xl:col-span-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-[var(--color-muted-strong)]">
                 Guardá los cambios para actualizar tu acceso.
               </p>
@@ -222,7 +222,7 @@ export function AccountAccessSettings({
           )}
         </form>
 
-        <section className="max-w-4xl rounded-xl border border-[var(--color-border)] bg-white/35 p-4 sm:p-5">
+        <section className="max-w-4xl rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold">Seguridad</p>

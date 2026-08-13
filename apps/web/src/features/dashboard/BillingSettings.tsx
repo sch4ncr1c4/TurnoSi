@@ -142,7 +142,7 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
           <div className={`${compact ? "mt-5" : "mt-8"} grid justify-items-center gap-4 lg:grid-cols-3`}>
             {!subscription?.trialStartedAt && (
               <div className="lg:col-span-3">
-                <article className="mx-auto flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-5 sm:flex-row sm:items-center sm:justify-between">
+                <article className="mx-auto flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[#ffffff] p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
                       Prueba gratis
@@ -176,7 +176,7 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
                   className={`${compact ? "min-h-[390px] p-5" : "min-h-[430px] p-5"} relative flex w-full max-w-[330px] flex-col overflow-hidden rounded-2xl border transition hover:-translate-y-0.5 ${
                     plan.recommended
                       ? "border-[var(--color-ink)] bg-[linear-gradient(180deg,rgba(32,24,54,0.96),rgba(32,24,54,0.91))] text-white shadow-[0_16px_42px_rgba(32,24,54,0.16)]"
-                      : "border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
+                      : "border-[var(--color-border)] bg-[#ffffff] shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
                   }`}
                 >
                   {plan.recommended && (

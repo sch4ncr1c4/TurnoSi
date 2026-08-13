@@ -6,7 +6,7 @@ type CardProps = {
 };
 
 const CARD_BASE =
-  "min-w-0 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] shadow-[0_16px_44px_rgba(32,24,54,0.05)]";
+  "min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)]";
 
 export function Card({ children, className = "" }: CardProps) {
   return (

@@ -224,7 +224,7 @@ export function DashboardAgendaView({
   return (
     <>
     <section className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <article className="min-w-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+      <article className="min-w-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-3 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-left text-xs lg:w-72">
             <span className="min-w-0">
@@ -254,7 +254,7 @@ export function DashboardAgendaView({
                 value={searchTerm}
                 onChange={(event) => onSearchTermChange(event.target.value)}
                 placeholder="Cliente, servicio, hora o responsable"
-                className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.94)] px-3 text-sm text-[var(--color-ink)] outline-none"
+                className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm text-[var(--color-ink)] outline-none"
               />
             </label>
             <div className="h-10 rounded-md border border-[var(--color-border)] bg-white/60 px-3 py-2 text-sm text-[var(--color-muted-strong)] lg:min-w-[170px]">
@@ -266,7 +266,7 @@ export function DashboardAgendaView({
 
         {sortedMatches.length === 0 && (
           <div className="border-b border-[var(--color-border)] bg-white/42 px-3 py-3">
-            <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[rgba(255,251,244,0.68)] px-4 py-3 text-sm text-[var(--color-muted-strong)]">
+            <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[#ffffff] px-4 py-3 text-sm text-[var(--color-muted-strong)]">
               {emptyMessage}
             </div>
           </div>
@@ -473,7 +473,7 @@ function AgendaMonthView({
 
   return (
     <section className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+      <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <div className="flex flex-col gap-3 border-b border-[var(--color-border)] pb-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-base font-semibold capitalize">
@@ -502,7 +502,7 @@ function AgendaMonthView({
               value={searchTerm}
               onChange={(event) => onSearchTermChange(event.target.value)}
               placeholder="Cliente, servicio, hora o responsable"
-              className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.94)] px-3 text-sm text-[var(--color-ink)] outline-none"
+              className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm text-[var(--color-ink)] outline-none"
             />
           </label>
         </div>
@@ -516,7 +516,7 @@ function AgendaMonthView({
                 onSelectDate(date);
                 onSelectScheduleView("day");
               }}
-              className="w-full rounded-md border border-[var(--color-border)] bg-[rgba(255,251,244,0.66)] px-3 py-2.5 text-left"
+              className="w-full rounded-md border border-[var(--color-border)] bg-[#ffffff] px-3 py-2.5 text-left"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -573,7 +573,7 @@ function AgendaMonthView({
             return (
               <div
                 key={day.toISOString()}
-                className={`min-h-24 rounded-md border border-[var(--color-border)] bg-[rgba(255,251,244,0.68)] p-2 ${
+                className={`min-h-24 rounded-md border border-[var(--color-border)] bg-[#ffffff] p-2 ${
                   isSameDay(day, selectedDate) ? "ring-1 ring-[var(--color-ink)]" : ""
                 }`}
               >
@@ -651,7 +651,7 @@ function AgendaMatchesCard({
         : "Turnos del mes";
 
   return (
-    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold">{title}</h2>

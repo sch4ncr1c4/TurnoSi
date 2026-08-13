@@ -255,7 +255,7 @@ export function DashboardTeamView() {
               return (
                 <article
                   key={member.id}
-                  className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] shadow-[0_8px_22px_rgba(32,24,54,0.035)]"
+                  className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_8px_22px_rgba(32,24,54,0.035)]"
                 >
                   <div className="grid gap-3 p-3 xl:grid-cols-[minmax(260px,1.05fr)_minmax(0,1.25fr)] xl:items-center">
                     <div className="flex min-w-0 items-center gap-3">

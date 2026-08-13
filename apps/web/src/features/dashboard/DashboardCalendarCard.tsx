@@ -21,7 +21,7 @@ export function DashboardCalendarCard({
   const calendarDays = getMonthCalendarDays(selectedDate);
 
   return (
-    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-semibold">Calendario</h2>
         <div className="flex items-center gap-2 text-sm font-medium">

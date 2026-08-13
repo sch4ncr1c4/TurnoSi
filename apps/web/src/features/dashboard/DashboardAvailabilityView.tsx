@@ -670,7 +670,7 @@ export function DashboardAvailabilityView() {
 
   return (
     <section className="grid min-w-0 gap-5 min-[1700px]:grid-cols-[minmax(0,1fr)_320px]">
-      <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+      <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <div className="flex flex-col gap-4 border-b border-[var(--color-border)] px-4 py-4 min-[1280px]:flex-row min-[1280px]:items-end min-[1280px]:justify-between">
           <div className="min-w-0 flex-1">
             <div className="stable-scrollbar flex gap-4 overflow-x-auto whitespace-nowrap text-sm font-medium text-[var(--color-muted-strong)] sm:gap-6">

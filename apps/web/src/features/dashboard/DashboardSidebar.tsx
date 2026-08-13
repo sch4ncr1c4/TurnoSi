@@ -10,12 +10,14 @@ import { dashboardSections } from "./dashboard.data";
 import { canOpenBillingPlans, canAccessDashboardView, type DashboardRole } from "./dashboard.permissions";
 import type { DashboardView } from "./dashboard.types";
 import type { SubscriptionStatus } from "../billing/billing.api";
+import backChevronIcon from "../../components/assets/icons/actions/back-chevron.svg";
 import navAvailabilityIcon from "../../components/assets/icons/navigation/availability.svg";
 import navCalendarIcon from "../../components/assets/icons/navigation/calendar.svg";
 import navHomeIcon from "../../components/assets/icons/navigation/home.svg";
 import navSettingsIcon from "../../components/assets/icons/navigation/settings.svg";
 import navTeamIcon from "../../components/assets/icons/navigation/team.svg";
 import navTeamSettingsIcon from "../../components/assets/icons/navigation/team-settings.svg";
+import sparklesIcon from "../../components/assets/sparkles.svg";
 
 const dashboardNavIcons: Partial<Record<DashboardView, string>> = {
   summary: navHomeIcon,
@@ -264,9 +266,22 @@ export function DashboardSidebar({
               onOpenBillingPlans();
               setIsMobileMenuOpen(false);
             }}
-            className="dashboard-sidebar-plan-button landing-link w-full rounded-md border border-[var(--color-accent)] bg-[rgba(253,134,6,0.1)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[rgba(253,134,6,0.18)] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-35"
+            className="dashboard-sidebar-plan-button group relative flex w-full items-center gap-3 overflow-hidden rounded-md border border-white/14 bg-white/[0.045] px-3.5 py-3 text-left text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(253,134,6,0.5)] hover:bg-white/[0.07] hover:shadow-[0_16px_36px_rgba(0,0,0,0.18)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-35"
           >
-            Mejorar plan
+            <img
+              src={sparklesIcon}
+              alt=""
+              aria-hidden="true"
+              className="dashboard-sidebar-plan-sparkles h-5 w-5 shrink-0"
+            />
+            <span className="min-w-0 flex-1">Mejorar plan</span>
+            <span className="dashboard-sidebar-plan-badge">PRO</span>
+            <img
+              src={backChevronIcon}
+              alt=""
+              aria-hidden="true"
+              className="dashboard-sidebar-plan-arrow h-4 w-4 shrink-0 rotate-180"
+            />
           </button>
         )}
 

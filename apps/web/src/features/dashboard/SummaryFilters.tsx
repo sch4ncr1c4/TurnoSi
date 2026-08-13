@@ -61,7 +61,7 @@ export function SummaryFilters({
               value={searchTerm}
               onChange={(event) => onSearchTermChange(event.target.value)}
               placeholder="Cliente, servicio, hora o responsable"
-              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.94)] px-3 text-sm font-medium text-[var(--color-ink)] outline-none"
+              className="h-10 rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-medium text-[var(--color-ink)] outline-none"
             />
           </label>
           <label className="grid gap-1.5 text-sm text-[var(--color-muted-strong)]">
@@ -73,7 +73,7 @@ export function SummaryFilters({
               onChange={(event) =>
                 onSelectAppointmentFilter(event.target.value as AppointmentFilter)
               }
-              className="h-10 min-w-40 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.94)] px-3 text-sm font-medium text-[var(--color-ink)] outline-none"
+              className="h-10 min-w-40 rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-medium text-[var(--color-ink)] outline-none"
             >
               {appointmentFilterOptions.map((filter) => (
                 <option key={filter.value} value={filter.value}>
@@ -91,7 +91,7 @@ export function SummaryFilters({
               <select
                 value={dayFilter}
                 onChange={(event) => onSelectDayFilter(event.target.value)}
-                className="h-10 min-w-40 rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.94)] px-3 text-sm font-medium text-[var(--color-ink)] outline-none"
+                className="h-10 min-w-40 rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-medium text-[var(--color-ink)] outline-none"
               >
                 <option value="all">Todos</option>
                 {dayOptions.map((day) => (

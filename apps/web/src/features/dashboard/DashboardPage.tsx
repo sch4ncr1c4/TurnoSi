@@ -138,7 +138,7 @@ function getInitialDashboardView(): DashboardView {
 
 function DashboardSectionFallback() {
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-5 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-5 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
       <p className="text-sm font-medium text-[var(--color-ink)]">
         Cargando sección...
       </p>

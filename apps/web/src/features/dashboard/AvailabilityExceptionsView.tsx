@@ -20,7 +20,7 @@ export function AvailabilityExceptionsView({
 
   return (
     <div className="grid gap-5 px-4 py-4">
-      <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[linear-gradient(135deg,rgba(255,251,244,0.96),rgba(255,244,229,0.74))] shadow-[0_18px_52px_rgba(32,24,54,0.06)]">
+      <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[#ffffff] shadow-[0_18px_52px_rgba(32,24,54,0.06)]">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="p-5">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-[var(--color-accent)]">
@@ -74,7 +74,7 @@ export function AvailabilityExceptionsView({
       </section>
 
       {sortedExceptions.length > 0 ? (
-        <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.88)]">
+        <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[#ffffff]">
           <header className="flex flex-col gap-2 border-b border-[var(--color-border)] px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h4 className="font-semibold">Fechas configuradas</h4>
@@ -137,7 +137,7 @@ export function AvailabilityExceptionsView({
           </div>
         </section>
       ) : (
-        <section className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[rgba(255,251,244,0.62)] p-8 text-center">
+        <section className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[#ffffff] p-8 text-center">
           <p className="font-semibold">Todavía no hay excepciones</p>
           <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
             Usá "Agregar excepción" para cargar feriados, cierres o días con horario especial.

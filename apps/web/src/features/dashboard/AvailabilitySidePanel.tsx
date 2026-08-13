@@ -9,7 +9,7 @@ export function AvailabilitySidePanel({
 }) {
   return (
     <aside className="grid min-w-0 gap-3 lg:grid-cols-2 min-[1700px]:sticky min-[1700px]:top-4 min-[1700px]:block min-[1700px]:space-y-3 min-[1700px]:self-start">
-      <article className="rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+      <article className="rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-4 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <h2 className="text-base font-semibold">Vista rápida</h2>
         <div className="mt-4 grid grid-cols-[42px_minmax(0,1fr)] gap-y-3 text-xs">
           {availability.map((day) => (
@@ -49,7 +49,7 @@ export function AvailabilitySidePanel({
         </div>
       </article>
 
-      <article className="rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+      <article className="rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-4 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <h2 className="text-base font-semibold">Consejos</h2>
         <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
           {activeTab === "weekly"

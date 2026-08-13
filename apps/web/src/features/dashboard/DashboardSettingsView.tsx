@@ -1082,7 +1082,7 @@ function moneyToCents(value: string) {
                 {onboardingTasks.map((task, index) => (
                   <li
                     key={task.label}
-                    className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white/55 p-3"
+                    className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3"
                   >
                     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-xs font-semibold text-white">
                       {index + 1}
@@ -1112,7 +1112,7 @@ function moneyToCents(value: string) {
           </div>
         )}
       <div className="settings-tabs-shell relative 2xl:max-w-[calc(100%-360px)]">
-        <nav className="settings-mobile-tabs flex w-max max-w-full snap-x items-center overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] p-0.5 shadow-[0_8px_20px_rgba(32,24,54,0.035)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:overflow-hidden">
+        <nav className="settings-mobile-tabs flex w-max max-w-full snap-x items-center overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-0.5 shadow-[0_8px_20px_rgba(32,24,54,0.035)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden 2xl:overflow-hidden">
           {([
             ["business", "Negocio", "Negocio", settingsNavBusinessIcon],
             ["contact", "Contacto", "Contacto", contactPhoneIcon],
@@ -1165,7 +1165,7 @@ function moneyToCents(value: string) {
       <div className="grid min-w-0 max-w-full gap-4 overflow-x-clip sm:gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-4 sm:space-y-5">
         {isOnboarding && (
-          <section className="rounded-lg border border-[var(--color-accent)] bg-[rgba(253,134,6,0.08)] p-3 sm:p-4">
+          <section className="rounded-lg border border-[var(--color-accent)] bg-[#ffffff] p-3 sm:p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-3">
@@ -1201,7 +1201,7 @@ function moneyToCents(value: string) {
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${
                     task.done
                       ? "border-[#b9d8bf] bg-[#eef8ee] text-[#28633a]"
-                      : "border-[var(--color-border-strong)] bg-white/75 text-[var(--color-ink)]"
+                      : "border-[var(--color-border-strong)] bg-[#ffffff] text-[var(--color-ink)]"
                   }`}
                 >
                   {task.done ? "✓ " : ""}{task.label}
@@ -1257,7 +1257,7 @@ function moneyToCents(value: string) {
           <CardBody className="grid gap-3 p-3 sm:p-4 md:grid-cols-2">
             {activeTab === "business" && (
               <>
-                <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-3 md:col-span-2 sm:p-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+                <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 md:col-span-2 sm:p-4 xl:grid-cols-[300px_minmax(0,1fr)]">
                   <div className="min-w-0">
                     <div>
                       <div className="mb-2 flex items-center gap-2 text-sm">
@@ -1384,7 +1384,7 @@ function moneyToCents(value: string) {
                   </div>
                 </section>
 
-                <section className="rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-3 md:col-span-2 sm:p-4">
+                <section className="rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 md:col-span-2 sm:p-4">
                   <div className="flex items-start gap-3">
                     <SettingsSectionIcon icon={galleryIcon} />
                     <div className="min-w-0 flex-1">
@@ -1427,7 +1427,7 @@ function moneyToCents(value: string) {
                         return (
                           <div
                             key={slot}
-                            className="group relative aspect-[16/9] overflow-hidden rounded-lg border border-[var(--color-border)] bg-white/50"
+                            className="group relative aspect-[16/9] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[#ffffff]"
                           >
                             <button
                               type="button"
@@ -1496,7 +1496,7 @@ function moneyToCents(value: string) {
                       }
 
                       return (
-                        <label className="grid aspect-[16/9] min-h-24 cursor-pointer place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/40 text-center transition hover:border-[var(--color-accent)] hover:bg-white/65">
+                        <label className="grid aspect-[16/9] min-h-24 cursor-pointer place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] text-center transition hover:border-[var(--color-accent)] hover:bg-[#ffffff]">
                           <span>
                             <span className="block text-2xl leading-none text-[var(--color-ink)]">
                               +
@@ -1528,7 +1528,7 @@ function moneyToCents(value: string) {
             )}
             {activeTab === "contact" && (
               <>
-            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
+            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 <SettingsSectionIcon icon={contactPhoneIcon} />
                 Canales de contacto
@@ -1561,7 +1561,7 @@ function moneyToCents(value: string) {
             />
             </section>
 
-            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
+            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 <SettingsSectionIcon icon={contactLocationIcon} />
                 Ubicación
@@ -1612,7 +1612,7 @@ function moneyToCents(value: string) {
               </div>
             </section>
 
-            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
+            <section className="grid min-w-0 gap-4 overflow-x-clip rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 md:col-span-2 sm:p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
                 Redes sociales
               </div>
@@ -1631,7 +1631,7 @@ function moneyToCents(value: string) {
             )}
             {activeTab === "payments" && (
               <>
-            <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
+            <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 md:col-span-2 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
                   <SettingsSectionIcon icon={paymentsDepositIcon} />
@@ -1685,7 +1685,7 @@ function moneyToCents(value: string) {
                   </span>
                 </label>
 
-                <div className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-white/55 p-3">
+                <div className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3">
                   <label className="flex items-center justify-between gap-3 text-sm font-semibold">
                     <span>
                       Cobrar seña
@@ -1715,7 +1715,7 @@ function moneyToCents(value: string) {
               </div>
 
               {settings.mercadoPagoConnected && (
-                <div className="flex flex-col gap-2 rounded-lg border border-[#e7b9b2] bg-[#fff8f6] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2 rounded-lg border border-[#e7b9b2] bg-[#ffffff] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-[var(--color-muted)]">
                     Si desconectás Mercado Pago, se desactiva el cobro de seña.
                   </p>
@@ -1725,7 +1725,7 @@ function moneyToCents(value: string) {
                       updateSetting("mercadoPagoConnected", false);
                       updateSetting("depositEnabled", false);
                     }}
-                    className="w-fit rounded-lg border border-[#e7b9b2] bg-[#fff8f6] px-3 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5]"
+                    className="w-fit rounded-lg border border-[#e7b9b2] bg-[#ffffff] px-3 py-2 text-sm font-semibold text-[#9f1f16] hover:bg-[#fde8e5]"
                   >
                     Desconectar
                   </button>
@@ -1736,7 +1736,7 @@ function moneyToCents(value: string) {
             )}
             {activeTab === "page" && (
               <>
-            <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)] p-4 md:col-span-2 sm:p-5">
+            <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 md:col-span-2 sm:p-5">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--color-ink)]">
                   Link de reservas
@@ -1866,7 +1866,7 @@ function moneyToCents(value: string) {
               />
             </div>
 
-            <div className="mt-4 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-[rgba(255,255,255,0.35)]">
+            <div className="mt-4 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-[#ffffff]">
               {profileCompletionItems.map((item) => (
                 <button
                   key={item.label}
@@ -1921,7 +1921,7 @@ function moneyToCents(value: string) {
               ))}
             </div>
 
-            <div className="mt-3 rounded-xl border border-[rgba(253,134,6,0.24)] bg-[#fff4e4] p-3">
+            <div className="mt-3 rounded-xl border border-[rgba(253,134,6,0.24)] bg-[#ffffff] p-3">
               <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--color-accent)]">
                 {profileCompletionPercent === 100 ? "Todo listo" : "Siguiente paso"}
               </p>
@@ -2217,7 +2217,7 @@ function DeleteGalleryImageModal({
             type="button"
             disabled={isDeleting}
             onClick={onConfirm}
-            className="rounded-md border border-[#e7b9b2] bg-[#fff8f6] px-4 py-2 text-sm font-semibold text-[#9f1f16] transition hover:-translate-y-0.5 hover:bg-[#fde8e5] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-[#e7b9b2] bg-[#ffffff] px-4 py-2 text-sm font-semibold text-[#9f1f16] transition hover:-translate-y-0.5 hover:bg-[#fde8e5] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isDeleting ? "Eliminando..." : "Eliminar foto"}
           </button>
@@ -2327,7 +2327,7 @@ function GalleryCropModal({
             <div className="pointer-events-none absolute inset-4 rounded-[1rem] border border-white/80 shadow-[0_0_0_9999px_rgba(32,24,54,0.06)]" />
           </div>
 
-          <div className="rounded-2xl border border-[var(--color-border)] bg-white/72 p-4">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[#ffffff] p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
               Referencia
             </p>
@@ -2465,7 +2465,7 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
             onChange={(event) => setPassword(event.target.value)}
             type="password"
             autoComplete="current-password"
-            className="h-10 rounded-md border border-[#e7b9b2] bg-white/70 px-3 outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[rgba(180,35,24,0.18)]"
+            className="h-10 rounded-md border border-[#e7b9b2] bg-[#ffffff] px-3 outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[rgba(180,35,24,0.18)]"
           />
         </label>
         {error && <p className="mt-3 text-sm font-medium text-[#b42318]">{error}</p>}

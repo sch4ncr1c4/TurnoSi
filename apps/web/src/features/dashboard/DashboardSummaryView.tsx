@@ -87,7 +87,7 @@ export function DashboardSummaryView({
     <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <article
         id="today"
-        className="min-w-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.82)]"
+        className="min-w-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[#ffffff]"
       >
         <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

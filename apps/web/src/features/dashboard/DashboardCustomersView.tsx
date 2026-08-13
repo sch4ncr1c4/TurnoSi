@@ -111,7 +111,7 @@ export function DashboardCustomersView() {
                   setPage(1);
                 }}
                 placeholder="Nombre, email o teléfono"
-                className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,251,244,0.92)] px-3 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
+                className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
               />
             </label>
             <div className="w-full lg:w-auto">
@@ -148,7 +148,7 @@ export function DashboardCustomersView() {
             {customers.map((customer) => (
               <article
                 key={customer.id}
-                className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(255,251,244,0.88)] p-3 shadow-[0_8px_22px_rgba(32,24,54,0.035)] xl:grid-cols-[minmax(260px,1.1fr)_minmax(0,0.95fr)_auto] xl:items-center"
+                className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_8px_22px_rgba(32,24,54,0.035)] xl:grid-cols-[minmax(260px,1.1fr)_minmax(0,0.95fr)_auto] xl:items-center"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${

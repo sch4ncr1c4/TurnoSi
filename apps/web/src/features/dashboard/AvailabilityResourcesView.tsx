@@ -38,7 +38,7 @@ export function AvailabilityResourcesView({
 
   return (
     <div className="grid gap-4 px-4 py-4">
-      <section className="rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.72)] px-4 py-3">
+      <section className="rounded-xl border border-[var(--color-border)] bg-[#ffffff] px-4 py-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
@@ -65,7 +65,7 @@ export function AvailabilityResourcesView({
         return (
           <section
             key={category}
-            className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.84)]"
+            className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#ffffff]"
           >
             <header className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-white/42 px-4 py-3 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
