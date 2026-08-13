@@ -390,6 +390,42 @@ select,
   transform: translateX(2px) rotate(180deg);
 }
 
+.dashboard-deposit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  width: fit-content;
+  border: 1px solid rgba(253, 134, 6, 0.24);
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #141019 0%, #18151f 58%, #201824 100%);
+  padding: 0.32rem 0.54rem;
+  color: #fffaf4;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 10px 24px rgba(32, 24, 54, 0.14);
+}
+
+.dashboard-deposit-badge::before {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #45d47e;
+  box-shadow: 0 0 0 3px rgba(69, 212, 126, 0.12);
+}
+
+.dashboard-deposit-badge-pending::before {
+  background: #f6b44b;
+  box-shadow: 0 0 0 3px rgba(246, 180, 75, 0.13);
+}
+
+.dashboard-deposit-badge-problem::before {
+  background: #ff6b61;
+  box-shadow: 0 0 0 3px rgba(255, 107, 97, 0.13);
+}
+
 @media (min-width: 768px) and (max-height: 720px) {
   .dashboard-shell {
     padding-left: 300px;

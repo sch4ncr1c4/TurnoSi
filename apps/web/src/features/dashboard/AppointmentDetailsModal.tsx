@@ -3,7 +3,11 @@ import { es } from "date-fns/locale";
 
 import { ModalCloseButton } from "../../components/ui";
 import { statusClassName } from "./dashboard.constants";
-import type { DashboardAppointment } from "./dashboard.data";
+import {
+  getDepositPaymentBadgeClassName,
+  getDepositPaymentLabel,
+  type DashboardAppointment
+} from "./dashboard.data";
 
 type AppointmentDetailsModalProps = {
   appointment: DashboardAppointment;
@@ -21,7 +25,6 @@ export function AppointmentDetailsModal({
     ? format(startsAt, "EEEE dd 'de' MMMM 'de' yyyy", { locale: es })
     : appointment.day ?? "Fecha no disponible";
   const depositLabel = getDepositPaymentLabel(appointment);
-  const depositTone = getDepositPaymentTone(appointment);
 
   return (
     <div
@@ -61,7 +64,7 @@ export function AppointmentDetailsModal({
             <div className="flex items-center justify-between gap-5 py-3.5 text-sm">
               <span className="text-[var(--color-muted-strong)]">Seña</span>
               <span
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold ${depositTone}`}
+                className={getDepositPaymentBadgeClassName(appointment)}
               >
                 {depositLabel}
               </span>
@@ -86,35 +89,6 @@ export function AppointmentDetailsModal({
       </section>
     </div>
   );
-}
-
-function formatDepositAmount(amountCents: number) {
-  return new Intl.NumberFormat("es-AR", {
-    currency: "ARS",
-    maximumFractionDigits: 0,
-    style: "currency"
-  }).format(amountCents / 100);
-}
-
-function getDepositPaymentLabel(appointment: DashboardAppointment) {
-  const deposit = appointment.depositPayment;
-  if (!deposit) return "";
-  const amount = formatDepositAmount(deposit.amountCents);
-  if (deposit.status === "approved") return `Pagada · ${amount}`;
-  if (deposit.status === "pending") return `Pendiente · ${amount}`;
-  if (deposit.status === "cancelled") return `Vencida · ${amount}`;
-  if (deposit.status === "rejected") return `Rechazada · ${amount}`;
-  return `Sin confirmar · ${amount}`;
-}
-
-function getDepositPaymentTone(appointment: DashboardAppointment) {
-  const status = appointment.depositPayment?.status;
-  if (status === "approved") return "bg-[#e5f4e8] text-[#1f6b35]";
-  if (status === "pending") return "bg-[#eef9fb] text-[#275f6b]";
-  if (status === "rejected" || status === "cancelled") {
-    return "bg-[#fde8e5] text-[#9f1f16]";
-  }
-  return "bg-[rgba(32,24,54,0.08)] text-[var(--color-muted-strong)]";
 }
 
 function AppointmentDetail({

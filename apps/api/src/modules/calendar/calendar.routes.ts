@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
 
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
@@ -20,10 +21,61 @@ import {
   calendarQuerySchema,
   calendarRecentQuerySchema,
   createManualCalendarAppointmentSchema,
+  reservationNotificationSeenSchema,
   updateCalendarStatusSchema
 } from "./calendar.schemas.js";
 
 export const calendarRouter = Router();
+
+calendarRouter.get("/notifications/reservations", async (request, response) => {
+  const tenant = request.tenant!;
+  const states = await prisma.$queryRaw<Array<{ seenUntil: Date }>>`
+    SELECT "seenUntil"
+    FROM "ReservationNotificationState"
+    WHERE "userId" = ${tenant.userId}
+      AND "organizationId" = ${tenant.organizationId}
+    LIMIT 1
+  `;
+
+  response.json(ok({
+    seenUntil: states[0]?.seenUntil?.toISOString() ?? null
+  }));
+});
+
+calendarRouter.put("/notifications/reservations", authRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  const data = reservationNotificationSeenSchema.parse(request.body);
+  const seenUntil = new Date(data.seenUntil);
+  const stateId = randomUUID();
+
+  await prisma.$executeRaw`
+    INSERT INTO "ReservationNotificationState" (
+      "id",
+      "userId",
+      "organizationId",
+      "seenUntil",
+      "createdAt",
+      "updatedAt"
+    )
+    VALUES (
+      ${stateId},
+      ${tenant.userId},
+      ${tenant.organizationId},
+      ${seenUntil},
+      CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT ("userId", "organizationId")
+    DO UPDATE SET
+      "seenUntil" = GREATEST(
+        "ReservationNotificationState"."seenUntil",
+        EXCLUDED."seenUntil"
+      ),
+      "updatedAt" = CURRENT_TIMESTAMP
+  `;
+
+  response.json(ok({ seenUntil: seenUntil.toISOString() }));
+});
 
 calendarRouter.get("/appointments", async (request, response) => {
   const query = calendarQuerySchema.parse(request.query);

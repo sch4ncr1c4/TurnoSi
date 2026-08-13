@@ -27,6 +27,10 @@ export const calendarRecentQuerySchema = z.object({
   since: z.string().datetime().optional()
 });
 
+export const reservationNotificationSeenSchema = z.object({
+  seenUntil: z.string().datetime()
+});
+
 export const createManualCalendarAppointmentSchema = z.object({
   serviceId: z.string().cuid(),
   branchId: z.string().min(1).optional(),

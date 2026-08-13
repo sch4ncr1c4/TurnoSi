@@ -75,6 +75,27 @@ export async function getRecentDashboardReservations(since: Date) {
   return response.data.map(mapDashboardAppointment);
 }
 
+export async function getReservationNotificationState() {
+  const response = await apiRequest<{
+    success: true;
+    data: { seenUntil: string | null };
+  }>("/api/v1/calendar/notifications/reservations");
+
+  return response.data.seenUntil ? Date.parse(response.data.seenUntil) : 0;
+}
+
+export async function updateReservationNotificationState(seenUntil: Date) {
+  const response = await apiRequest<{
+    success: true;
+    data: { seenUntil: string };
+  }>("/api/v1/calendar/notifications/reservations", {
+    method: "PUT",
+    body: JSON.stringify({ seenUntil: seenUntil.toISOString() })
+  });
+
+  return Date.parse(response.data.seenUntil);
+}
+
 export function updateDashboardAppointmentStatus(
   appointmentId: string,
   status: AppointmentStatusLabel

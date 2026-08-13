@@ -8,7 +8,11 @@ import {
   type ScheduleView
 } from "./dashboard.constants";
 import { format } from "date-fns";
-import type { DashboardAppointment } from "./dashboard.data";
+import {
+  getDepositPaymentBadgeClassName,
+  getDepositPaymentLabel,
+  type DashboardAppointment
+} from "./dashboard.data";
 
 type SummaryAppointmentsTableProps = {
   dateFilterLabel: string;
@@ -102,8 +106,8 @@ export function SummaryAppointmentsTable({
                     {appointment.client} · {appointment.channel}
                   </p>
                   {appointment.depositPayment?.status === "approved" && (
-                    <span className="mt-2 inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35]">
-                      Seña pagada
+                    <span className={`mt-2 ${getDepositPaymentBadgeClassName(appointment)}`}>
+                      {getDepositPaymentLabel(appointment)}
                     </span>
                   )}
                 </td>
@@ -173,8 +177,8 @@ export function SummaryAppointmentsTable({
                     {appointment.client} · {appointment.channel}
                   </p>
                   {appointment.depositPayment?.status === "approved" && (
-                    <span className="mt-2 inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35]">
-                      Seña pagada
+                    <span className={`mt-2 ${getDepositPaymentBadgeClassName(appointment)}`}>
+                      {getDepositPaymentLabel(appointment)}
                     </span>
                   )}
                   <p className="mt-1 text-xs text-[var(--color-muted)]">

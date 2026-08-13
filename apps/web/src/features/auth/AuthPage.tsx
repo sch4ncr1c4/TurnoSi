@@ -294,7 +294,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                                   autoComplete={nameField.id === "firstName" ? "given-name" : "family-name"}
                                   aria-invalid={Boolean(nameError)}
                                   aria-describedby={nameError ? `${nameField.id}-error` : undefined}
-                                  className={`h-11 w-full rounded-lg border bg-white/70 px-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)] ${
+                                  className={`h-11 w-full rounded-lg border bg-[#ffffff] px-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-0 focus:shadow-none ${
                                     nameError
                                       ? "border-[#b42318]"
                                       : "border-[var(--color-border)]"
@@ -366,7 +366,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                             autoComplete={autoComplete}
                             aria-invalid={Boolean(error)}
                             aria-describedby={error ? `${field.id}-error` : undefined}
-                            className={`relative z-0 h-11 w-full rounded-lg border bg-white/70 py-2.5 pl-12 text-sm text-[var(--color-ink)] outline-none transition-all duration-200 ease-out placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:-translate-y-0.5 focus:border-[var(--color-accent)] focus:shadow-[0_14px_34px_rgba(253,134,6,0.13)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)] ${
+                            className={`relative z-0 h-11 w-full rounded-lg border bg-[#ffffff] py-2.5 pl-12 text-sm text-[var(--color-ink)] outline-none transition-all duration-200 ease-out placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-0 focus:shadow-none ${
                               field.type === "password" ? "pr-12" : ""
                             } ${
                               error

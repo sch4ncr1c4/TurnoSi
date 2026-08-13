@@ -87,6 +87,7 @@ model User {
   authSessions           AuthSession[]
   passwordResets         PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  reservationNotificationStates ReservationNotificationState[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
 }
@@ -145,6 +146,7 @@ model Organization {
   subscription           OrganizationSubscription?
   subscriptionPayments   OrganizationSubscriptionPayment[]
   appointmentDepositPayments AppointmentDepositPayment[]
+  reservationNotificationStates ReservationNotificationState[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
 }
@@ -424,6 +426,20 @@ model AppointmentDepositPayment {
 
   @@index([organizationId, createdAt])
   @@index([status])
+}
+
+model ReservationNotificationState {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  seenUntil      DateTime
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, seenUntil])
 }
 
 model AvailabilityRule {

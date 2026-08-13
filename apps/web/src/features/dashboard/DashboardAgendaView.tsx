@@ -19,7 +19,11 @@ import {
   DashboardCalendarCard
 } from "./DashboardCalendarCard";
 import { getMonthCalendarDays } from "./dashboard.calendar-utils";
-import type { DashboardAppointment } from "./dashboard.data";
+import {
+  getDepositPaymentBadgeClassName,
+  getDepositPaymentLabel,
+  type DashboardAppointment
+} from "./dashboard.data";
 
 type AgendaTone =
   | "paid"
@@ -348,9 +352,9 @@ export function DashboardAgendaView({
                                   {event.depositPaid && (
                                     <span
                                       title="Seña pagada"
-                                      className="inline-flex h-4 shrink-0 items-center gap-1 rounded-full bg-white/70 px-1.5 text-[9px] font-semibold text-[#1f6b35] ring-1 ring-[#b9dfc0]"
+                                      className="inline-flex h-4 shrink-0 items-center gap-1 rounded-full border border-[rgba(253,134,6,0.22)] bg-[rgba(32,24,54,0.92)] px-1.5 text-[9px] font-semibold text-white shadow-[0_8px_18px_rgba(32,24,54,0.14)]"
                                     >
-                                      <span className="h-1.5 w-1.5 rounded-full bg-[#4f9a62]" />
+                                      <span className="h-1.5 w-1.5 rounded-full bg-[#45d47e]" />
                                       Seña
                                     </span>
                                   )}
@@ -699,8 +703,8 @@ function AgendaMatchesCard({
                   {item.status}
                 </span>
                 {item.depositPayment?.status === "approved" && (
-                  <span className="inline-flex rounded-md bg-[#e5f4e8] px-2 py-1 text-[10px] font-semibold text-[#1f6b35] ring-1 ring-[#b9dfc0]">
-                    Seña pagada
+                  <span className={getDepositPaymentBadgeClassName(item)}>
+                    {getDepositPaymentLabel(item)}
                   </span>
                 )}
               </div>

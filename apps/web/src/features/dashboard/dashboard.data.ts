@@ -34,6 +34,35 @@ export type DashboardAppointment = {
   attended?: boolean;
 };
 
+export function formatDepositAmount(amountCents: number) {
+  return new Intl.NumberFormat("es-AR", {
+    currency: "ARS",
+    maximumFractionDigits: 0,
+    style: "currency"
+  }).format(amountCents / 100);
+}
+
+export function getDepositPaymentLabel(appointment: DashboardAppointment) {
+  const deposit = appointment.depositPayment;
+  if (!deposit) return "";
+  const amount = formatDepositAmount(deposit.amountCents);
+  if (deposit.status === "approved") return `Seña pagada · ${amount}`;
+  if (deposit.status === "pending") return `Seña pendiente · ${amount}`;
+  if (deposit.status === "cancelled") return `Seña vencida · ${amount}`;
+  if (deposit.status === "rejected") return `Seña rechazada · ${amount}`;
+  return `Seña sin confirmar · ${amount}`;
+}
+
+export function getDepositPaymentBadgeClassName(appointment: DashboardAppointment) {
+  const status = appointment.depositPayment?.status;
+  if (status === "approved") return "dashboard-deposit-badge dashboard-deposit-badge-paid";
+  if (status === "pending") return "dashboard-deposit-badge dashboard-deposit-badge-pending";
+  if (status === "rejected" || status === "cancelled") {
+    return "dashboard-deposit-badge dashboard-deposit-badge-problem";
+  }
+  return "dashboard-deposit-badge";
+}
+
 export const weeklyAvailability: WeeklyAvailabilityDay[] = [
   {
     day: "Lunes",

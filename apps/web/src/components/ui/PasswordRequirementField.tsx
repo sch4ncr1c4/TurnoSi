@@ -64,10 +64,10 @@ export function PasswordRequirementField({
           value={value}
           minLength={minLength}
           onChange={handleChange}
-          className={`h-11 w-full rounded-md border bg-white/70 pl-12 pr-12 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-all duration-200 ease-out hover:border-[var(--color-accent)] focus:-translate-y-0.5 focus:shadow-[0_14px_34px_rgba(253,134,6,0.13)] focus:ring-2 ${
+          className={`h-11 w-full rounded-md border bg-[#ffffff] pl-12 pr-12 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-all duration-200 ease-out hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-0 focus:shadow-none ${
             isTooShort
-              ? "border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.16)]"
-              : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
+              ? "border-[var(--color-accent)] focus:border-[var(--color-accent)]"
+              : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)]"
           }`}
         />
         <button

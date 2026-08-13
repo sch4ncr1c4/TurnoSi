@@ -47,7 +47,9 @@ import { type DashboardAppointment } from "./dashboard.data";
 import {
   getDashboardAppointments,
   getRecentDashboardReservations,
-  updateDashboardAppointmentStatus
+  getReservationNotificationState,
+  updateDashboardAppointmentStatus,
+  updateReservationNotificationState
 } from "./dashboard.api";
 import type { DashboardView } from "./dashboard.types";
 import { getSubscription } from "../billing/billing.api";
@@ -498,12 +500,41 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   }
 
   const currentOrganization = session.data?.data.organizations?.[0];
+  const reservationNotificationStateQuery = useQuery({
+    queryKey: queryKeys.reservationNotifications(currentOrganization?.id ?? "none"),
+    queryFn: getReservationNotificationState,
+    staleTime: 5_000,
+    refetchOnWindowFocus: true,
+    enabled:
+      Boolean(currentOrganization) &&
+      currentOrganization?.onboardingCompleted !== false
+  });
+  const notificationStateReady =
+    reservationNotificationStateQuery.isFetched ||
+    reservationNotificationStateQuery.isError;
   const storedReservationSeenUntil = readReservationSeenUntil(
     currentOrganization?.id
   );
+  const backendReservationSeenUntil = reservationNotificationStateQuery.data ?? 0;
+  const hasNoSyncedReservationSeenUntil =
+    notificationStateReady &&
+    backendReservationSeenUntil === 0 &&
+    storedReservationSeenUntil === 0 &&
+    reservationSeenUntil === 0;
+  const initialReservationSeenBaseline =
+    hasNoSyncedReservationSeenUntil
+      ? Math.max(
+          0,
+          ...allAppointments
+            .filter((appointment) => appointment.channel === "web" && appointment.createdAt)
+            .map((appointment) => Date.parse(appointment.createdAt!))
+        )
+      : 0;
   const effectiveReservationSeenUntil = Math.max(
     reservationSeenUntil,
-    storedReservationSeenUntil
+    storedReservationSeenUntil,
+    backendReservationSeenUntil,
+    initialReservationSeenBaseline
   );
   const notificationSinceMs =
     effectiveReservationSeenUntil || notificationFallbackSince;
@@ -517,12 +548,24 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     refetchOnWindowFocus: true,
     enabled:
       Boolean(currentOrganization) &&
-      currentOrganization?.onboardingCompleted !== false
+      currentOrganization?.onboardingCompleted !== false &&
+      notificationStateReady
   });
   const reservationNotificationSource =
     recentReservationsQuery.data ?? allAppointments;
+  const recentReservationSeenBaseline =
+    hasNoSyncedReservationSeenUntil && recentReservationsQuery.data
+      ? Math.max(
+          0,
+          ...recentReservationsQuery.data
+            .filter((appointment) => appointment.channel === "web" && appointment.createdAt)
+            .map((appointment) => Date.parse(appointment.createdAt!))
+        )
+      : 0;
   const newReservations = useMemo(
     () => {
+      if (!notificationStateReady) return [];
+      if (hasNoSyncedReservationSeenUntil) return [];
       const uniqueAppointments = new Map<string, DashboardAppointment>();
       [...reservationNotificationSource, ...allAppointments].forEach(
         (appointment) => uniqueAppointments.set(appointment.id, appointment)
@@ -538,9 +581,61 @@ export function DashboardPage({ brand }: DashboardPageProps) {
             Date.parse(second.createdAt ?? "") - Date.parse(first.createdAt ?? "")
         );
     },
-    [allAppointments, effectiveReservationSeenUntil, reservationNotificationSource]
+    [
+      allAppointments,
+      effectiveReservationSeenUntil,
+      hasNoSyncedReservationSeenUntil,
+      notificationStateReady,
+      reservationNotificationSource
+    ]
   );
   const latestNewReservation = newReservations[0];
+
+  useEffect(() => {
+    if (!currentOrganization || !reservationNotificationStateQuery.data) return;
+    const backendSeenUntil = reservationNotificationStateQuery.data;
+    const storedSeenUntil = readReservationSeenUntil(currentOrganization.id);
+    if (backendSeenUntil <= storedSeenUntil) return;
+    window.localStorage.setItem(
+      reservationSeenStorageKey(currentOrganization.id),
+      String(backendSeenUntil)
+    );
+    setReservationSeenUntil((current) => Math.max(current, backendSeenUntil));
+  }, [currentOrganization, reservationNotificationStateQuery.data]);
+
+  useEffect(() => {
+    if (!currentOrganization || !notificationStateReady) return;
+    const seenUntilToSync = Math.max(
+      readReservationSeenUntil(currentOrganization.id),
+      initialReservationSeenBaseline,
+      recentReservationSeenBaseline
+    );
+    if (seenUntilToSync <= backendReservationSeenUntil) return;
+
+    window.localStorage.setItem(
+      reservationSeenStorageKey(currentOrganization.id),
+      String(seenUntilToSync)
+    );
+    setReservationSeenUntil((current) => Math.max(current, seenUntilToSync));
+    queryClient.setQueryData(
+      queryKeys.reservationNotifications(currentOrganization.id),
+      seenUntilToSync
+    );
+    void updateReservationNotificationState(new Date(seenUntilToSync)).catch(
+      () => {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.reservationNotifications(currentOrganization.id)
+        });
+      }
+    );
+  }, [
+    backendReservationSeenUntil,
+    currentOrganization,
+    initialReservationSeenBaseline,
+    notificationStateReady,
+    queryClient,
+    recentReservationSeenBaseline
+  ]);
 
   useEffect(() => {
     const latestReservationId = latestNewReservation?.id;
@@ -604,11 +699,23 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         Date.parse(appointment.createdAt ?? new Date().toISOString())
       )
     );
+    const nextSeenUntil = Math.max(latestSeen, effectiveReservationSeenUntil);
     window.localStorage.setItem(
       reservationSeenStorageKey(currentOrganization.id),
-      String(latestSeen)
+      String(nextSeenUntil)
     );
-    setReservationSeenUntil(latestSeen);
+    setReservationSeenUntil(nextSeenUntil);
+    queryClient.setQueryData(
+      queryKeys.reservationNotifications(currentOrganization.id),
+      nextSeenUntil
+    );
+    void updateReservationNotificationState(new Date(nextSeenUntil)).catch(
+      () => {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.reservationNotifications(currentOrganization.id)
+        });
+      }
+    );
   }
 
   function openLatestReservation() {
@@ -812,14 +919,14 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           <button
             type="button"
             onClick={openLatestReservation}
-            className={`dashboard-reservation-toast group w-full overflow-hidden rounded-xl border border-[rgba(253,134,6,0.34)] bg-[linear-gradient(135deg,#211735_0%,#2d2046_62%,#3a251f_100%)] p-3 text-left text-white shadow-[0_14px_34px_rgba(32,24,54,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_38px_rgba(32,24,54,0.2)] ${
+            className={`dashboard-reservation-toast group w-full overflow-hidden rounded-xl border border-[rgba(255,255,255,0.12)] bg-[linear-gradient(135deg,#141019_0%,#18151f_58%,#201824_100%)] p-3 text-left text-white shadow-[0_18px_44px_rgba(4,2,12,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(4,2,12,0.38)] ${
               isReservationToastLeaving ? "dashboard-reservation-toast-out" : ""
             }`}
           >
             <div className="flex items-start gap-3 pr-8">
               <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--color-accent)] text-sm font-extrabold text-[var(--color-button-text)]">
                 {getInitials(latestNewReservation.client)}
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#211735] bg-[#49d17a]" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#141019] bg-[#49d17a]" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2 text-sm font-extrabold text-white">
