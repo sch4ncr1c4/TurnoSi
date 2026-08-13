@@ -111,15 +111,15 @@ export function DashboardSidebar({
         <div className="[&_*]:text-[var(--color-button-text)] [&_img]:h-12">{brand}</div>
         <button
           type="button"
-          aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-label="Abrir menú"
           aria-expanded={isMobileMenuOpen}
-          onClick={() => setIsMobileMenuOpen((current) => !current)}
+          onClick={() => setIsMobileMenuOpen(true)}
           className="group grid h-11 w-11 place-items-center rounded-xl border border-white/14 bg-white/8 transition hover:bg-white/14"
         >
           <span className="relative h-5 w-6">
-            <span className={`absolute left-0 top-0 h-0.5 w-6 rounded-full bg-white transition duration-300 ${isMobileMenuOpen ? "translate-y-2 rotate-45" : ""}`} />
-            <span className={`absolute left-0 top-2 h-0.5 w-6 rounded-full bg-white transition duration-200 ${isMobileMenuOpen ? "opacity-0" : "opacity-100"}`} />
-            <span className={`absolute left-0 top-4 h-0.5 w-6 rounded-full bg-white transition duration-300 ${isMobileMenuOpen ? "-translate-y-2 -rotate-45" : ""}`} />
+            <span className="absolute left-0 top-0 h-0.5 w-6 rounded-full bg-white" />
+            <span className="absolute left-0 top-2 h-0.5 w-6 rounded-full bg-white" />
+            <span className="absolute left-0 top-4 h-0.5 w-6 rounded-full bg-white" />
           </span>
         </button>
       </header>
@@ -136,7 +136,17 @@ export function DashboardSidebar({
     <aside className={`dashboard-sidebar dot-pattern-corner dot-pattern-bottom-left z-[70] flex flex-col border-b border-[var(--color-border)] bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] transition-transform duration-300 ease-out max-md:border-r max-md:border-white/10 max-md:shadow-[24px_0_70px_rgba(18,13,31,0.28)] max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:z-40 md:border-r md:border-b-0 md:px-4 md:py-4 ${
       isMobileMenuOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
     }`}>
-      <div className="dashboard-sidebar-brand flex justify-center [&_*]:text-[var(--color-button-text)]">{brand}</div>
+      <div className="dashboard-sidebar-brand flex items-center justify-center [&_*]:text-[var(--color-button-text)] max-md:justify-between">
+        <div>{brand}</div>
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="hidden h-10 w-10 place-items-center rounded-xl border border-white/14 bg-white/8 text-2xl leading-none text-white/82 transition hover:bg-white/14 hover:text-white max-md:grid"
+        >
+          ×
+        </button>
+      </div>
 
       <nav className="dashboard-sidebar-nav mt-8 space-y-1 md:mt-7 md:shrink-0">
         {dashboardSections.map((section, index) => {
