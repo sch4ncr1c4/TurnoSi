@@ -173,42 +173,46 @@ export function AuthPage({ brand, route }: AuthPageProps) {
   return (
     <PageLayout>
       <div className="grid min-h-screen lg:grid-cols-2">
-        <aside className="dot-pattern-corner dot-pattern-bottom-left flex flex-col justify-between bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:px-8 lg:py-8">
-          <div>
-            <div className="[&_*]:text-[var(--color-button-text)]">
-              {brand}
-            </div>
-
-            <div className="mt-8 max-w-[34rem] lg:mt-10">
+        <aside className="auth-brand-panel hidden flex-col bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:flex lg:px-8 lg:py-8">
+          <div className="relative z-10 mx-auto flex w-full max-w-[34rem] flex-1 flex-col justify-center py-10 lg:py-8">
+            <div className="text-center">
+              <div className="mb-10 flex justify-center [&_*]:text-[var(--color-button-text)]">
+                {brand}
+              </div>
               <p className="text-xs font-semibold uppercase text-white/52">
                 {config.eyebrow}
               </p>
-              <h1 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">
-                {config.sideTitle}
+              <h1 className="mx-auto mt-3 max-w-xl text-3xl font-semibold leading-tight sm:text-4xl">
+                {config.sideTitle.split(". ").map((line, index, lines) => (
+                  <span key={line} className="block">
+                    {line}
+                    {index < lines.length - 1 ? "." : ""}
+                  </span>
+                ))}
               </h1>
-              <p className="mt-4 text-sm leading-7 text-white/68">
+              <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-white/68">
                 {config.sideCopy}
               </p>
             </div>
-          </div>
 
-          <div className="mt-8 max-w-[34rem] border-t border-white/12 pt-5 lg:mt-10">
-            <div className="space-y-2.5">
-              {config.sideItems.map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center justify-between gap-4 border-b border-white/10 pb-3 text-sm last:border-b-0 last:pb-0"
-                >
-                  <span className="text-white/68">{item}</span>
-                  <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-                </div>
-              ))}
+            <div className="mx-auto mt-8 w-full max-w-[34rem] border-t border-white/12 pt-5">
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
+                {config.sideItems.map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3 text-center text-xs leading-5 text-white/68"
+                  >
+                    <span className="mx-auto mb-2 block h-2 w-2 rounded-full bg-[var(--color-accent)]" />
+                    {item}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </aside>
 
         <section className="auth-surface-pattern relative flex min-w-0 flex-col overflow-hidden bg-[#ffffff]">
-          <header className="relative z-10 flex justify-end px-5 py-5 sm:px-8">
+          <header className="relative z-10 flex justify-start px-5 py-5 sm:px-8 lg:justify-end">
             <Link
               to="/"
               className="group inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-strong)] transition hover:text-[var(--color-ink)]"

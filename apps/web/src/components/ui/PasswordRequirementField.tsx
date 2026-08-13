@@ -2,6 +2,7 @@ import { type ChangeEvent, type InputHTMLAttributes, useState } from "react";
 
 import passwordEyeOffIcon from "../assets/icons/auth/password-eye-off.svg";
 import passwordEyeIcon from "../assets/icons/auth/password-eye.svg";
+import loginPasswordIcon from "../assets/icons/auth/login-password.svg";
 
 type PasswordRequirementFieldProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -48,14 +49,22 @@ export function PasswordRequirementField({
           Mín. {minLength} caracteres
         </span>
       </span>
-      <span className="relative">
+      <span className="group/auth-field relative">
+        <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[var(--color-muted)] transition duration-200 ease-out group-focus-within/auth-field:text-[var(--color-accent)]">
+          <img
+            src={loginPasswordIcon}
+            alt=""
+            aria-hidden="true"
+            className="h-5 w-5 opacity-62 transition duration-200 ease-out group-focus-within/auth-field:scale-110 group-focus-within/auth-field:opacity-90"
+          />
+        </span>
         <input
           {...props}
           type={isVisible ? "text" : "password"}
           value={value}
           minLength={minLength}
           onChange={handleChange}
-          className={`h-11 w-full rounded-md border bg-[rgba(32,24,54,0.035)] px-3 pr-12 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent)] focus:ring-2 ${
+          className={`h-11 w-full rounded-md border bg-white/70 pl-12 pr-12 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-all duration-200 ease-out hover:border-[var(--color-accent)] focus:-translate-y-0.5 focus:shadow-[0_14px_34px_rgba(253,134,6,0.13)] focus:ring-2 ${
             isTooShort
               ? "border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.16)]"
               : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"

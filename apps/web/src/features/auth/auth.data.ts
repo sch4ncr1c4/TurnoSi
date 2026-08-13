@@ -31,7 +31,7 @@ export const authRoutes: readonly AuthRouteConfig[] = [
     alternateLabel: "¿Todavía no tenés cuenta?",
     alternateHref: "/register",
     alternateCta: "Crear cuenta",
-    sideTitle: "Tu operación diaria en un solo lugar.",
+    sideTitle: "Organizá tu tiempo. Hacé crecer tu negocio.",
     sideCopy:
       "Agenda, clientes, sedes y equipo conectados para trabajar con más orden.",
     sideItems: [
@@ -64,7 +64,7 @@ export const authRoutes: readonly AuthRouteConfig[] = [
     alternateLabel: "¿Ya tenés cuenta?",
     alternateHref: "/login",
     alternateCta: "Iniciar sesión",
-    sideTitle: "Prepará tu negocio para recibir turnos.",
+    sideTitle: "Configurá tu negocio. Empezá a recibir turnos.",
     sideCopy:
       "Configurá datos básicos, horarios y equipo desde una experiencia guiada.",
     sideItems: [
