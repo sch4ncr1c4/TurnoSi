@@ -44,7 +44,7 @@ export function StatusChangeModal({
         }
       }}
     >
-      <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#d8cbbf] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.38)] ring-1 ring-[#fffaf4]">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#d8cbbf] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.38)] ring-1 ring-[#ffffff]">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
           {draft.isCorrection ? "Editar estado" : "Cambiar estado"}
         </p>
@@ -54,7 +54,7 @@ export function StatusChangeModal({
             : "Elegí el nuevo estado del turno"}
         </h2>
 
-        <div className="mt-4 rounded-md border border-[#ded0c2] bg-[#f7efe3] p-3 text-sm">
+        <div className="mt-4 rounded-md border border-[#ded0c2] bg-[#ffffff] p-3 text-sm">
           <p className="font-medium">{draft.appointment.service}</p>
           <p className="mt-1 text-[var(--color-muted-strong)]">
             {draft.appointment.client} · {draft.appointment.day ?? "Hoy"} ·{" "}

@@ -138,7 +138,7 @@ export function ManualAppointmentModal({
 
   return (
     <div className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
-      <section className="modal-panel-enter modal-scroll-panel w-full max-w-4xl overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+      <section className="modal-panel-enter modal-scroll-panel w-full max-w-4xl overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#ffffff] shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] px-5 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">

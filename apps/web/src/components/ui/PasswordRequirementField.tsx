@@ -55,7 +55,7 @@ export function PasswordRequirementField({
           value={value}
           minLength={minLength}
           onChange={handleChange}
-          className={`w-full rounded-md border bg-[rgba(32,24,54,0.035)] px-3 py-2.5 pr-12 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent)] focus:ring-2 ${
+          className={`h-11 w-full rounded-md border bg-[rgba(32,24,54,0.035)] px-3 pr-12 text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent)] focus:ring-2 ${
             isTooShort
               ? "border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.16)]"
               : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"
@@ -77,7 +77,7 @@ export function PasswordRequirementField({
         </button>
       </span>
       <span
-        className={`rounded-md border px-3 py-1.5 text-xs transition ${
+        className={`rounded-md border px-3 py-1 text-xs transition ${
           isTooShort
             ? "border-[rgba(253,134,6,0.28)] bg-[#fff3e5] text-[var(--color-ink)]"
             : "border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] text-[var(--color-muted)]"

@@ -127,14 +127,14 @@ export const statusDotClassName = buildStatusMap(
 );
 
 export const statusOptionClassName = buildStatusMap(
-  (_, c) => `border-[${c.border}40] border-l-[${c.border}] bg-[#fffaf4]`
+  (_, c) => `border-[${c.border}40] border-l-[${c.border}] bg-[#ffffff]`
 );
 
 export const statusOptionTextClassName = "text-[var(--color-ink)]";
 
 export const selectedStatusOptionClassName = buildStatusMap(
   (_, c) =>
-    `border-[var(--color-ink)] border-l-[${c.border}] bg-[#fffaf4] text-[var(--color-ink)] ring-2 ring-[${c.ring}]`
+    `border-[var(--color-ink)] border-l-[${c.border}] bg-[#ffffff] text-[var(--color-ink)] ring-2 ring-[${c.ring}]`
 );
 
 const statusModalDotOverrides: Partial<Record<AppointmentStatusLabel, string>> = {

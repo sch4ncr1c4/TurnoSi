@@ -128,7 +128,7 @@ export function AvailabilityEditPanel({
 
   return (
     <div className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
-      <div className="modal-panel-enter modal-scroll-panel w-full max-w-xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-xl rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-4 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-3">
           <div>
             <h2 className="text-lg font-semibold">{title}</h2>

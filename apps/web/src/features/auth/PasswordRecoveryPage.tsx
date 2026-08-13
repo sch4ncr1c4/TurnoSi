@@ -84,7 +84,7 @@ export function PasswordRecoveryPage({ brand }: { brand: ReactNode }) {
         <div className="mx-auto max-w-5xl [&_*]:text-white">{brand}</div>
       </header>
       <main className="mx-auto flex w-full max-w-lg flex-1 items-center px-5 py-10">
-        <section className="w-full rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_24px_70px_rgba(32,24,54,0.12)] sm:p-7">
+        <section className="w-full rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-5 shadow-[0_24px_70px_rgba(32,24,54,0.12)] sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
             Seguridad de la cuenta
           </p>

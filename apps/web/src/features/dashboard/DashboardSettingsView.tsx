@@ -1062,7 +1062,7 @@ function moneyToCents(value: string) {
               role="dialog"
               aria-modal="true"
               aria-labelledby="onboarding-guide-title"
-              className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_30px_100px_rgba(32,24,54,0.4)] sm:p-7"
+              className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-5 shadow-[0_30px_100px_rgba(32,24,54,0.4)] sm:p-7"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                 Primeros pasos
@@ -1269,7 +1269,7 @@ function moneyToCents(value: string) {
                         </span>
                       </div>
                       <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-3">
-                        <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-2">
+                        <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-2">
                           {logoPreview ? (
                             <img
                               src={logoPreview}
@@ -1282,7 +1282,7 @@ function moneyToCents(value: string) {
                             </span>
                           )}
                         </div>
-                        <label className="grid h-28 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[#fffaf4] px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
+                        <label className="grid h-28 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
                           <span>
                             <span className="block text-xl leading-none">↥</span>
                             <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
@@ -1300,7 +1300,7 @@ function moneyToCents(value: string) {
                           />
                         </label>
                       </div>
-                      <label className="mt-3 flex min-h-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[#fffaf4] px-3 py-2 text-center text-sm font-semibold hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
+                      <label className="mt-3 flex min-h-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[#ffffff] px-3 py-2 text-center text-sm font-semibold hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
                         <span className="text-base leading-none">✎</span>
                         <span>{logoPreview ? "Cambiar logo" : "Subir logo"}</span>
                         <input
@@ -1340,7 +1340,7 @@ function moneyToCents(value: string) {
                           }
                           updateSetting("category", event.target.value);
                         }}
-                        className={`h-10 appearance-none rounded-md border bg-[#fffaf4] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`h-10 appearance-none rounded-md border bg-[#ffffff] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.category !== savedSettings.category
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1370,7 +1370,7 @@ function moneyToCents(value: string) {
                         onChange={(event) =>
                           updateSetting("description", event.target.value)
                         }
-                        className={`min-h-32 resize-none rounded-md border bg-[#fffaf4] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`min-h-32 resize-none rounded-md border bg-[#ffffff] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.description !== savedSettings.description
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1482,7 +1482,7 @@ function moneyToCents(value: string) {
                       );
                       if (emptySlot === undefined) {
                         return (
-                          <div className="grid h-full min-h-[9.85rem] place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[#fffaf4] px-4 text-center lg:min-h-[9.15rem] xl:min-h-[9.85rem]">
+                          <div className="grid h-full min-h-[9.85rem] place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] px-4 text-center lg:min-h-[9.15rem] xl:min-h-[9.85rem]">
                             <span>
                               <span className="block text-sm font-semibold text-[var(--color-ink)]">
                                 Máximo alcanzado
@@ -1593,7 +1593,7 @@ function moneyToCents(value: string) {
                   <select
                     value={settings.province}
                     onChange={(event) => updateSetting("province", event.target.value)}
-                    className={`h-10 appearance-none rounded-md border bg-[#fffaf4] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                    className={`h-10 appearance-none rounded-md border bg-[#ffffff] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                       showUnsavedState &&
                       settings.province !== savedSettings.province
                         ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1676,7 +1676,7 @@ function moneyToCents(value: string) {
                         ? "Pegá un token nuevo para reemplazar el actual"
                         : "APP_USR-..."
                     }
-                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[#fffaf4] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[#fffaf4] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
+                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[#ffffff] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                     type="password"
                     autoComplete="off"
                   />
@@ -1806,7 +1806,7 @@ function moneyToCents(value: string) {
             </div>
           </CardHeader>
           <CardBody className="p-4">
-            <div className="flex flex-col gap-3 rounded-lg border border-[#e7b9b2] bg-[#fffaf4] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-lg border border-[#e7b9b2] bg-[#ffffff] p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-[#8f1b13]">
                   Eliminar cuenta
@@ -1828,7 +1828,7 @@ function moneyToCents(value: string) {
       </div>
 
       <aside className="min-w-0 space-y-3 xl:sticky xl:top-4 xl:self-start">
-        <Card className="bg-[#fffaf4]">
+        <Card className="bg-[#ffffff]">
           <CardBody className="p-4">
             <div className="flex items-center gap-3">
               <div
@@ -1838,7 +1838,7 @@ function moneyToCents(value: string) {
                 }}
               >
                 <div
-                  className="grid h-11 w-11 place-items-center rounded-full bg-[#fffaf4] text-sm font-extrabold"
+                  className="grid h-11 w-11 place-items-center rounded-full bg-[#ffffff] text-sm font-extrabold"
                   style={{ color: profileCompletionColor }}
                 >
                   {profileCompletionPercent}%
@@ -2044,11 +2044,11 @@ function SettingsField({
         changed
           ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
           : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-      } bg-[#fffaf4]`}>
+      } bg-[#ffffff]`}>
         {prefix && (
           <span
             className={`shrink-0 border-r border-[var(--color-border)] px-3 py-2 text-[var(--color-muted)] ${
-              readOnly ? "bg-[#fffaf4]" : "bg-[#fffaf4]"
+              readOnly ? "bg-[#ffffff]" : "bg-[#ffffff]"
             }`}
           >
             {prefix}
@@ -2070,7 +2070,7 @@ function SettingsField({
             target="_blank"
             rel="noreferrer"
             className={`shrink-0 border-l border-[var(--color-border)] px-3 py-2 font-semibold text-[var(--color-ink)] hover:bg-[rgba(253,134,6,0.1)] ${
-              readOnly ? "bg-[#fffaf4]" : ""
+              readOnly ? "bg-[#ffffff]" : ""
             }`}
           >
             Ver página
@@ -2118,11 +2118,11 @@ function ArgentinaPhoneField({
           changed
             ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
             : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
-        } bg-[#fffaf4]`}
+        } bg-[#ffffff]`}
       >
         <span
           className={`inline-flex shrink-0 items-center border-r border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-ink)] ${
-            readOnly ? "bg-[#fffaf4]" : "bg-[#fffaf4]"
+            readOnly ? "bg-[#ffffff]" : "bg-[#ffffff]"
           }`}
         >
           +54 9
@@ -2158,7 +2158,7 @@ function CustomCategoryModal({
 }) {
   return (
     <div className="viewport-overlay modal-overlay-enter z-[90] grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center">
-      <section className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+      <section className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
           Rubro personalizado
         </p>
@@ -2169,7 +2169,7 @@ function CustomCategoryModal({
           onChange={(event) => onChange(event.target.value)}
           maxLength={settingsFieldLimits.category}
           placeholder="Ej: Veterinaria"
-          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-[#fffaf4] px-3 outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
+          className="mt-4 h-11 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)]"
         />
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" onClick={onClose}>
@@ -2198,7 +2198,7 @@ function DeleteGalleryImageModal({
       <section
         role="dialog"
         aria-modal="true"
-        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[#e7b9b2] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
       >
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b42318]">
           Eliminar foto
@@ -2284,7 +2284,7 @@ function GalleryCropModal({
       <section
         role="dialog"
         aria-modal="true"
-        className="modal-panel-enter modal-scroll-panel w-full max-w-3xl rounded-2xl border border-[var(--color-border)] bg-[#fffaf4] p-4 shadow-[0_30px_100px_rgba(32,24,54,0.32)] sm:p-6"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-3xl rounded-2xl border border-[var(--color-border)] bg-[#ffffff] p-4 shadow-[0_30px_100px_rgba(32,24,54,0.32)] sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -2397,7 +2397,7 @@ function UnsavedChangesModal({
       <section
         role="dialog"
         aria-modal="true"
-        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
       >
         <h2 className="text-lg font-semibold">Tenés cambios sin guardar</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
@@ -2447,7 +2447,7 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.62)] px-3 py-3 backdrop-blur-sm sm:place-items-center">
-      <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#e7b9b2] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#e7b9b2] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <h2 className="text-lg font-semibold text-[#8f1b13]">
           Confirmar eliminación
         </h2>

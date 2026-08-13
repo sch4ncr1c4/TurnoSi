@@ -8,6 +8,10 @@ import { authRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
 import { visibleOperationalAppointmentWhere } from "../appointments/appointment-visibility.js";
 import {
+  customerIdentityData,
+  customerIdentityWhere
+} from "../customers/customer-identity.js";
+import {
   calculateSlots,
   expireStaleDepositHolds
 } from "../public-booking/public-booking.routes.js";
@@ -151,17 +155,10 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
   const startsAt = new Date(data.startsAt);
   const endsAt = new Date(startsAt.getTime() + context.service.durationMinutes * 60_000);
   const [firstName, ...lastNameParts] = data.customerName.trim().split(/\s+/);
-  const email = data.email?.toLowerCase() ?? null;
+  const identity = customerIdentityData(data);
   const appointment = await prisma.$transaction(async (transaction) => {
     const existing = await transaction.customer.findFirst({
-      where: {
-        organizationId: tenant.organizationId,
-        deletedAt: null,
-        OR: [
-          { phone: data.phone },
-          ...(email ? [{ email }] : [])
-        ]
-      }
+      where: customerIdentityWhere(tenant.organizationId, data)
     });
     if (existing?.blockedAt) {
       throw new AppError(403, "CUSTOMER_BLOCKED", "Customer is blocked");
@@ -174,8 +171,8 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
             firstName,
             lastName: lastNameParts.join(" ") || null,
             fullName: data.customerName,
-            phone: data.phone,
-            ...(email ? { email } : {})
+            ...(identity.phone ? { phone: identity.phone } : {}),
+            ...(identity.email ? { email: identity.email } : {})
           }
         })
       : await transaction.customer.create({
@@ -184,8 +181,8 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
             firstName,
             lastName: lastNameParts.join(" ") || null,
             fullName: data.customerName,
-            phone: data.phone,
-            email
+            phone: identity.phone,
+            email: identity.email
           }
         });
 

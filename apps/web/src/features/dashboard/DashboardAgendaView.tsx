@@ -57,7 +57,7 @@ function getAgendaEventClassName(tone: AgendaTone) {
   }
 
   if (tone === "available") {
-    return "border-dashed border-[#f0b56f] bg-[#fffaf4] text-[#8a5a22]";
+    return "border-dashed border-[#f0b56f] bg-[#ffffff] text-[#8a5a22]";
   }
 
   return "border-dashed border-[var(--color-border-strong)] bg-white/40 text-[var(--color-muted-strong)]";

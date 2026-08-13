@@ -420,7 +420,7 @@ function PasswordResetModal({
       <section
         role="dialog"
         aria-modal="true"
-        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-lg border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
       >
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-4">
           <div>
@@ -514,7 +514,7 @@ function TeamModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="team-modal-title"
-        className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
       >
         <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-4">
           <div>

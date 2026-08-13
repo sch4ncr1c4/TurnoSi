@@ -172,14 +172,14 @@ export function AuthPage({ brand, route }: AuthPageProps) {
 
   return (
     <PageLayout>
-      <div className="grid min-h-screen lg:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
-        <aside className="dot-pattern-corner dot-pattern-bottom-left flex flex-col bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:px-8">
+      <div className="grid min-h-screen lg:grid-cols-2">
+        <aside className="dot-pattern-corner dot-pattern-bottom-left flex flex-col justify-between bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:px-8 lg:py-8">
           <div>
             <div className="[&_*]:text-[var(--color-button-text)]">
               {brand}
             </div>
 
-            <div className="mt-8 max-w-lg">
+            <div className="mt-8 max-w-[34rem] lg:mt-10">
               <p className="text-xs font-semibold uppercase text-white/52">
                 {config.eyebrow}
               </p>
@@ -192,8 +192,8 @@ export function AuthPage({ brand, route }: AuthPageProps) {
             </div>
           </div>
 
-          <div className="mt-8 border-t border-white/12 pt-5">
-            <div className="space-y-3">
+          <div className="mt-8 max-w-[34rem] border-t border-white/12 pt-5 lg:mt-10">
+            <div className="space-y-2.5">
               {config.sideItems.map((item) => (
                 <div
                   key={item}
@@ -207,7 +207,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
           </div>
         </aside>
 
-        <section className="relative flex min-w-0 flex-col overflow-hidden bg-[#fbfaf7]">
+        <section className="auth-surface-pattern relative flex min-w-0 flex-col overflow-hidden bg-[#ffffff]">
           <header className="relative z-10 flex justify-end px-5 py-5 sm:px-8">
             <Link
               to="/"
@@ -224,12 +224,12 @@ export function AuthPage({ brand, route }: AuthPageProps) {
           </header>
 
           <div className="relative z-10 flex flex-1 items-center justify-center px-5 pb-8 pt-4 sm:px-7 lg:pb-12">
-            <div className="w-full max-w-[590px] rounded-2xl border border-[rgba(32,24,54,0.11)] bg-white/90 px-8 py-7 shadow-[0_24px_70px_rgba(32,24,54,0.12)] backdrop-blur sm:px-14 sm:py-12 lg:px-16 lg:py-14 lg:-translate-y-2">
+            <div className="w-full max-w-[500px] rounded-2xl border border-[rgba(32,24,54,0.11)] bg-white/90 px-7 py-7 shadow-[0_24px_70px_rgba(32,24,54,0.12)] backdrop-blur sm:px-9 sm:py-8 lg:px-10 lg:py-9 lg:-translate-y-2">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--color-ink)]">
                   {config.eyebrow}
                 </p>
-                <h2 className="mt-3 max-w-md text-3xl font-extrabold leading-tight sm:text-4xl">
+                <h2 className="mt-3 max-w-md text-2xl font-semibold leading-[1.12] sm:text-3xl">
                   {config.title}
                 </h2>
                 <p className="mt-3 max-w-md text-sm leading-6 text-[var(--color-muted-strong)]">
@@ -237,7 +237,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                 </p>
               </div>
 
-                <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+                <form onSubmit={handleSubmit} className="mt-6 space-y-3.5">
                   {formError && (
                     <div role="alert" className="rounded-md border border-[#f0c9c5] bg-[#fff3f1] p-3 text-sm text-[#9f261d]">
                       {formError}
@@ -274,7 +274,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                       const nameFields = lastNameField ? [field, lastNameField] : [field];
 
                       return (
-                        <div key={field.id} className="grid gap-4 sm:grid-cols-2">
+                        <div key={field.id} className="grid gap-3.5 sm:grid-cols-2">
                           {nameFields.map((nameField) => {
                             const nameError = errors[nameField.id];
                             return (
@@ -290,7 +290,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                                   autoComplete={nameField.id === "firstName" ? "given-name" : "family-name"}
                                   aria-invalid={Boolean(nameError)}
                                   aria-describedby={nameError ? `${nameField.id}-error` : undefined}
-                                  className={`h-12 w-full rounded-lg border bg-white/70 px-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)] ${
+                                  className={`h-11 w-full rounded-lg border bg-white/70 px-3 text-sm text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)] ${
                                     nameError
                                       ? "border-[#b42318]"
                                       : "border-[var(--color-border)]"
@@ -362,7 +362,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                             autoComplete={autoComplete}
                             aria-invalid={Boolean(error)}
                             aria-describedby={error ? `${field.id}-error` : undefined}
-                            className={`relative z-0 h-12 w-full rounded-lg border bg-white/70 py-3 pl-12 text-sm text-[var(--color-ink)] outline-none transition-all duration-200 ease-out placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:-translate-y-0.5 focus:border-[var(--color-accent)] focus:shadow-[0_14px_34px_rgba(253,134,6,0.13)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)] ${
+                            className={`relative z-0 h-11 w-full rounded-lg border bg-white/70 py-2.5 pl-12 text-sm text-[var(--color-ink)] outline-none transition-all duration-200 ease-out placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:-translate-y-0.5 focus:border-[var(--color-accent)] focus:shadow-[0_14px_34px_rgba(253,134,6,0.13)] focus:ring-2 focus:ring-[rgba(253,134,6,0.18)] ${
                               field.type === "password" ? "pr-12" : ""
                             } ${
                               error
@@ -419,14 +419,14 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="mt-3 inline-flex h-12 w-full items-center justify-center gap-3 rounded-lg bg-[var(--color-ink)] px-5 text-sm font-bold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(32,24,54,0.2)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent)] hover:text-[var(--color-button-text)]"
+                    className="mt-2 inline-flex h-11 w-full items-center justify-center gap-3 rounded-lg bg-[var(--color-ink)] px-5 text-sm font-bold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(32,24,54,0.2)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent)] hover:text-[var(--color-button-text)]"
                   >
                     <span>{isSubmitting ? "Procesando..." : config.submitLabel}</span>
                     {!isSubmitting && <span aria-hidden="true">→</span>}
                   </button>
                 </form>
 
-              <div className="mt-6 border-t border-[var(--color-border)] pt-5 text-center text-sm text-[var(--color-muted)]">
+              <div className="mt-5 border-t border-[var(--color-border)] pt-4 text-center text-sm text-[var(--color-muted)]">
                 {config.alternateLabel}{" "}
                 <Link
                   to={config.alternateHref}

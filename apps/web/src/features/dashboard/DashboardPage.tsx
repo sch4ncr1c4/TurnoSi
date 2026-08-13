@@ -777,7 +777,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           <section
             role="dialog"
             aria-modal="true"
-            className="modal-panel-enter modal-scroll-panel w-full max-w-6xl rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+            className="modal-panel-enter modal-scroll-panel w-full max-w-6xl rounded-xl border border-[var(--color-border)] bg-[#ffffff] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
           >
             <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-4 sm:p-5">
               <div>
@@ -857,7 +857,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           <section
             role="dialog"
             aria-modal="true"
-            className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#fffaf4] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+            className="modal-panel-enter modal-scroll-panel w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
           >
             <h2 className="text-lg font-semibold">Tenés cambios sin guardar</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">

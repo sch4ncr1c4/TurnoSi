@@ -240,7 +240,7 @@ function DayActionsMenu({
   onToggleStatus: () => void;
 }) {
   return (
-    <div className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[var(--color-border)] bg-[#fffaf4] p-1.5 text-left shadow-[0_18px_48px_rgba(32,24,54,0.18)]">
+    <div className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-1.5 text-left shadow-[0_18px_48px_rgba(32,24,54,0.18)]">
       <button
         type="button"
         onClick={onDuplicateAll}

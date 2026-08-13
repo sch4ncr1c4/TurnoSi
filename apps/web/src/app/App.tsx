@@ -17,13 +17,23 @@ import { SuperAdminPage } from "../features/superadmin/SuperAdminPage";
 import { NotFoundPage } from "../features/NotFoundPage";
 
 const firstLoadStorageKey = "turnosi:first-load-seen";
-const firstLoadMinimumMs = 1300;
+const firstLoadMinimumMs = 3000;
+const noFirstLoadLoaderRoutes = new Set<string>([
+  ROUTES.home,
+  ROUTES.login,
+  ROUTES.register,
+  ROUTES.recoverPassword
+]);
+
+function shouldShowFirstLoadLoader() {
+  if (typeof window === "undefined") return false;
+  if (noFirstLoadLoaderRoutes.has(window.location.pathname)) return false;
+
+  return window.sessionStorage.getItem(firstLoadStorageKey) !== "1";
+}
 
 export function App() {
-  const [showFirstLoad, setShowFirstLoad] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.sessionStorage.getItem(firstLoadStorageKey) !== "1";
-  });
+  const [showFirstLoad, setShowFirstLoad] = useState(shouldShowFirstLoadLoader);
 
   useEffect(() => {
     if (!showFirstLoad) return;

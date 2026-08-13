@@ -24,6 +24,10 @@ import {
   type ScheduledAppointment
 } from "./booking-capacity.service.js";
 import { hasActiveSubscription } from "../billing/subscription-access.service.js";
+import {
+  customerIdentityData,
+  customerIdentityWhere
+} from "../customers/customer-identity.js";
 
 export const publicBookingRouter = Router();
 
@@ -881,13 +885,9 @@ publicBookingRouter.post(
               "Selected slot is no longer available"
             );
           }
-          const email = data.email.toLowerCase();
+          const identity = customerIdentityData(data);
           const existing = await transaction.customer.findFirst({
-            where: {
-              organizationId: context.organization.id,
-              deletedAt: null,
-              OR: [{ email }, { phone: data.phone }]
-            }
+            where: customerIdentityWhere(context.organization.id, data)
           });
           if (existing?.blockedAt) {
             throw new AppError(
@@ -918,9 +918,7 @@ publicBookingRouter.post(
               AND: [
                 activeConflictWhere,
                 {
-                  customer: {
-                    OR: [{ phone: data.phone }, { email }]
-                  }
+                  customer: customerIdentityWhere(context.organization.id, data)
                 }
               ]
             },
@@ -940,7 +938,8 @@ publicBookingRouter.post(
                   firstName,
                   lastName: lastNameParts.join(" ") || null,
                   fullName: data.name,
-                  phone: data.phone
+                  ...(identity.email ? { email: identity.email } : {}),
+                  ...(identity.phone ? { phone: identity.phone } : {})
                 }
               })
             : await transaction.customer.create({
@@ -949,8 +948,8 @@ publicBookingRouter.post(
                   firstName,
                   lastName: lastNameParts.join(" ") || null,
                   fullName: data.name,
-                  email,
-                  phone: data.phone
+                  email: identity.email,
+                  phone: identity.phone
                 }
               });
           return transaction.appointment.create({

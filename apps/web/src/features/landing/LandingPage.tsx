@@ -292,7 +292,7 @@ export function LandingPage({ brand }: LandingPageProps) {
               className="landing-rise landing-delay-1 order-2 mx-auto w-full min-w-0 max-w-4xl xl:order-none xl:mt-24 xl:max-w-[900px] xl:-translate-x-2 xl:justify-self-start 2xl:max-w-[960px] 2xl:translate-x-0"
             >
               <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white xl:min-h-[470px]">
-                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[1080px]:block">
+                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[1080px]:block">
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
                       <div className="mb-8 flex items-center gap-2">
@@ -394,7 +394,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </div>
 
                 <div className="landing-product-mobile-board min-[1080px]:hidden">
-                  <div className="grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#f6f1e7] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
+                  <div className="grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
                       <img src={turnosiLogo} alt="TurnoSi" className="h-5 w-auto min-w-[58px] opacity-95" />
                       <div className="mt-8 space-y-3">

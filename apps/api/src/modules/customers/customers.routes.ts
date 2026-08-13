@@ -9,6 +9,10 @@ import { softDelete, restore } from "../../lib/soft-delete.js";
 import { authRateLimit, authenticatedRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
 import {
+  customerIdentityData,
+  customerIdentityWhere
+} from "./customer-identity.js";
+import {
   createCustomerSchema,
   blockCustomerSchema,
   customersQuerySchema,
@@ -145,18 +149,45 @@ customersRouter.post("/", authRateLimit, async (request, response) => {
   const membership = await assertMembership(request.auth!.sub, organizationId);
   requireEditor(membership.role);
   const data = createCustomerSchema.parse(request.body);
+  const identity = customerIdentityData(data);
   const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
 
-  const customer = await prisma.customer.create({
-    data: {
-      organizationId,
-      ...data,
-      fullName
-    }
-  });
+  const existing =
+    identity.email || identity.phone
+      ? await prisma.customer.findFirst({
+          where: customerIdentityWhere(organizationId, data)
+        })
+      : null;
 
-  await auditLog({ userId: request.auth!.sub, organizationId, action: "customer.create", entityType: "customer", entityId: customer.id });
-  response.status(201).json(ok(customer));
+  const customer = existing
+    ? await prisma.customer.update({
+        where: { id: existing.id },
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          fullName,
+          ...(identity.email ? { email: identity.email } : {}),
+          ...(identity.phone ? { phone: identity.phone } : {}),
+          notes: data.notes
+        }
+      })
+    : await prisma.customer.create({
+        data: {
+          organizationId,
+          ...data,
+          ...identity,
+          fullName
+        }
+      });
+
+  await auditLog({
+    userId: request.auth!.sub,
+    organizationId,
+    action: existing ? "customer.update" : "customer.create",
+    entityType: "customer",
+    entityId: customer.id
+  });
+  response.status(existing ? 200 : 201).json(ok(customer));
 });
 
 customersRouter.delete("/:customerId", authRateLimit, async (request, response) => {

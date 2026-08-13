@@ -253,7 +253,7 @@ export function AccountAccessSettings({
           role="dialog"
           aria-modal="true"
           aria-labelledby="password-modal-title"
-          className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-xl border border-[var(--color-border)] bg-[#fffaf4] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+          className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-xl border border-[var(--color-border)] bg-[#ffffff] shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
         >
           <div className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] p-5">
             <div>
