@@ -48,6 +48,7 @@ import {
   getDashboardAppointments,
   getRecentDashboardReservations,
   getReservationNotificationState,
+  markDashboardAppointmentDepositPaid,
   updateDashboardAppointmentStatus,
   updateReservationNotificationState
 } from "./dashboard.api";
@@ -342,6 +343,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   function getAppointmentStatus(
     appointment: DashboardAppointment
   ): AppointmentStatusLabel {
+    if (appointment.depositPayment?.status === "approved") return "Pagado";
+
     return (
       appointmentStatusChanges[appointment.id] ??
       (appointment.attended ? "Asistido" : appointment.status)
@@ -453,10 +456,16 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
     setIsChangingStatus(true);
     try {
-      await updateDashboardAppointmentStatus(
-        draft.appointment.id,
-        draft.nextStatus as AppointmentStatusLabel
-      );
+      const nextStatus = draft.nextStatus as AppointmentStatusLabel;
+      const paidDepositResult =
+        nextStatus === "Pagado"
+          ? await markDashboardAppointmentDepositPaid(draft.appointment.id)
+          : null;
+
+      if (nextStatus !== "Pagado") {
+        await updateDashboardAppointmentStatus(draft.appointment.id, nextStatus);
+      }
+
       queryClient.setQueryData<DashboardAppointment[]>(
         appointmentsKey,
         (current = []) =>
@@ -464,21 +473,24 @@ export function DashboardPage({ brand }: DashboardPageProps) {
             appointment.id === draft.appointment.id
               ? {
                   ...appointment,
-                  status: draft.nextStatus as AppointmentStatusLabel,
-                  attended: draft.nextStatus === "Asistido"
+                  status: nextStatus === "Pagado" ? "Confirmado" : nextStatus,
+                  depositPayment:
+                    paidDepositResult?.data.depositPayment ??
+                    appointment.depositPayment,
+                  attended: nextStatus === "Asistido"
                 }
               : appointment
           )
       );
       if (
         draft.currentStatus === "No asistió" ||
-        draft.nextStatus === "No asistió"
+        nextStatus === "No asistió"
       ) {
         await queryClient.invalidateQueries({ queryKey: ["customers"] });
       }
       setAppointmentStatusChanges((current) => ({
         ...current,
-        [draft.appointment.id]: draft.nextStatus as AppointmentStatusLabel
+        [draft.appointment.id]: nextStatus
       }));
       setPendingStatusChange(null);
     } finally {

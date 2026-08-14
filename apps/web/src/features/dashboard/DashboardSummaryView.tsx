@@ -199,6 +199,14 @@ export function DashboardSummaryView({
       <AppointmentDetailsModal
         appointment={selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
+        onRequestReschedule={() => {
+          if (selectedAppointment.startsAt) {
+            onSelectDate(new Date(selectedAppointment.startsAt));
+          }
+          onSelectScheduleView("day");
+          onViewAgenda();
+          setSelectedAppointment(null);
+        }}
         onRequestStatusChange={() => {
           onRequestStatusChange(
             selectedAppointment,

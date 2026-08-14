@@ -964,7 +964,7 @@ publicBookingRouter.post(
               title: context.service.name,
               startsAt,
               endsAt,
-              status: depositRequired ? "pending" : "confirmed",
+              status: "pending",
               ...(depositRequired
                 ? {
                     depositPayment: {
@@ -1058,7 +1058,7 @@ publicBookingRouter.post(
     }
 
     response.status(201).json(
-      ok({ id: appointment.id, startsAt: appointment.startsAt, status: "confirmed" })
+      ok({ id: appointment.id, startsAt: appointment.startsAt, status: "pending" })
     );
   }
 );

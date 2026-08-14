@@ -107,7 +107,7 @@ export function createPublicAppointment(
     data: {
       id: string;
       startsAt: string;
-      status: "confirmed" | "pending_payment";
+      status: "confirmed" | "pending" | "pending_payment";
       checkoutUrl?: string;
     };
   }>(

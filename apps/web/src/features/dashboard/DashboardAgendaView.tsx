@@ -45,7 +45,7 @@ function getAgendaEventClassName(tone: AgendaTone) {
   }
 
   if (tone === "pending") {
-    return "border-[#98cbd5] bg-[#eef9fb] text-[#275f6b]";
+    return "border-[var(--color-ink)] bg-[#ffffff] text-[var(--color-ink)]";
   }
 
   if (tone === "attended") {
@@ -57,7 +57,7 @@ function getAgendaEventClassName(tone: AgendaTone) {
   }
 
   if (tone === "noShow") {
-    return "border-[#d9b7a6] bg-[#fff0e9] text-[#8a3f22]";
+    return "border-[#d9b7a6] bg-[#ffffff] text-[#8a3f22]";
   }
 
   if (tone === "available") {
@@ -86,7 +86,7 @@ function getStatusBadgeClassName(status: AppointmentStatusLabel) {
   }
 
   if (status === "En espera") {
-    return "bg-[#eef9fb] text-[#275f6b] ring-[#98cbd5]";
+    return "bg-[var(--color-ink)] text-white ring-[var(--color-ink)]";
   }
 
   if (status === "Asistido") {
@@ -97,7 +97,7 @@ function getStatusBadgeClassName(status: AppointmentStatusLabel) {
     return "bg-[#fde8e5] text-[#9f1f16] ring-[#e7b9b2]";
   }
 
-  return "bg-[#fff0e9] text-[#8a3f22] ring-[#d9b7a6]";
+  return "bg-[#ffffff] text-[#8a3f22] ring-[#d9b7a6]";
 }
 
 function getAgendaHours(appointments: DashboardAppointment[]) {
@@ -172,6 +172,7 @@ export function DashboardAgendaView({
         time: appointment.time,
         title: appointment.service,
         client: appointment.client,
+        assignee: appointment.assignee,
         status: appointment.status,
         depositPaid: appointment.depositPayment?.status === "approved",
         tone: getAgendaTone(appointment.status)
@@ -248,7 +249,7 @@ export function DashboardAgendaView({
             scheduleView={scheduleView}
           />
         </div>
-        <div className="border-b border-[var(--color-border)] bg-[rgba(240,234,217,0.38)] px-3 py-3">
+        <div className="border-b border-[var(--color-border)] bg-[#ffffff] px-3 py-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-start">
             <label className="w-full min-w-0 lg:max-w-xl xl:max-w-2xl">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
@@ -276,7 +277,7 @@ export function DashboardAgendaView({
           </div>
         )}
 
-        <div className="stable-scrollbar overflow-x-auto">
+        <div className="stable-scrollbar overflow-x-auto bg-[rgba(32,24,54,0.025)]">
           <div className={scheduleView === "day" ? "min-w-0" : "min-w-[820px]"}>
             <div
               className="grid border-b border-[var(--color-border)]"
@@ -305,7 +306,7 @@ export function DashboardAgendaView({
             <div className="grid" style={{ gridTemplateColumns }}>
               {agendaHours.map(({ hour, label }) => (
                 <div key={hour} className="contents">
-                  <div className="border-r border-[var(--color-border)] px-2 py-3 text-[11px] text-[var(--color-muted)] sm:px-3">
+                  <div className="border-r border-[rgba(32,24,54,0.12)] px-2 py-3 text-[11px] text-[var(--color-muted)] sm:px-3">
                     {label}
                   </div>
                   {visibleDays.map((day) => {
@@ -316,8 +317,8 @@ export function DashboardAgendaView({
                     return (
                       <div
                         key={`${label}-${day.label}`}
-                        className={`min-h-[42px] border-r border-b border-[var(--color-border)] p-1 ${
-                          day.active ? "bg-[rgba(32,24,54,0.025)]" : ""
+                        className={`min-h-[42px] border-r border-b border-[rgba(32,24,54,0.12)] p-1 ${
+                          day.active ? "bg-[rgba(32,24,54,0.045)]" : ""
                                   }`}
                                 >
                         {events.length > 0 && (
@@ -372,6 +373,9 @@ export function DashboardAgendaView({
                                     {event.client}
                                   </span>
                                 )}
+                                <span className="mt-1 block truncate text-[10px] opacity-60">
+                                  {event.assignee || "Sin profesional"}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -405,6 +409,13 @@ export function DashboardAgendaView({
       <AppointmentDetailsModal
         appointment={selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
+        onRequestReschedule={() => {
+          if (selectedAppointment.startsAt) {
+            onSelectDate(new Date(selectedAppointment.startsAt));
+            onSelectScheduleView("day");
+          }
+          setSelectedAppointment(null);
+        }}
         onRequestStatusChange={() => {
           onRequestStatusChange(
             selectedAppointment,
@@ -497,7 +508,7 @@ function AgendaMonthView({
             />
           </div>
         </div>
-        <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[rgba(240,234,217,0.38)] px-3 py-3">
+        <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[#ffffff] px-3 py-3">
           <label className="block w-full lg:max-w-xl xl:max-w-2xl">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
               Buscar turno

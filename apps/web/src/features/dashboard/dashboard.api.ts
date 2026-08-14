@@ -106,6 +106,22 @@ export function updateDashboardAppointmentStatus(
   });
 }
 
+export function markDashboardAppointmentDepositPaid(appointmentId: string) {
+  return apiRequest<{
+    success: true;
+    data: {
+      status: "confirmed";
+      depositPayment: {
+        status: string;
+        amountCents: number;
+        paidAt: string | null;
+      };
+    };
+  }>(`/api/v1/calendar/appointments/${appointmentId}/deposit-payment`, {
+    method: "PATCH"
+  });
+}
+
 export type ManualAppointmentPayload = {
   serviceId: string;
   branchId?: string;

@@ -352,8 +352,8 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
       setErrors({});
       setStatus(
         whatsappUrl
-          ? "Tu turno quedó confirmado. Te llevamos a WhatsApp para avisarle al local."
-          : "Tu turno quedó confirmado."
+          ? "Tu reserva quedó recibida. Te llevamos a WhatsApp para avisarle al local."
+          : "Tu reserva quedó recibida y espera confirmación del local."
       );
       setConfirmedAppointment(confirmation);
       setStep("success");
@@ -562,9 +562,9 @@ export function PublicBookingPage({ brand }: PublicBookingPageProps) {
         {activeStep === "success" ? (
           <section className="booking-success mx-auto max-w-2xl p-6 text-center sm:p-10">
             <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[rgba(64,145,91,0.14)] text-2xl text-[#347548]">✓</span>
-            <h2 className="mt-5 text-2xl font-semibold">Turno confirmado</h2>
+            <h2 className="mt-5 text-2xl font-semibold">Reserva recibida</h2>
             <p className="mt-2 text-sm text-[var(--color-muted-strong)]">
-              Tu reserva en {data.organization.name} quedó registrada.
+              Tu reserva en {data.organization.name} quedó registrada y espera confirmación.
             </p>
             <div className="mx-auto mt-6 max-w-sm divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/55 px-4 text-left text-sm">
               <ConfirmationRow

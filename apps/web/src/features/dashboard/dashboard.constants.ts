@@ -47,7 +47,7 @@ export const appointmentFilterOptions: {
 export const statusGuide = [
   { label: "Confirmado", description: "turno reservado" },
   { label: "En espera", description: "requiere confirmación" },
-  { label: "Pagado", description: "pago registrado" },
+  { label: "Pagado", description: "seña registrada" },
   { label: "Asistido", description: "cliente presente" },
   { label: "Cancelado", description: "turno dado de baja" },
   { label: "No asistió", description: "cliente ausente" }
@@ -63,15 +63,15 @@ const statusColors: Record<
     solid: "var(--color-accent)",
     muted: "var(--color-accent)",
     border: "var(--color-accent)",
-    light: "rgba(253,134,6,0.05)",
+    light: "#ffffff",
     ring: "rgba(253,134,6,0.28)"
   },
   "En espera": {
-    solid: "#438397",
-    muted: "#438397",
-    border: "#438397",
-    light: "rgba(67,131,151,0.07)",
-    ring: "rgba(67,131,151,0.28)"
+    solid: "var(--color-ink)",
+    muted: "var(--color-ink)",
+    border: "var(--color-ink)",
+    light: "rgba(32,24,54,0.055)",
+    ring: "rgba(32,24,54,0.22)"
   },
   Pagado: {
     solid: "#569165",
@@ -98,7 +98,7 @@ const statusColors: Record<
     solid: "#8a5a44",
     muted: "#8a5a44",
     border: "#8a5a44",
-    light: "rgba(138,90,68,0.08)",
+    light: "#ffffff",
     ring: "rgba(138,90,68,0.24)"
   }
 };
@@ -111,7 +111,7 @@ function buildStatusMap<T>(fn: (status: AppointmentStatusLabel, color: typeof st
 
 export const statusClassName: Record<AppointmentStatusLabel, string> = {
   Confirmado: "bg-[var(--color-accent)] text-white",
-  "En espera": "bg-[#438397] text-white",
+  "En espera": "bg-[var(--color-ink)] text-white",
   Pagado: "bg-[#569165] text-white",
   Asistido: "bg-[rgba(32,24,54,0.9)] text-white",
   Cancelado: "bg-[#b42318] text-white",
@@ -149,7 +149,7 @@ export function getStatusModalDotClassName(status: AppointmentStatusLabel): stri
 export const statusModalLabel: Record<AppointmentStatusLabel, string> = {
   Confirmado: "Pedido confirmado",
   "En espera": "En espera",
-  Pagado: "Pagado",
+  Pagado: "Seña pagada",
   Asistido: "Asistido",
   Cancelado: "Cancelado",
   "No asistió": "No asistió"
@@ -173,9 +173,9 @@ export const statusTransitionOptions: Record<
   AppointmentStatusLabel,
   AppointmentStatusLabel[]
 > = {
-  "En espera": ["Confirmado", "Cancelado"],
-  Confirmado: ["Pagado", "Asistido", "No asistió", "Cancelado"],
-  Pagado: ["Asistido", "No asistió", "Cancelado"],
+  "En espera": ["Confirmado", "Pagado", "Cancelado"],
+  Confirmado: ["Pagado", "No asistió", "Cancelado"],
+  Pagado: ["No asistió", "Cancelado"],
   Asistido: [],
   Cancelado: [],
   "No asistió": []
@@ -185,12 +185,12 @@ export const statusCorrectionOptions: Record<
   AppointmentStatusLabel,
   AppointmentStatusLabel[]
 > = {
-  "En espera": ["Confirmado", "Cancelado"],
-  Confirmado: ["En espera", "Pagado", "Asistido", "No asistió", "Cancelado"],
-  Pagado: ["Confirmado", "Asistido", "No asistió", "Cancelado"],
+  "En espera": ["Confirmado", "Pagado", "Cancelado"],
+  Confirmado: ["En espera", "Pagado", "No asistió", "Cancelado"],
+  Pagado: ["Confirmado", "No asistió", "Cancelado"],
   Asistido: ["Confirmado", "Pagado", "No asistió", "Cancelado"],
   Cancelado: ["En espera", "Confirmado", "Pagado"],
-  "No asistió": ["Confirmado", "Pagado", "Asistido", "Cancelado"]
+  "No asistió": ["Confirmado", "Pagado", "Cancelado"]
 };
 
 export const inactiveDayRowClassName =

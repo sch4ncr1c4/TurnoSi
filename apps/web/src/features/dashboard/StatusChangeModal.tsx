@@ -1,14 +1,15 @@
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { useEffect } from "react";
+
+import { ModalCloseButton } from "../../components/ui";
 import {
   buttonMotionClass,
   getStatusModalDescription,
-  getStatusModalDotClassName,
-  selectedStatusOptionClassName,
   statusClassName,
   statusCorrectionOptions,
   statusDotClassName,
   statusModalLabel,
-  statusOptionClassName,
-  statusOptionTextClassName,
   statusTransitionOptions,
   type AppointmentStatusLabel,
   type StatusChangeDraft
@@ -32,100 +33,134 @@ export function StatusChangeModal({
   const options = draft.isCorrection
     ? statusCorrectionOptions[draft.currentStatus]
     : statusTransitionOptions[draft.currentStatus];
+  const startsAt = draft.appointment.startsAt
+    ? new Date(draft.appointment.startsAt)
+    : null;
+  const appointmentDate = startsAt
+    ? format(startsAt, "dd MMM yyyy", { locale: es })
+    : draft.appointment.day ?? "Hoy";
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isConfirming) onCancel();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isConfirming, onCancel]);
 
   return (
     <div
       aria-modal="true"
-      className="viewport-overlay modal-overlay-enter z-50 grid place-items-center bg-[rgba(32,24,54,0.68)] px-4 backdrop-blur-sm"
+      className="viewport-overlay modal-overlay-enter z-50 grid place-items-end bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm sm:place-items-center"
       role="dialog"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if (event.target === event.currentTarget) {
           if (!isConfirming) onCancel();
         }
       }}
     >
-      <div className="modal-panel-enter modal-scroll-panel w-full max-w-lg rounded-lg border border-[#d8cbbf] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.38)] ring-1 ring-[#ffffff]">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
-          {draft.isCorrection ? "Editar estado" : "Cambiar estado"}
-        </p>
-        <h2 className="mt-2 text-xl font-semibold">
-          {draft.isCorrection
-            ? "Corregí el estado del turno"
-            : "Elegí el nuevo estado del turno"}
-        </h2>
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-2xl rounded-2xl border border-[rgba(32,24,54,0.12)] bg-[#ffffff] p-5 shadow-[0_28px_90px_rgba(32,24,54,0.38)] sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
+              {draft.isCorrection ? "Editar estado" : "Cambiar estado"}
+            </p>
+            <h2 className="mt-4 text-2xl font-semibold leading-tight text-[var(--color-ink)] sm:text-3xl">
+              Cambiar estado del turno
+            </h2>
+          </div>
+          <ModalCloseButton disabled={isConfirming} onClick={onCancel} />
+        </div>
 
-        <div className="mt-4 rounded-md border border-[#ded0c2] bg-[#ffffff] p-3 text-sm">
-          <p className="font-medium">{draft.appointment.service}</p>
-          <p className="mt-1 text-[var(--color-muted-strong)]">
-            {draft.appointment.client} · {draft.appointment.day ?? "Hoy"} ·{" "}
-            {draft.appointment.time}
-          </p>
-          <p className="mt-3 text-xs text-[var(--color-muted)]">
-            Estado actual:
+        <section className="mt-6 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4">
+          <div className="flex items-start gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[rgba(253,134,6,0.12)] text-xl text-[var(--color-ink)]">
+              ✂
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-lg font-semibold text-[var(--color-ink)]">
+                {draft.appointment.service}
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                {draft.appointment.client} · {appointmentDate} · {draft.appointment.time}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-3 border-t border-[var(--color-border)] pt-4 text-sm">
+            <span className="text-[var(--color-muted-strong)]">Estado actual</span>
             <span
-              className={`ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
                 statusClassName[draft.currentStatus]
               }`}
             >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  draft.currentStatus === "Asistido" ||
-                  draft.currentStatus === "Cancelado" ||
-                  draft.currentStatus === "En espera" ||
-                  draft.currentStatus === "Pagado" ||
-                  draft.currentStatus === "No asistió"
-                    ? "bg-white"
-                    : statusDotClassName[draft.currentStatus]
-                }`}
-              />
+              <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
               {draft.currentStatus}
             </span>
-          </p>
-        </div>
+          </div>
+        </section>
 
-        <div className="mt-4 grid gap-2">
+        <section className="mt-5">
+          <h3 className="text-lg font-semibold text-[var(--color-muted-strong)]">
+            Seleccioná el nuevo estado
+          </h3>
+          <div className="mt-4 divide-y divide-[var(--color-border)]">
           {options.map((status) => (
             <button
               key={status}
               type="button"
               disabled={isConfirming}
               onClick={() => onSelectNextStatus(status)}
-              className={`rounded-md border px-3 py-3 text-left text-sm shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`group flex w-full items-center gap-4 px-3 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 ${
                 draft.nextStatus === status
-                  ? selectedStatusOptionClassName[status]
-                  : `${statusOptionClassName[status]} ${statusOptionTextClassName}`
-              } border-l-4`}
+                  ? "rounded-lg border border-[rgba(253,134,6,0.26)] bg-[rgba(253,134,6,0.045)]"
+                  : "border border-transparent hover:bg-[rgba(32,24,54,0.025)]"
+              }`}
             >
-              <span className="inline-flex items-center gap-2 font-medium">
-                <span
-                  className={`h-2 w-2 rounded-full ${getStatusModalDotClassName(status)}`}
-                />
-                {statusModalLabel[status]}
-              </span>
               <span
-                className={`ml-2 text-xs ${
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${
                   draft.nextStatus === status
-                    ? "text-[var(--color-muted-strong)]"
-                    : "text-[var(--color-muted)]"
+                    ? "border-[var(--color-accent)]"
+                    : "border-[rgba(32,24,54,0.28)]"
                 }`}
               >
-                {getStatusModalDescription(status)}
+                <span
+                  className={`h-3 w-3 rounded-full ${
+                    draft.nextStatus === status
+                      ? "bg-[var(--color-accent)]"
+                      : "bg-transparent"
+                  }`}
+                />
+              </span>
+              <span className="grid min-w-0 gap-1 sm:grid-cols-[150px_1fr] sm:items-center">
+                <span className="text-base font-semibold text-[var(--color-ink)]">
+                  {statusModalLabel[status]}
+                </span>
+                <span className="text-sm text-[var(--color-muted)]">
+                  {getStatusModalDescription(status)}
+                </span>
               </span>
             </button>
           ))}
-        </div>
+          </div>
+        </section>
 
-        <p className="mt-4 text-sm leading-6 text-[var(--color-muted-strong)]">
-          {draft.isCorrection
-            ? "Usá esta opción solo si hubo una confusión operativa. La corrección también deberá quedar registrada en auditoría."
-            : "El cambio se aplica solo después de confirmar. En backend este tipo de acción deberá registrarse en auditoría con usuario, organización y fecha."}
+        <p className="mt-5 flex items-start gap-3 border-t border-[var(--color-border)] pt-4 text-sm leading-6 text-[var(--color-muted)]">
+          <span
+            className={`mt-2 h-2 w-2 shrink-0 rounded-full ${
+              draft.nextStatus
+                ? statusDotClassName[draft.nextStatus]
+                : "bg-[var(--color-muted)]"
+            }`}
+          />
+          Este cambio quedará registrado en auditoría.
         </p>
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
             disabled={isConfirming}
             onClick={onCancel}
-            className={`rounded-md border border-[var(--color-border-strong)] px-4 py-2 text-sm font-medium text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonMotionClass}`}
+            className={`rounded-lg border border-[var(--color-border-strong)] bg-[#ffffff] px-7 py-3 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonMotionClass}`}
           >
             Cancelar
           </button>
@@ -133,13 +168,13 @@ export function StatusChangeModal({
             type="button"
             disabled={!draft.nextStatus || isConfirming}
             onClick={onConfirm}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${buttonMotionClass} ${
+            className={`rounded-lg px-7 py-3 text-sm font-semibold ${buttonMotionClass} ${
               draft.nextStatus
-                ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
-                : "cursor-not-allowed bg-[#ddd6ca] text-[var(--color-muted)]"
+                ? "bg-[var(--color-accent)] text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(253,134,6,0.22)]"
+                : "cursor-not-allowed bg-[rgba(32,24,54,0.12)] text-[var(--color-muted)]"
             }`}
           >
-            {isConfirming ? "Confirmando..." : "Confirmar cambio"}
+            {isConfirming ? "Guardando..." : "Guardar cambio"}
           </button>
         </div>
       </div>

@@ -36,7 +36,7 @@ export function SummaryFilters({
   scheduleView
 }: SummaryFiltersProps) {
   return (
-    <div className="border-b border-[var(--color-border)] bg-[rgba(240,234,217,0.38)] px-4 py-3">
+    <div className="border-b border-[var(--color-border)] bg-[#ffffff] px-4 py-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">

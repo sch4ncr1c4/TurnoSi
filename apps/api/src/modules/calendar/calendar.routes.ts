@@ -29,8 +29,8 @@ export const calendarRouter = Router();
 
 calendarRouter.get("/notifications/reservations", async (request, response) => {
   const tenant = request.tenant!;
-  const states = await prisma.$queryRaw<Array<{ seenUntil: Date }>>`
-    SELECT "seenUntil"
+  const states = await prisma.$queryRaw<Array<{ seenUntil: string | null }>>`
+    SELECT to_char("seenUntil", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "seenUntil"
     FROM "ReservationNotificationState"
     WHERE "userId" = ${tenant.userId}
       AND "organizationId" = ${tenant.organizationId}
@@ -38,7 +38,7 @@ calendarRouter.get("/notifications/reservations", async (request, response) => {
   `;
 
   response.json(ok({
-    seenUntil: states[0]?.seenUntil?.toISOString() ?? null
+    seenUntil: states[0]?.seenUntil ?? null
   }));
 });
 
@@ -46,6 +46,7 @@ calendarRouter.put("/notifications/reservations", authRateLimit, async (request,
   const tenant = request.tenant!;
   const data = reservationNotificationSeenSchema.parse(request.body);
   const seenUntil = new Date(data.seenUntil);
+  const seenUntilIso = seenUntil.toISOString();
   const stateId = randomUUID();
 
   await prisma.$executeRaw`
@@ -61,7 +62,7 @@ calendarRouter.put("/notifications/reservations", authRateLimit, async (request,
       ${stateId},
       ${tenant.userId},
       ${tenant.organizationId},
-      ${seenUntil},
+      ${seenUntilIso}::timestamp,
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
     )
@@ -74,7 +75,15 @@ calendarRouter.put("/notifications/reservations", authRateLimit, async (request,
       "updatedAt" = CURRENT_TIMESTAMP
   `;
 
-  response.json(ok({ seenUntil: seenUntil.toISOString() }));
+  const states = await prisma.$queryRaw<Array<{ seenUntil: string | null }>>`
+    SELECT to_char("seenUntil", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "seenUntil"
+    FROM "ReservationNotificationState"
+    WHERE "userId" = ${tenant.userId}
+      AND "organizationId" = ${tenant.organizationId}
+    LIMIT 1
+  `;
+
+  response.json(ok({ seenUntil: states[0]?.seenUntil ?? seenUntilIso }));
 });
 
 calendarRouter.get("/appointments", async (request, response) => {
@@ -252,7 +261,7 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
         notes: data.notes,
         startsAt,
         endsAt,
-        status: "confirmed",
+        status: data.depositPaid ? "confirmed" : "pending",
         ...(context.organization.depositEnabled && context.organization.depositAmountCents
           ? {
               depositPayment: {
@@ -338,4 +347,95 @@ calendarRouter.patch("/appointments/:appointmentId/status", authRateLimit, async
   });
 
   response.json(ok({ updated: true }));
+});
+
+calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLimit, async (request, response) => {
+  const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+
+  const appointment = await prisma.appointment.findFirst({
+    where: {
+      id: appointmentId,
+      organizationId: tenant.organizationId,
+      deletedAt: null
+    },
+    select: {
+      id: true,
+      customerId: true,
+      status: true,
+      depositPayment: {
+        select: {
+          id: true,
+          amountCents: true
+        }
+      },
+      organization: {
+        select: {
+          depositAmountCents: true
+        }
+      }
+    }
+  });
+  if (!appointment) throw new AppError(404, "NOT_FOUND", "Appointment not found");
+
+  const amountCents =
+    appointment.depositPayment?.amountCents ??
+    appointment.organization.depositAmountCents;
+  if (!amountCents) {
+    throw new AppError(
+      400,
+      "DEPOSIT_NOT_CONFIGURED",
+      "Deposit amount is not configured"
+    );
+  }
+
+  const depositPayment = await prisma.$transaction(async (transaction) => {
+    const paidAt = new Date();
+    await transaction.appointment.update({
+      where: { id: appointment.id },
+      data: { status: "confirmed" }
+    });
+    if (appointment.status === "no_show") {
+      await transaction.customer.updateMany({
+        where: { id: appointment.customerId, noShowCount: { gt: 0 } },
+        data: { noShowCount: { decrement: 1 } }
+      });
+    }
+
+    if (appointment.depositPayment) {
+      return transaction.appointmentDepositPayment.update({
+        where: { id: appointment.depositPayment.id },
+        data: {
+          status: "approved",
+          paidAt,
+          statusDetail: "manual_payment"
+        },
+        select: { status: true, amountCents: true, paidAt: true }
+      });
+    }
+
+    return transaction.appointmentDepositPayment.create({
+      data: {
+        organizationId: tenant.organizationId,
+        appointmentId: appointment.id,
+        amountCents,
+        status: "approved",
+        paidAt,
+        statusDetail: "manual_payment"
+      },
+      select: { status: true, amountCents: true, paidAt: true }
+    });
+  });
+
+  await auditLog({
+    organizationId: tenant.organizationId,
+    userId: request.auth!.sub,
+    action: "appointment.deposit_paid",
+    entityType: "Appointment",
+    entityId: appointmentId,
+    metadata: { amountCents }
+  });
+
+  response.json(ok({ status: "confirmed", depositPayment }));
 });
