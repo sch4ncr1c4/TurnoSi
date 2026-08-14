@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
+import type { Prisma } from "@prisma/client";
 
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
@@ -18,14 +19,55 @@ import {
 } from "../public-booking/public-booking.routes.js";
 import {
   calendarAppointmentParamsSchema,
+  calendarIndicatorsQuerySchema,
   calendarQuerySchema,
   calendarRecentQuerySchema,
   createManualCalendarAppointmentSchema,
+  markCalendarDepositPaymentSchema,
+  rescheduleCalendarAppointmentSchema,
   reservationNotificationSeenSchema,
   updateCalendarStatusSchema
 } from "./calendar.schemas.js";
 
 export const calendarRouter = Router();
+
+function calendarAppointmentPayload(appointment: Prisma.AppointmentGetPayload<{
+  include: {
+    customer: true;
+    service: true;
+    depositPayment: true;
+    assignedUser: {
+      select: { firstName: true; lastName: true; email: true };
+    };
+  };
+}>) {
+  return {
+    id: appointment.id,
+    serviceId: appointment.serviceId,
+    branchId: appointment.branchId,
+    assigneeId: appointment.assignedUserId,
+    startsAt: appointment.startsAt,
+    endsAt: appointment.endsAt,
+    createdAt: appointment.createdAt,
+    service: appointment.service.name,
+    client: appointment.customer.fullName,
+    customerPhone: appointment.customer.phone,
+    assignee: appointment.assignedUser
+      ? [appointment.assignedUser.firstName, appointment.assignedUser.lastName]
+          .filter(Boolean).join(" ") || appointment.assignedUser.email
+      : "Sin asignar",
+    status: appointment.status,
+    channel: appointment.channel,
+    depositPayment: appointment.depositPayment
+      ? {
+          status: appointment.depositPayment.status,
+          amountCents: appointment.depositPayment.amountCents,
+          method: appointment.depositPayment.method,
+          paidAt: appointment.depositPayment.paidAt
+        }
+      : null
+  };
+}
 
 calendarRouter.get("/notifications/reservations", async (request, response) => {
   const tenant = request.tenant!;
@@ -91,46 +133,74 @@ calendarRouter.get("/appointments", async (request, response) => {
   const tenant = request.tenant!;
   await expireStaleDepositHolds(tenant.organizationId);
 
+  const search = query.search?.trim();
+  const searchDigits = search?.replace(/\D/g, "");
+  const from = query.day ? new Date(`${query.day}T00:00:00.000Z`) : new Date(query.from);
+  const to = query.day
+    ? new Date(new Date(`${query.day}T00:00:00.000Z`).getTime() + 24 * 60 * 60 * 1000)
+    : new Date(query.to);
+  const andWhere: Prisma.AppointmentWhereInput[] = [visibleOperationalAppointmentWhere];
+
+  if (search) {
+    andWhere.push({
+      OR: [
+        { customer: { fullName: { contains: search, mode: "insensitive" } } },
+        { customer: { email: { contains: search, mode: "insensitive" } } },
+        { customer: { phone: { contains: search, mode: "insensitive" } } },
+        ...(searchDigits ? [{ customer: { phone: { contains: searchDigits } } }] : []),
+        { service: { name: { contains: search, mode: "insensitive" } } },
+        { assignedUser: { firstName: { contains: search, mode: "insensitive" } } },
+        { assignedUser: { lastName: { contains: search, mode: "insensitive" } } },
+        { assignedUser: { email: { contains: search, mode: "insensitive" } } }
+      ]
+    });
+  }
+
+  if (query.status === "paid_deposit") {
+    andWhere.push({
+      status: "confirmed",
+      depositPayment: { is: { status: "approved" } }
+    });
+  } else if (query.status) {
+    andWhere.push({ status: query.status });
+  }
+
+  const where: Prisma.AppointmentWhereInput = {
+    organizationId: tenant.organizationId,
+    deletedAt: null,
+    ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {}),
+    startsAt: { gte: from, lt: to },
+    AND: andWhere
+  };
+
+  const include = {
+    customer: true,
+    service: true,
+    depositPayment: true,
+    assignedUser: {
+      select: { firstName: true, lastName: true, email: true }
+    }
+  } satisfies Prisma.AppointmentInclude;
+
   const appointments = await prisma.appointment.findMany({
-    where: {
-      organizationId: tenant.organizationId,
-      deletedAt: null,
-      ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {}),
-      startsAt: { gte: new Date(query.from), lt: new Date(query.to) },
-      AND: [visibleOperationalAppointmentWhere]
-    },
-    include: {
-      customer: true,
-      service: true,
-      depositPayment: true,
-      assignedUser: {
-        select: { firstName: true, lastName: true, email: true }
-      }
-    },
-    orderBy: { startsAt: "asc" }
+    where,
+    include,
+    orderBy: { startsAt: "asc" },
+    ...(query.limit ? { skip: query.offset, take: query.limit } : {})
   });
 
-  response.json(ok(appointments.map((appointment) => ({
-    id: appointment.id,
-    startsAt: appointment.startsAt,
-    endsAt: appointment.endsAt,
-    createdAt: appointment.createdAt,
-    service: appointment.service.name,
-    client: appointment.customer.fullName,
-    assignee: appointment.assignedUser
-      ? [appointment.assignedUser.firstName, appointment.assignedUser.lastName]
-          .filter(Boolean).join(" ") || appointment.assignedUser.email
-      : "Sin asignar",
-    status: appointment.status,
-    channel: appointment.channel,
-    depositPayment: appointment.depositPayment
-      ? {
-          status: appointment.depositPayment.status,
-          amountCents: appointment.depositPayment.amountCents,
-          paidAt: appointment.depositPayment.paidAt
-        }
-      : null
-  }))));
+  if (query.limit) {
+    const total = await prisma.appointment.count({ where });
+    response.json(ok({
+      items: appointments.map(calendarAppointmentPayload),
+      total,
+      limit: query.limit,
+      offset: query.offset
+    }));
+    return;
+  }
+
+  response.json(ok(appointments.map(calendarAppointmentPayload)));
 });
 
 calendarRouter.get("/appointments/recent", async (request, response) => {
@@ -165,11 +235,15 @@ calendarRouter.get("/appointments/recent", async (request, response) => {
 
   response.json(ok(appointments.map((appointment) => ({
     id: appointment.id,
+    serviceId: appointment.serviceId,
+    branchId: appointment.branchId,
+    assigneeId: appointment.assignedUserId,
     startsAt: appointment.startsAt,
     endsAt: appointment.endsAt,
     createdAt: appointment.createdAt,
     service: appointment.service.name,
     client: appointment.customer.fullName,
+    customerPhone: appointment.customer.phone,
     assignee: appointment.assignedUser
       ? [appointment.assignedUser.firstName, appointment.assignedUser.lastName]
           .filter(Boolean).join(" ") || appointment.assignedUser.email
@@ -180,10 +254,39 @@ calendarRouter.get("/appointments/recent", async (request, response) => {
       ? {
           status: appointment.depositPayment.status,
           amountCents: appointment.depositPayment.amountCents,
+          method: appointment.depositPayment.method,
           paidAt: appointment.depositPayment.paidAt
         }
       : null
   }))));
+});
+
+calendarRouter.get("/appointments/indicators", async (request, response) => {
+  const query = calendarIndicatorsQuerySchema.parse(request.query);
+  const tenant = request.tenant!;
+
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      organizationId: tenant.organizationId,
+      deletedAt: null,
+      ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {}),
+      startsAt: { gte: new Date(query.from), lt: new Date(query.to) },
+      AND: [visibleOperationalAppointmentWhere]
+    },
+    select: { startsAt: true }
+  });
+
+  const counts = new Map<string, number>();
+  for (const appointment of appointments) {
+    const date = appointment.startsAt.toISOString().slice(0, 10);
+    counts.set(date, (counts.get(date) ?? 0) + 1);
+  }
+
+  response.json(ok(
+    [...counts.entries()]
+      .map(([date, count]) => ({ date, count }))
+      .sort((first, second) => first.date.localeCompare(second.date))
+  ));
 });
 
 calendarRouter.post("/appointments/manual", authRateLimit, async (request, response) => {
@@ -268,6 +371,7 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
                 create: {
                   organizationId: tenant.organizationId,
                   amountCents: context.organization.depositAmountCents,
+                  method: data.depositPaid ? "cash" : null,
                   status: data.depositPaid ? "approved" : "pending",
                   paidAt: data.depositPaid ? new Date() : null,
                   statusDetail: data.depositPaid ? "manual_payment" : "manual_unpaid"
@@ -296,11 +400,49 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
       depositPayment: appointment.depositPayment
         ? {
             status: appointment.depositPayment.status,
-            amountCents: appointment.depositPayment.amountCents
+            amountCents: appointment.depositPayment.amountCents,
+            method: appointment.depositPayment.method
           }
         : null
     })
   );
+});
+
+calendarRouter.get("/appointments/:appointmentId/reschedule-slots", async (request, response) => {
+  const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
+  const tenant = request.tenant!;
+  const appointment = await prisma.appointment.findFirst({
+    where: {
+      id: appointmentId,
+      organizationId: tenant.organizationId,
+      deletedAt: null,
+      ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {})
+    },
+    select: {
+      id: true,
+      serviceId: true,
+      branchId: true,
+      assignedUserId: true,
+      organization: {
+        select: { slug: true }
+      }
+    }
+  });
+  if (!appointment) throw new AppError(404, "NOT_FOUND", "Appointment not found");
+
+  const result = await calculateSlots(
+    appointment.organization.slug,
+    appointment.serviceId,
+    30,
+    appointment.branchId ?? undefined,
+    appointment.assignedUserId ?? undefined,
+    appointment.id
+  );
+
+  response.json(ok({
+    days: result.days,
+    suggestedAssigneeId: result.suggestedAssignee?.userId ?? null
+  }));
 });
 
 calendarRouter.patch("/appointments/:appointmentId/status", authRateLimit, async (request, response) => {
@@ -349,8 +491,71 @@ calendarRouter.patch("/appointments/:appointmentId/status", authRateLimit, async
   response.json(ok({ updated: true }));
 });
 
+calendarRouter.patch("/appointments/:appointmentId/reschedule", authRateLimit, async (request, response) => {
+  const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
+  const data = rescheduleCalendarAppointmentSchema.parse(request.body);
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+
+  const appointment = await prisma.appointment.findFirst({
+    where: {
+      id: appointmentId,
+      organizationId: tenant.organizationId,
+      deletedAt: null,
+      ...(tenant.role === "member" ? { assignedUserId: tenant.userId } : {})
+    },
+    include: {
+      service: { select: { durationMinutes: true } },
+      organization: { select: { slug: true } }
+    }
+  });
+  if (!appointment) throw new AppError(404, "NOT_FOUND", "Appointment not found");
+
+  const startsAt = new Date(data.startsAt);
+  const sameSlot = startsAt.getTime() === appointment.startsAt.getTime();
+  const context = await calculateSlots(
+    appointment.organization.slug,
+    appointment.serviceId,
+    30,
+    appointment.branchId ?? undefined,
+    appointment.assignedUserId ?? undefined,
+    appointment.id
+  );
+  const slotIsAvailable =
+    sameSlot ||
+    context.days.some((day) =>
+      day.slots.some((slot) => slot.startsAt === data.startsAt)
+    );
+  if (!slotIsAvailable) {
+    throw new AppError(409, "SLOT_UNAVAILABLE", "Selected slot is no longer available");
+  }
+
+  const endsAt = new Date(
+    startsAt.getTime() + appointment.service.durationMinutes * 60_000
+  );
+  await prisma.appointment.update({
+    where: { id: appointment.id },
+    data: { startsAt, endsAt }
+  });
+
+  await auditLog({
+    organizationId: tenant.organizationId,
+    userId: request.auth!.sub,
+    action: "appointment.rescheduled",
+    entityType: "Appointment",
+    entityId: appointmentId,
+    metadata: {
+      previousStartsAt: appointment.startsAt,
+      startsAt
+    }
+  });
+
+  response.json(ok({ startsAt, endsAt }));
+});
+
 calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLimit, async (request, response) => {
   const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
+  const data = markCalendarDepositPaymentSchema.parse(request.body ?? {});
   const tenant = request.tenant!;
   requireEditor(tenant.role);
 
@@ -367,7 +572,8 @@ calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLim
       depositPayment: {
         select: {
           id: true,
-          amountCents: true
+          amountCents: true,
+          method: true
         }
       },
       organization: {
@@ -380,6 +586,7 @@ calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLim
   if (!appointment) throw new AppError(404, "NOT_FOUND", "Appointment not found");
 
   const amountCents =
+    data.amountCents ??
     appointment.depositPayment?.amountCents ??
     appointment.organization.depositAmountCents;
   if (!amountCents) {
@@ -408,10 +615,12 @@ calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLim
         where: { id: appointment.depositPayment.id },
         data: {
           status: "approved",
+          amountCents,
+          method: data.method,
           paidAt,
           statusDetail: "manual_payment"
         },
-        select: { status: true, amountCents: true, paidAt: true }
+        select: { status: true, amountCents: true, method: true, paidAt: true }
       });
     }
 
@@ -420,11 +629,12 @@ calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLim
         organizationId: tenant.organizationId,
         appointmentId: appointment.id,
         amountCents,
+        method: data.method,
         status: "approved",
         paidAt,
         statusDetail: "manual_payment"
       },
-      select: { status: true, amountCents: true, paidAt: true }
+      select: { status: true, amountCents: true, method: true, paidAt: true }
     });
   });
 
@@ -434,8 +644,72 @@ calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLim
     action: "appointment.deposit_paid",
     entityType: "Appointment",
     entityId: appointmentId,
-    metadata: { amountCents }
+    metadata: { amountCents, method: data.method }
   });
 
   response.json(ok({ status: "confirmed", depositPayment }));
+});
+
+calendarRouter.delete("/appointments/:appointmentId/deposit-payment", authRateLimit, async (request, response) => {
+  const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+
+  const appointment = await prisma.appointment.findFirst({
+    where: {
+      id: appointmentId,
+      organizationId: tenant.organizationId,
+      deletedAt: null
+    },
+    select: {
+      id: true,
+      depositPayment: {
+        select: {
+          id: true,
+          amountCents: true,
+          checkoutUrl: true,
+          mercadoPagoPreferenceId: true,
+          mercadoPagoPaymentId: true,
+          method: true,
+          status: true
+        }
+      }
+    }
+  });
+  if (!appointment) throw new AppError(404, "NOT_FOUND", "Appointment not found");
+  if (!appointment.depositPayment) {
+    response.json(ok({ depositPayment: null }));
+    return;
+  }
+  if (
+    appointment.depositPayment.mercadoPagoPaymentId ||
+    appointment.depositPayment.mercadoPagoPreferenceId ||
+    appointment.depositPayment.checkoutUrl ||
+    appointment.depositPayment.method === "mercadopago"
+  ) {
+    throw new AppError(
+      409,
+      "EXTERNAL_PAYMENT_CANNOT_BE_CLEARED",
+      "Online deposit payments cannot be cleared manually"
+    );
+  }
+
+  await prisma.appointmentDepositPayment.delete({
+    where: { id: appointment.depositPayment.id }
+  });
+
+  await auditLog({
+    organizationId: tenant.organizationId,
+    userId: request.auth!.sub,
+    action: "appointment.deposit_cleared",
+    entityType: "Appointment",
+    entityId: appointmentId,
+    metadata: {
+      amountCents: appointment.depositPayment.amountCents,
+      method: appointment.depositPayment.method,
+      previousStatus: appointment.depositPayment.status
+    }
+  });
+
+  response.json(ok({ depositPayment: null }));
 });

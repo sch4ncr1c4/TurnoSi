@@ -213,9 +213,22 @@ export function DashboardSidebar({
           onOpenManualAppointment();
           setIsMobileMenuOpen(false);
         }}
-        className="dashboard-sidebar-new-turn landing-cta mt-6 w-full shrink-0 rounded-md bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 md:mt-5"
+        className="dashboard-sidebar-new-turn landing-cta mt-6 inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-3 text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 md:mt-5"
       >
-        + Nuevo turno
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-4 w-4 shrink-0 text-white"
+        >
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
+        </svg>
+        <span>Nuevo turno</span>
       </button>
 
       <div className="dashboard-sidebar-footer mt-6 border-t border-white/12 pt-5 md:mt-auto md:shrink-0 md:pt-5">

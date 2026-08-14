@@ -23,6 +23,7 @@ enum BookingChannel {
 enum AppointmentStatus {
   pending
   confirmed
+  paid
   completed
   canceled
   no_show
@@ -65,6 +66,13 @@ enum AppointmentPaymentStatus {
   refunded
   charged_back
   unknown
+}
+
+enum AppointmentPaymentMethod {
+  mercadopago
+  cash
+  bank_transfer
+  other
 }
 
 model User {
@@ -166,6 +174,7 @@ model Branch {
   organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   memberships            MembershipBranch[]
   appointments           Appointment[]
+  services               Service[]
   resources              Resource[]
   availabilityRules      AvailabilityRule[]
   availabilityExceptions AvailabilityException[]
@@ -314,6 +323,7 @@ model ServiceCategory {
 model Service {
   id                  String        @id @default(cuid())
   organizationId      String
+  branchId            String?
   createdByUserId     String?
   name                String
   slug                String
@@ -327,6 +337,7 @@ model Service {
   isActive            Boolean       @default(true)
   isOnlineBookable    Boolean       @default(true)
   organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch              Branch?       @relation(fields: [branchId], references: [id], onDelete: SetNull)
   createdByUser       User?         @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   appointments        Appointment[]
   resourceLinks       ServiceResource[]
@@ -335,6 +346,7 @@ model Service {
 
   @@unique([organizationId, slug])
   @@index([organizationId, isActive])
+  @@index([organizationId, branchId])
 }
 
 model Resource {
@@ -415,6 +427,7 @@ model AppointmentDepositPayment {
   status                     AppointmentPaymentStatus @default(pending)
   amountCents                Int
   currencyId                 String                   @default("ARS")
+  method                     AppointmentPaymentMethod?
   checkoutUrl                String?
   statusDetail               String?
   paidAt                     DateTime?

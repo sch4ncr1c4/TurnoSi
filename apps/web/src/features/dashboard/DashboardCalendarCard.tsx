@@ -6,6 +6,9 @@ import {
 } from "./dashboard.calendar-utils";
 
 type DashboardCalendarCardProps = {
+  appointmentDays?: string[];
+  disablePreviousMonth?: boolean;
+  minDate?: Date;
   onNextMonth?: () => void;
   onPreviousMonth?: () => void;
   onSelectDate?: (date: Date) => void;
@@ -13,12 +16,16 @@ type DashboardCalendarCardProps = {
 };
 
 export function DashboardCalendarCard({
+  appointmentDays = [],
+  disablePreviousMonth = false,
+  minDate,
   onNextMonth,
   onPreviousMonth,
   onSelectDate,
   selectedDate
 }: DashboardCalendarCardProps) {
   const calendarDays = getMonthCalendarDays(selectedDate);
+  const appointmentDaySet = new Set(appointmentDays);
 
   return (
     <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
@@ -28,8 +35,10 @@ export function DashboardCalendarCard({
           {onPreviousMonth && (
             <button
               type="button"
+              disabled={disablePreviousMonth}
               onClick={onPreviousMonth}
-              className="rounded px-1.5 py-1 text-[var(--color-muted-strong)] hover:bg-white/60"
+              className="rounded px-1.5 py-1 text-[var(--color-muted-strong)] hover:bg-white/60 disabled:cursor-not-allowed disabled:opacity-35"
+              aria-label="Mes anterior"
             >
               ‹
             </button>
@@ -60,12 +69,18 @@ export function DashboardCalendarCard({
         {calendarDays.map((day) => {
           const isActive = isSameDay(day, selectedDate);
           const isMuted = !isSameMonth(day, selectedDate);
-          const hasAppointments = isSameMonth(day, selectedDate) && !isActive;
+          const isBeforeMinDate = minDate ? day < minDate : false;
+          const hasAppointments =
+            isSameMonth(day, selectedDate) &&
+            !isActive &&
+            appointmentDaySet.has(format(day, "yyyy-MM-dd"));
           const className = `relative mx-auto flex h-7 w-7 items-center justify-center rounded-full font-medium ${
             isActive
               ? "bg-[var(--color-ink)] text-white"
               : isMuted
                 ? "text-[var(--color-muted)]/45"
+                : isBeforeMinDate
+                  ? "text-[var(--color-muted)]/35"
                 : "text-[var(--color-ink)]"
           }`;
           const content = (
@@ -85,8 +100,9 @@ export function DashboardCalendarCard({
               <button
                 key={day.toISOString()}
                 type="button"
+                disabled={isBeforeMinDate}
                 onClick={() => onSelectDate(day)}
-                className={className}
+                className={`${className} disabled:cursor-not-allowed`}
               >
                 {content}
               </button>

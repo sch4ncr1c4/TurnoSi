@@ -70,7 +70,7 @@ function getAgendaEventClassName(tone: AgendaTone) {
 function getAgendaTone(status: AppointmentStatusLabel): AgendaTone {
   if (status === "En espera") return "pending";
   if (status === "Asistido") return "attended";
-  if (status === "Pagado") return "paid";
+  if (status === "Señado" || status === "Pagado") return "paid";
   if (status === "Cancelado") return "cancelled";
   if (status === "No asistió") return "noShow";
   return "confirmed";
@@ -78,6 +78,10 @@ function getAgendaTone(status: AppointmentStatusLabel): AgendaTone {
 
 function getStatusBadgeClassName(status: AppointmentStatusLabel) {
   if (status === "Pagado") {
+    return "bg-[#dcf5e3] text-[#1b6c3d] ring-[#9bc7a4]";
+  }
+
+  if (status === "Señado") {
     return "bg-[#e5f4e8] text-[#1f6b35] ring-[#b9dfc0]";
   }
 
@@ -122,10 +126,12 @@ function sentenceCase(value: string) {
 
 type DashboardAgendaViewProps = {
   appointments: DashboardAppointment[];
+  disablePreviousMonth?: boolean;
   filteredAppointments: DashboardAppointment[];
+  getAppointmentStatus: (appointment: DashboardAppointment) => AppointmentStatusLabel;
+  minDate?: Date;
   onNextMonth: () => void;
   onNextPeriod: () => void;
-  onSearchTermChange: (value: string) => void;
   onToday: () => void;
   onPreviousMonth: () => void;
   onPreviousPeriod: () => void;
@@ -134,6 +140,7 @@ type DashboardAgendaViewProps = {
     currentStatus: AppointmentStatusLabel,
     isCorrection?: boolean
   ) => void;
+  onRequestReschedule: (appointment: DashboardAppointment) => void;
   onSelectDate: (date: Date) => void;
   onSelectScheduleView: (view: ScheduleView) => void;
   searchTerm: string;
@@ -143,14 +150,17 @@ type DashboardAgendaViewProps = {
 
 export function DashboardAgendaView({
   appointments,
+  disablePreviousMonth = false,
   filteredAppointments,
+  getAppointmentStatus,
+  minDate,
   onNextMonth,
   onNextPeriod,
-  onSearchTermChange,
   onToday,
   onPreviousMonth,
   onPreviousPeriod,
   onRequestStatusChange,
+  onRequestReschedule,
   onSelectDate,
   onSelectScheduleView,
   searchTerm,
@@ -159,6 +169,23 @@ export function DashboardAgendaView({
 }: DashboardAgendaViewProps) {
   const [selectedAppointment, setSelectedAppointment] =
     useState<DashboardAppointment | null>(null);
+  function selectAppointment(appointment: DashboardAppointment | null) {
+    setSelectedAppointment(
+      appointment
+        ? {
+            ...appointment,
+            status: getAppointmentStatus(appointment)
+          }
+        : null
+    );
+  }
+  const appointmentDays = Array.from(
+    new Set(
+      appointments
+        .map((appointment) => appointment.day)
+        .filter((day): day is string => Boolean(day))
+    )
+  );
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const agendaHours = getAgendaHours(appointments);
   const agendaEvents = appointments
@@ -214,13 +241,11 @@ export function DashboardAgendaView({
         selectedDate={selectedDate}
         onNextMonth={onNextMonth}
         onNextPeriod={onNextPeriod}
-        onSearchTermChange={onSearchTermChange}
         onToday={onToday}
         onPreviousMonth={onPreviousMonth}
         onPreviousPeriod={onPreviousPeriod}
         onSelectDate={onSelectDate}
         onSelectScheduleView={onSelectScheduleView}
-        searchTerm={searchTerm}
         scheduleView={scheduleView}
       />
     );
@@ -249,26 +274,6 @@ export function DashboardAgendaView({
             scheduleView={scheduleView}
           />
         </div>
-        <div className="border-b border-[var(--color-border)] bg-[#ffffff] px-3 py-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-start">
-            <label className="w-full min-w-0 lg:max-w-xl xl:max-w-2xl">
-              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
-                Buscar turno
-              </span>
-              <input
-                value={searchTerm}
-                onChange={(event) => onSearchTermChange(event.target.value)}
-                placeholder="Cliente, servicio, hora o responsable"
-                className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm text-[var(--color-ink)] outline-none"
-              />
-            </label>
-            <div className="h-10 rounded-md border border-[var(--color-border)] bg-white/60 px-3 py-2 text-sm text-[var(--color-muted-strong)] lg:min-w-[170px]">
-              <span className="font-semibold text-[var(--color-ink)]">{sortedMatches.length}</span>{" "}
-              {sortedMatches.length === 1 ? "turno" : "turnos"} en esta vista
-            </div>
-          </div>
-        </div>
-
         {sortedMatches.length === 0 && (
           <div className="border-b border-[var(--color-border)] bg-white/42 px-3 py-3">
             <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[#ffffff] px-4 py-3 text-sm text-[var(--color-muted-strong)]">
@@ -334,7 +339,7 @@ export function DashboardAgendaView({
                                 key={event.id}
                                 type="button"
                                 onClick={() =>
-                                  setSelectedAppointment(
+                                  selectAppointment(
                                     appointments.find(
                                       (appointment) => appointment.id === event.id
                                     ) ?? null
@@ -392,6 +397,9 @@ export function DashboardAgendaView({
 
       <aside className="min-w-0 space-y-2 xl:sticky xl:top-4 xl:self-start">
         <DashboardCalendarCard
+          appointmentDays={appointmentDays}
+          disablePreviousMonth={disablePreviousMonth}
+          minDate={minDate}
           onNextMonth={onNextMonth}
           onPreviousMonth={onPreviousMonth}
           onSelectDate={onSelectDate}
@@ -399,7 +407,7 @@ export function DashboardAgendaView({
         />
         <AgendaMatchesCard
           appointments={sortedMatches}
-          onSelectAppointment={setSelectedAppointment}
+          onSelectAppointment={selectAppointment}
           scheduleView={scheduleView}
           selectedDate={selectedDate}
         />
@@ -410,10 +418,7 @@ export function DashboardAgendaView({
         appointment={selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
         onRequestReschedule={() => {
-          if (selectedAppointment.startsAt) {
-            onSelectDate(new Date(selectedAppointment.startsAt));
-            onSelectScheduleView("day");
-          }
+          onRequestReschedule(selectedAppointment);
           setSelectedAppointment(null);
         }}
         onRequestStatusChange={() => {
@@ -452,33 +457,40 @@ function getMonthEventCount(day: Date, appointments: DashboardAppointment[]) {
 
 function AgendaMonthView({
   appointments,
+  disablePreviousMonth = false,
+  minDate,
   onNextMonth,
   onNextPeriod,
-  onSearchTermChange,
   onToday,
   onPreviousMonth,
   onPreviousPeriod,
   onSelectDate,
   onSelectScheduleView,
-  searchTerm,
   scheduleView,
   selectedDate
 }: {
   appointments: DashboardAppointment[];
+  disablePreviousMonth?: boolean;
+  minDate?: Date;
   onNextMonth: () => void;
   onNextPeriod: () => void;
-  onSearchTermChange: (value: string) => void;
   onToday: () => void;
   onPreviousMonth: () => void;
   onPreviousPeriod: () => void;
   onSelectDate: (date: Date) => void;
   onSelectScheduleView: (view: ScheduleView) => void;
-  searchTerm: string;
   scheduleView: ScheduleView;
   selectedDate: Date;
 }) {
   const [showAllMonthItems, setShowAllMonthItems] = useState(false);
   const calendarDays = getMonthCalendarDays(selectedDate);
+  const appointmentDays = Array.from(
+    new Set(
+      appointments
+        .map((appointment) => appointment.day)
+        .filter((day): day is string => Boolean(day))
+    )
+  );
   const mobileMonthItems = getMobileMonthItems(selectedDate, appointments);
   const visibleMobileMonthItems = showAllMonthItems
     ? mobileMonthItems
@@ -508,20 +520,6 @@ function AgendaMonthView({
             />
           </div>
         </div>
-        <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[#ffffff] px-3 py-3">
-          <label className="block w-full lg:max-w-xl xl:max-w-2xl">
-            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
-              Buscar turno
-            </span>
-            <input
-              value={searchTerm}
-              onChange={(event) => onSearchTermChange(event.target.value)}
-              placeholder="Cliente, servicio, hora o responsable"
-              className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm text-[var(--color-ink)] outline-none"
-            />
-          </label>
-        </div>
-
         <div className="mt-3 space-y-2 md:hidden">
           {visibleMobileMonthItems.map(({ count, date }) => (
             <button
@@ -637,6 +635,9 @@ function AgendaMonthView({
 
       <aside className="min-w-0 space-y-2 xl:sticky xl:top-4 xl:self-start">
         <DashboardCalendarCard
+          appointmentDays={appointmentDays}
+          disablePreviousMonth={disablePreviousMonth}
+          minDate={minDate}
           onNextMonth={onNextMonth}
           onPreviousMonth={onPreviousMonth}
           onSelectDate={onSelectDate}

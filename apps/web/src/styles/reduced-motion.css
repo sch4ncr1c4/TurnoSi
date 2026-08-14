@@ -1,0 +1,54 @@
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay-enter,
+  .modal-panel-enter,
+  .dashboard-sidebar-plan-button::before {
+    animation: none;
+  }
+
+  .booking-hero,
+  .booking-hero-copy,
+  .booking-gallery,
+  .booking-stepper,
+  .booking-panel-enter,
+  .booking-success,
+  .landing-rise,
+  .landing-feature-card,
+  .landing-reservation-toast,
+  .landing-product-card,
+  .landing-hero-shell::before,
+  .landing-hero-shell::after,
+  .landing-product-scene::before,
+  .landing-product-scene::after,
+  .landing-mockup-row,
+  .landing-scroll-reveal {
+    animation: none;
+  }
+
+  .booking-choice,
+  .booking-date-card,
+  .booking-time-chip,
+  .booking-step-button,
+  .landing-mockup,
+  .landing-mockup-row,
+  .landing-link::after,
+  .landing-cta::before,
+  .landing-scroll-reveal {
+    transition: none;
+  }
+
+  .landing-scroll-reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .booking-skeleton::after {
+    animation: none;
+  }
+
+  .dashboard-reservation-toast,
+  .dashboard-reservation-toast-out {
+    animation: none;
+  }
+
+}
+

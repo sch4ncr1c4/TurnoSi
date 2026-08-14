@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useEffect } from "react";
 
+import trashIcon from "../../components/assets/icons/actions/trash.svg";
 import { ModalCloseButton } from "../../components/ui";
 import {
   buttonMotionClass,
@@ -20,6 +21,10 @@ type StatusChangeModalProps = {
   isConfirming?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  onClearDepositPayment?: () => void;
+  onDepositPaymentChange: (
+    updates: Partial<Pick<StatusChangeDraft, "depositAmount" | "depositMethod">>
+  ) => void;
   onSelectNextStatus: (status: AppointmentStatusLabel) => void;
 };
 
@@ -27,7 +32,9 @@ export function StatusChangeModal({
   draft,
   isConfirming = false,
   onCancel,
+  onClearDepositPayment,
   onConfirm,
+  onDepositPaymentChange,
   onSelectNextStatus
 }: StatusChangeModalProps) {
   const options = draft.isCorrection
@@ -39,6 +46,10 @@ export function StatusChangeModal({
   const appointmentDate = startsAt
     ? format(startsAt, "dd MMM yyyy", { locale: es })
     : draft.appointment.day ?? "Hoy";
+  const depositAmount = Number(draft.depositAmount.replace(",", "."));
+  const depositIsValid =
+    draft.nextStatus !== "Señado" ||
+    (Number.isFinite(depositAmount) && depositAmount > 0);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -87,16 +98,29 @@ export function StatusChangeModal({
               </p>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-3 border-t border-[var(--color-border)] pt-4 text-sm">
-            <span className="text-[var(--color-muted-strong)]">Estado actual</span>
-            <span
-              className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
-                statusClassName[draft.currentStatus]
-              }`}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-              {draft.currentStatus}
-            </span>
+          <div className="mt-4 flex flex-col gap-3 border-t border-[var(--color-border)] pt-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[var(--color-muted-strong)]">Estado actual</span>
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
+                  statusClassName[draft.currentStatus]
+                }`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+                {draft.currentStatus}
+              </span>
+            </div>
+            {draft.currentStatus === "Señado" && onClearDepositPayment && (
+              <button
+                type="button"
+                disabled={isConfirming}
+                onClick={onClearDepositPayment}
+                className={`inline-flex w-fit items-center gap-2 rounded-lg border border-[#e7b9b2] bg-[#ffffff] px-3 py-2 text-sm font-semibold text-[#b42318] disabled:cursor-not-allowed disabled:opacity-60 ${buttonMotionClass}`}
+              >
+                <img src={trashIcon} alt="" aria-hidden="true" className="h-4 w-4" />
+                Eliminar seña
+              </button>
+            )}
           </div>
         </section>
 
@@ -145,6 +169,55 @@ export function StatusChangeModal({
           </div>
         </section>
 
+        {draft.nextStatus === "Señado" && (
+          <section className="mt-5 rounded-xl border border-[rgba(86,145,101,0.22)] bg-[rgba(86,145,101,0.045)] p-4">
+            <p className="text-sm font-semibold text-[var(--color-ink)]">
+              Datos de la seña
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_190px]">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                  Monto
+                </span>
+                <input
+                  value={draft.depositAmount}
+                  disabled={isConfirming}
+                  inputMode="decimal"
+                  onChange={(event) =>
+                    onDepositPaymentChange({ depositAmount: event.target.value })
+                  }
+                  placeholder="Ej: 1500"
+                  className="h-11 w-full rounded-lg border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)] disabled:opacity-60"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                  Medio
+                </span>
+                <select
+                  value={draft.depositMethod}
+                  disabled={isConfirming}
+                  onChange={(event) =>
+                    onDepositPaymentChange({
+                      depositMethod: event.target.value as StatusChangeDraft["depositMethod"]
+                    })
+                  }
+                  className="h-11 w-full rounded-lg border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)] disabled:opacity-60"
+                >
+                  <option value="cash">Efectivo</option>
+                  <option value="bank_transfer">Transferencia</option>
+                  <option value="other">Otro</option>
+                </select>
+              </label>
+            </div>
+            {!depositIsValid && (
+              <p className="mt-2 text-xs font-semibold text-[#b42318]">
+                Ingresá un monto válido para registrar la seña.
+              </p>
+            )}
+          </section>
+        )}
+
         <p className="mt-5 flex items-start gap-3 border-t border-[var(--color-border)] pt-4 text-sm leading-6 text-[var(--color-muted)]">
           <span
             className={`mt-2 h-2 w-2 shrink-0 rounded-full ${
@@ -166,7 +239,7 @@ export function StatusChangeModal({
           </button>
           <button
             type="button"
-            disabled={!draft.nextStatus || isConfirming}
+            disabled={!draft.nextStatus || !depositIsValid || isConfirming}
             onClick={onConfirm}
             className={`rounded-lg px-7 py-3 text-sm font-semibold ${buttonMotionClass} ${
               draft.nextStatus

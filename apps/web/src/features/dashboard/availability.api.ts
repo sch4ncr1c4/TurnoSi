@@ -64,7 +64,7 @@ export function deleteAvailabilityException(id: string, branchId?: string) {
   );
 }
 
-export async function getAvailabilityCatalog() {
+export async function getAvailabilityCatalog(branchId?: string) {
   const response = await apiRequest<{
     success: true;
     data: {
@@ -81,7 +81,7 @@ export async function getAvailabilityCatalog() {
         online: boolean;
       }[];
     };
-  }>("/api/v1/availability/catalog");
+  }>(withBranch("/api/v1/availability/catalog", branchId));
   return {
     categories: response.data.categories,
     services: response.data.services.map((item): AvailabilityResource => ({
@@ -102,12 +102,12 @@ function parseMinutes(value: string) {
   return Number.parseInt(value, 10) || 0;
 }
 
-export function saveAvailabilityCatalogItem(item: AvailabilityResource) {
+export function saveAvailabilityCatalogItem(item: AvailabilityResource, branchId?: string) {
   const path = item.id
     ? `/api/v1/availability/catalog/${item.id}`
     : "/api/v1/availability/catalog";
   return apiRequest<{ success: true; data: { id?: string; updated?: true } }>(
-    path,
+    withBranch(path, branchId),
     {
       method: item.id ? "PATCH" : "POST",
       body: JSON.stringify({
@@ -136,9 +136,9 @@ export function saveAvailabilityCategory(name: string) {
   );
 }
 
-export function deleteAvailabilityCatalogItem(id: string) {
+export function deleteAvailabilityCatalogItem(id: string, branchId?: string) {
   return apiRequest<{ success: true; data: { deleted: true } }>(
-    `/api/v1/availability/catalog/${id}`,
+    withBranch(`/api/v1/availability/catalog/${id}`, branchId),
     { method: "DELETE" }
   );
 }

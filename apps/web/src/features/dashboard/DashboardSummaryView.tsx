@@ -14,14 +14,20 @@ import { SummarySidePanel } from "./SummarySidePanel";
 
 type DashboardSummaryViewProps = {
   appointmentFilter: AppointmentFilter;
+  appointmentIndicatorDays: string[];
   dateFilterLabel: string;
+  disablePreviousMonth?: boolean;
+  minDate?: Date;
   dayFilter: string;
   dayOptions: string[];
   filteredAppointments: DashboardAppointment[];
+  filteredTotal: number;
   getAppointmentStatus: (appointment: DashboardAppointment) => AppointmentStatusLabel;
   hasActiveFilters: boolean;
   hasHiddenAppointments: boolean;
+  isLoadingAppointments?: boolean;
   onClearFilters: () => void;
+  onLoadMoreAppointments: () => void;
   onNextMonth: () => void;
   onPreviousMonth: () => void;
   onRequestStatusChange: (
@@ -29,6 +35,7 @@ type DashboardSummaryViewProps = {
     currentStatus: AppointmentStatusLabel,
     isCorrection?: boolean
   ) => void;
+  onRequestReschedule: (appointment: DashboardAppointment) => void;
   onSearchTermChange: (value: string) => void;
   onSelectAppointmentFilter: (filter: AppointmentFilter) => void;
   onSelectDate: (date: Date) => void;
@@ -40,24 +47,29 @@ type DashboardSummaryViewProps = {
   scheduleTitle: string;
   scheduleView: ScheduleView;
   selectedDate: Date;
-  setShowAllAppointments: (showAll: boolean) => void;
-  showAllAppointments: boolean;
   visibleAppointments: DashboardAppointment[];
 };
 
 export function DashboardSummaryView({
   appointmentFilter,
+  appointmentIndicatorDays,
   dateFilterLabel,
+  disablePreviousMonth = false,
+  minDate,
   dayFilter,
   dayOptions,
   filteredAppointments,
+  filteredTotal,
   getAppointmentStatus,
   hasActiveFilters,
   hasHiddenAppointments,
+  isLoadingAppointments = false,
   onClearFilters,
+  onLoadMoreAppointments,
   onNextMonth,
   onPreviousMonth,
   onRequestStatusChange,
+  onRequestReschedule,
   onSearchTermChange,
   onSelectAppointmentFilter,
   onSelectDate,
@@ -69,8 +81,6 @@ export function DashboardSummaryView({
   scheduleTitle,
   scheduleView,
   selectedDate,
-  setShowAllAppointments,
-  showAllAppointments,
   visibleAppointments
 }: DashboardSummaryViewProps) {
   const [selectedAppointment, setSelectedAppointment] =
@@ -139,7 +149,7 @@ export function DashboardSummaryView({
           dateFilterLabel={dateFilterLabel}
           dayFilter={dayFilter}
           dayOptions={dayOptions}
-          filteredCount={filteredAppointments.length}
+          filteredCount={filteredTotal}
           hasActiveFilters={hasActiveFilters}
           onClearFilters={onClearFilters}
           onSearchTermChange={onSearchTermChange}
@@ -160,33 +170,26 @@ export function DashboardSummaryView({
 
         <div className="flex flex-col items-center justify-center gap-2 border-t border-[var(--color-border)] px-4 py-3">
           <p className="text-sm text-[var(--color-muted)]">
-            Mostrando {visibleAppointments.length} de {filteredAppointments.length} turnos
+            Mostrando {visibleAppointments.length} de {filteredTotal} turnos
           </p>
           {hasHiddenAppointments ? (
             <button
               type="button"
-              onClick={() => setShowAllAppointments(true)}
+              disabled={isLoadingAppointments}
+              onClick={onLoadMoreAppointments}
               className={`rounded-md border border-[var(--color-border-strong)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-ink)] ${buttonMotionClass}`}
             >
-              Ver más
+              {isLoadingAppointments ? "Cargando..." : "Cargar más"}
             </button>
-          ) : (
-            showAllAppointments &&
-            filteredAppointments.length > 5 && (
-              <button
-                type="button"
-                onClick={() => setShowAllAppointments(false)}
-                className={`rounded-md border border-[var(--color-border-strong)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-ink)] ${buttonMotionClass}`}
-              >
-                Ver menos
-              </button>
-            )
-          )}
+          ) : null}
         </div>
       </article>
 
       <SummarySidePanel
+        appointmentIndicatorDays={appointmentIndicatorDays}
         appointments={filteredAppointments}
+        disablePreviousMonth={disablePreviousMonth}
+        minDate={minDate}
         selectedDate={selectedDate}
         onNextMonth={onNextMonth}
         onPreviousMonth={onPreviousMonth}
@@ -200,11 +203,7 @@ export function DashboardSummaryView({
         appointment={selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
         onRequestReschedule={() => {
-          if (selectedAppointment.startsAt) {
-            onSelectDate(new Date(selectedAppointment.startsAt));
-          }
-          onSelectScheduleView("day");
-          onViewAgenda();
+          onRequestReschedule(selectedAppointment);
           setSelectedAppointment(null);
         }}
         onRequestStatusChange={() => {

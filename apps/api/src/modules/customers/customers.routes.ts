@@ -27,6 +27,11 @@ customerManagementRouter.get("/", authenticatedRateLimit, async (request, respon
   const { search, status, ...pagination } = customersQuerySchema
     .merge(paginationSchema)
     .parse(request.query);
+  if (!search || search.length < 2) {
+    response.json(ok(paginatedResponse([], 0, pagination)));
+    return;
+  }
+
   const where = {
     organizationId: tenant.organizationId,
     deletedAt: null,
@@ -35,15 +40,11 @@ customerManagementRouter.get("/", authenticatedRateLimit, async (request, respon
       : status === "active"
         ? { blockedAt: null }
         : {}),
-    ...(search
-      ? {
-          OR: [
-            { fullName: { contains: search, mode: "insensitive" as const } },
-            { email: { contains: search, mode: "insensitive" as const } },
-            { phone: { contains: search } }
-          ]
-        }
-      : {})
+    OR: [
+      { fullName: { contains: search, mode: "insensitive" as const } },
+      { email: { contains: search, mode: "insensitive" as const } },
+      { phone: { contains: search } }
+    ]
   };
   const [customers, total] = await Promise.all([
     prisma.customer.findMany({
@@ -117,19 +118,19 @@ customersRouter.get("/", authenticatedRateLimit, async (request, response) => {
   const { search, status: _status, ...pagination } = customersQuerySchema
     .merge(paginationSchema)
     .parse(request.query);
+  if (!search || search.length < 2) {
+    response.json(ok(paginatedResponse([], 0, pagination)));
+    return;
+  }
 
   const where = {
     organizationId,
     deletedAt: null,
-    ...(search
-      ? {
-          OR: [
-            { fullName: { contains: search, mode: "insensitive" as const } },
-            { email: { contains: search, mode: "insensitive" as const } },
-            { phone: { contains: search } }
-          ]
-        }
-      : {})
+    OR: [
+      { fullName: { contains: search, mode: "insensitive" as const } },
+      { email: { contains: search, mode: "insensitive" as const } },
+      { phone: { contains: search } }
+    ]
   };
 
   const [customers, total] = await Promise.all([

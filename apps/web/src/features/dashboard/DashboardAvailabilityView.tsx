@@ -27,6 +27,7 @@ import type {
 } from "./availability.types";
 import { buttonMotionClass } from "./dashboard.constants";
 import { weeklyAvailability } from "./dashboard.data";
+import type { SubscriptionStatus } from "../billing/billing.api";
 import {
   getAvailabilityCatalog,
   getAvailabilityExceptions,
@@ -75,7 +76,11 @@ function cloneDaySchedule(source: WeeklyAvailabilityDay, target: WeeklyAvailabil
   };
 }
 
-export function DashboardAvailabilityView() {
+type DashboardAvailabilityViewProps = {
+  subscription?: SubscriptionStatus;
+};
+
+export function DashboardAvailabilityView({ subscription }: DashboardAvailabilityViewProps) {
   const [activeTab, setActiveTab] = useState<AvailabilityTab>("weekly");
   const [activeDayMenu, setActiveDayMenu] = useState<number | null>(null);
   const [activePanel, setActivePanel] = useState<AvailabilityPanel>(null);
@@ -109,6 +114,8 @@ export function DashboardAvailabilityView() {
     branchesQuery.data?.find((branch) => branch.isMain)?.id ?? branchesQuery.data?.[0]?.id ?? "";
   const activeBranchId = selectedBranchId || fallbackBranchId;
   const selectedBranch = branchesQuery.data?.find((branch) => branch.id === activeBranchId);
+  const canManageMultipleBranches =
+    subscription?.plan === "professional" || subscription?.plan === "operation";
   const weeklyQuery = useQuery({
     queryKey: queryKeys.weeklyAvailability(activeBranchId),
     queryFn: () => getWeeklyAvailability(activeBranchId),
@@ -120,9 +127,9 @@ export function DashboardAvailabilityView() {
     enabled: activeTab === "exceptions" && Boolean(activeBranchId)
   });
   const catalogQuery = useQuery({
-    queryKey: queryKeys.availabilityCatalog,
-    queryFn: getAvailabilityCatalog,
-    enabled: activeTab === "resources"
+    queryKey: queryKeys.availabilityCatalog(activeBranchId),
+    queryFn: () => getAvailabilityCatalog(activeBranchId),
+    enabled: activeTab === "resources" && Boolean(activeBranchId)
   });
 
   useEffect(() => {
@@ -430,7 +437,7 @@ export function DashboardAvailabilityView() {
 
   async function saveResource(index: number, draft: AvailabilityResource) {
     try {
-      const result = await saveAvailabilityCatalogItem(draft);
+      const result = await saveAvailabilityCatalogItem(draft, activeBranchId);
       const saved = { ...draft, id: draft.id ?? result.data.id };
       setResources((current) =>
         index < 0
@@ -443,7 +450,7 @@ export function DashboardAvailabilityView() {
         categories: AvailabilityServiceCategory[];
         services: AvailabilityResource[];
       }>(
-        queryKeys.availabilityCatalog,
+        queryKeys.availabilityCatalog(activeBranchId),
         (current) => {
           const categories = current?.categories ?? serviceCategories;
           const services = current?.services ?? [];
@@ -483,7 +490,7 @@ export function DashboardAvailabilityView() {
       queryClient.setQueryData<{
         categories: AvailabilityServiceCategory[];
         services: AvailabilityResource[];
-      }>(queryKeys.availabilityCatalog, (current) => ({
+      }>(queryKeys.availabilityCatalog(activeBranchId), (current) => ({
         categories: [
           ...((current?.categories ?? serviceCategories).filter(
             (category) => category.id !== saved.id
@@ -503,12 +510,12 @@ export function DashboardAvailabilityView() {
     const resource = resources[index];
     if (!resource?.id) return;
     try {
-      await deleteAvailabilityCatalogItem(resource.id);
+      await deleteAvailabilityCatalogItem(resource.id, activeBranchId);
       setResources((current) => current.filter((_, currentIndex) => currentIndex !== index));
       queryClient.setQueryData<{
         categories: AvailabilityServiceCategory[];
         services: AvailabilityResource[];
-      }>(queryKeys.availabilityCatalog, (current) => ({
+      }>(queryKeys.availabilityCatalog(activeBranchId), (current) => ({
         categories: current?.categories ?? serviceCategories,
         services: (current?.services ?? resources).filter((item) => item.id !== resource.id)
       }));
@@ -530,7 +537,7 @@ export function DashboardAvailabilityView() {
       queryClient.setQueryData<{
         categories: AvailabilityServiceCategory[];
         services: AvailabilityResource[];
-      }>(queryKeys.availabilityCatalog, (current) => ({
+      }>(queryKeys.availabilityCatalog(activeBranchId), (current) => ({
         categories: (current?.categories ?? serviceCategories).filter(
           (category) => category.id !== categoryId
         ),
@@ -670,89 +677,86 @@ export function DashboardAvailabilityView() {
 
   return (
     <section className="grid min-w-0 gap-5 min-[1700px]:grid-cols-[minmax(0,1fr)_320px]">
-      <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
-        <div className="flex flex-col gap-4 border-b border-[var(--color-border)] px-4 py-4 min-[1280px]:flex-row min-[1280px]:items-end min-[1280px]:justify-between">
-          <div className="min-w-0 flex-1">
-            <div className="stable-scrollbar flex gap-4 overflow-x-auto whitespace-nowrap text-sm font-medium text-[var(--color-muted-strong)] sm:gap-6">
-              {availabilityTabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`border-b-2 pb-3 ${
-                    activeTab === tab.value
-                      ? "border-[var(--color-ink)] text-[var(--color-ink)]"
-                      : "border-transparent hover:text-[var(--color-ink)]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+      <div className="min-w-0 space-y-3">
+        {canManageMultipleBranches && (
+          <div className="flex flex-col gap-2 px-1 min-[900px]:flex-row min-[900px]:items-center min-[900px]:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-muted)]">
+                Sede
+              </span>
+              <select
+                value={activeBranchId}
+                onChange={(event) => handleBranchChange(event.target.value)}
+                className="h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] outline-none transition-colors hover:border-[var(--color-ink)] focus:border-[var(--color-accent)] sm:w-[260px]"
+                aria-label="Seleccionar sede"
+              >
+                {(branchesQuery.data ?? []).map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                    {branch.isMain ? " · Principal" : ""}
+                  </option>
+                ))}
+              </select>
             </div>
-            {activeTab !== "resources" && (
-              <div className="mt-4 flex flex-wrap items-end gap-3">
-                <label className="flex w-full flex-col gap-1 text-sm sm:w-auto sm:min-w-[300px] sm:flex-row sm:items-center">
-                  <span className="shrink-0 text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-muted)]">
-                    Sede
-                  </span>
-                  <select
-                    value={activeBranchId}
-                    onChange={(event) => handleBranchChange(event.target.value)}
-                    className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[rgba(255,255,255,0.74)] px-3 text-sm font-semibold outline-none transition-colors hover:border-[var(--color-ink)] focus:border-[var(--color-accent)]"
-                  >
-                    {(branchesQuery.data ?? []).map((branch) => (
-                      <option key={branch.id} value={branch.id}>
-                        {branch.name}
-                        {branch.isMain ? " · Principal" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="flex flex-nowrap gap-2">
-                  <button
-                    type="button"
-                    onClick={openCreateBranch}
-                    className={`h-10 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] ${buttonMotionClass}`}
-                  >
-                    + Nueva sede
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!selectedBranch}
-                    onClick={openEditBranch}
-                    className={`h-10 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 ${buttonMotionClass}`}
-                  >
-                    Editar sede
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={openCreateBranch}
+                className={`h-9 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] ${buttonMotionClass}`}
+              >
+                + Nueva sede
+              </button>
+              <button
+                type="button"
+                disabled={!selectedBranch}
+                onClick={openEditBranch}
+                className={`h-9 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 ${buttonMotionClass}`}
+              >
+                Editar sede
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {activeTab === "resources" && (
+        )}
+
+        <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+        <div className="border-b border-[var(--color-border)] px-4 pt-4">
+          <div className="stable-scrollbar flex gap-4 overflow-x-auto whitespace-nowrap text-sm font-medium text-[var(--color-muted-strong)] sm:gap-6">
+            {availabilityTabs.map((tab) => (
               <button
+                key={tab.value}
                 type="button"
-                onClick={() => setCategoryDraft("")}
-                className={`rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)] ${buttonMotionClass}`}
+                onClick={() => setActiveTab(tab.value)}
+                className={`border-b-2 pb-3 ${
+                  activeTab === tab.value
+                    ? "border-[var(--color-ink)] text-[var(--color-ink)]"
+                    : "border-transparent hover:text-[var(--color-ink)]"
+                }`}
               >
-                + Crear categoría
+                {tab.label}
               </button>
-            )}
-            {activeTab !== "weekly" && (
-              <button
-                type="button"
-                onClick={() => void handlePrimaryAction()}
-                className={`rounded-md px-4 py-2 text-sm font-semibold ${
-                  activeTab === "resources"
-                    ? "bg-[var(--color-accent)] text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)]"
-                    : "border border-[var(--color-border-strong)] text-[var(--color-ink)]"
-                } ${buttonMotionClass}`}
-              >
-                {activeTab === "exceptions" ? "+ Agregar excepción" : "+ Agregar servicio"}
-              </button>
-            )}
+            ))}
           </div>
         </div>
+
+        {activeTab === "exceptions" && (
+          <AvailabilityActionBar
+            title="Excepciones y feriados"
+            description="Agregá días no laborables o ajustes puntuales de horario."
+            actionLabel="+ Agregar excepción"
+            onAction={() => void handlePrimaryAction()}
+          />
+        )}
+
+        {activeTab === "resources" && (
+          <AvailabilityActionBar
+            title="Servicios y recursos"
+            description="Configurá los servicios disponibles para la sede seleccionada."
+            actionLabel="+ Agregar servicio"
+            secondaryActionLabel="+ Crear categoría"
+            onAction={() => void handlePrimaryAction()}
+            onSecondaryAction={() => setCategoryDraft("")}
+          />
+        )}
 
         {activeTab === "weekly" && (
           <AvailabilityWeeklySchedule
@@ -807,7 +811,8 @@ export function DashboardAvailabilityView() {
             resources={resources}
           />
         )}
-      </article>
+        </article>
+      </div>
 
       <AvailabilitySidePanel activeTab={activeTab} availability={availability} />
 
@@ -858,6 +863,49 @@ export function DashboardAvailabilityView() {
       )}
       {toast && <Toast message={toast} onDismiss={() => setToast("")} />}
     </section>
+  );
+}
+
+function AvailabilityActionBar({
+  actionLabel,
+  description,
+  onAction,
+  onSecondaryAction,
+  secondaryActionLabel,
+  title
+}: {
+  actionLabel: string;
+  description: string;
+  onAction: () => void;
+  onSecondaryAction?: () => void;
+  secondaryActionLabel?: string;
+  title: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-[#ffffff] px-4 py-4 min-[900px]:flex-row min-[900px]:items-center min-[900px]:justify-between">
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold text-[var(--color-ink)]">{title}</h3>
+        <p className="mt-1 text-sm text-[var(--color-muted-strong)]">{description}</p>
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {secondaryActionLabel && onSecondaryAction && (
+          <button
+            type="button"
+            onClick={onSecondaryAction}
+            className="rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-4 py-2 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >
+            {secondaryActionLabel}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onAction}
+          className="rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)] transition-shadow hover:shadow-[0_12px_28px_rgba(253,134,6,0.24)]"
+        >
+          {actionLabel}
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -10,6 +10,7 @@ export const dashboardSections = [
 export type AppointmentStatus =
   | "Confirmado"
   | "En espera"
+  | "Señado"
   | "Pagado"
   | "Asistido"
   | "Cancelado"
@@ -17,18 +18,23 @@ export type AppointmentStatus =
 
 export type DashboardAppointment = {
   id: string;
+  serviceId?: string;
+  branchId?: string;
+  assigneeId?: string | null;
   startsAt?: string;
   createdAt?: string;
   day?: string;
   time: string;
   service: string;
   client: string;
+  customerPhone?: string | null;
   assignee: string;
   status: AppointmentStatus;
   channel: string;
   depositPayment?: {
     status: string;
     amountCents: number;
+    method: string | null;
     paidAt: string | null;
   } | null;
   attended?: boolean;
@@ -46,7 +52,18 @@ export function getDepositPaymentLabel(appointment: DashboardAppointment) {
   const deposit = appointment.depositPayment;
   if (!deposit) return "";
   const amount = formatDepositAmount(deposit.amountCents);
-  if (deposit.status === "approved") return `Seña pagada · ${amount}`;
+  const methodLabel =
+    deposit.method === "mercadopago"
+      ? "Mercado Pago"
+      : deposit.method === "cash"
+        ? "Efectivo"
+        : deposit.method === "bank_transfer"
+          ? "Transferencia"
+          : deposit.method === "other"
+            ? "Otro"
+            : "";
+  const suffix = methodLabel ? ` · ${methodLabel}` : "";
+  if (deposit.status === "approved") return `Seña pagada · ${amount}${suffix}`;
   if (deposit.status === "pending") return `Seña pendiente · ${amount}`;
   if (deposit.status === "cancelled") return `Seña vencida · ${amount}`;
   if (deposit.status === "rejected") return `Seña rechazada · ${amount}`;

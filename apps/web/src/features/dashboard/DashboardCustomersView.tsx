@@ -47,9 +47,11 @@ export function DashboardCustomersView() {
   const [toast, setToast] = useState("");
   const [blockingId, setBlockingId] = useState("");
   const [unblockingId, setUnblockingId] = useState("");
+  const canSearchCustomers = deferredSearch.length >= 2;
   const customersQuery = useQuery({
     queryKey: queryKeys.customers(deferredSearch, status, page),
     queryFn: () => getCustomers(deferredSearch, status, page),
+    enabled: canSearchCustomers,
     staleTime: 2 * 60 * 1000
   });
 
@@ -79,8 +81,8 @@ export function DashboardCustomersView() {
     }
   }
 
-  const customers = customersQuery.data?.data ?? [];
-  const totalCustomers = customersQuery.data?.pagination.total ?? 0;
+  const customers = canSearchCustomers ? (customersQuery.data?.data ?? []) : [];
+  const totalCustomers = canSearchCustomers ? (customersQuery.data?.pagination.total ?? 0) : 0;
 
   return (
     <section className="min-w-0 space-y-3">
@@ -94,7 +96,7 @@ export function DashboardCustomersView() {
               </p>
             </div>
             <span className="w-fit rounded-full bg-[rgba(32,24,54,0.08)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)]">
-              {totalCustomers} registros
+              {canSearchCustomers ? `${totalCustomers} registros` : "Búsqueda manual"}
             </span>
           </div>
         </CardHeader>
@@ -110,7 +112,7 @@ export function DashboardCustomersView() {
                   setSearch(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Nombre, email o teléfono"
+                placeholder="Escribí al menos 2 letras, email o teléfono"
                 className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
               />
             </label>
@@ -241,7 +243,17 @@ export function DashboardCustomersView() {
                 </div>
               </article>
             ))}
-            {!customersQuery.isPending && customers.length === 0 && (
+            {!canSearchCustomers && (
+              <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/70 p-6 text-center">
+                <p className="text-sm font-semibold text-[var(--color-ink)]">
+                  Buscá un cliente para empezar
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  Podés buscar por nombre, email o número de teléfono.
+                </p>
+              </div>
+            )}
+            {canSearchCustomers && !customersQuery.isPending && customers.length === 0 && (
               <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/50 p-6 text-center">
                 <p className="text-sm font-semibold text-[var(--color-ink)]">
                   No encontramos clientes
@@ -252,7 +264,7 @@ export function DashboardCustomersView() {
               </div>
             )}
           </div>
-          {(customersQuery.data?.pagination.totalPages ?? 0) > 1 && (
+          {canSearchCustomers && (customersQuery.data?.pagination.totalPages ?? 0) > 1 && (
             <div className="flex items-center justify-between border-t border-[var(--color-border)] p-4 text-sm">
               <Button
                 type="button"

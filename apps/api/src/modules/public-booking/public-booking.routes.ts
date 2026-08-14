@@ -150,6 +150,7 @@ async function syncAppointmentDepositPayment(organizationId: string, paymentId: 
       where: { id: deposit.id },
       data: {
         mercadoPagoPaymentId: paymentId,
+        method: "mercadopago",
         status,
         statusDetail: payment.status_detail ?? null,
         paidAt: payment.date_approved ? new Date(payment.date_approved) : null,
@@ -404,7 +405,8 @@ export async function calculateSlots(
   serviceId: string,
   dayCount: number,
   branchId?: string,
-  selectedAssigneeId?: string
+  selectedAssigneeId?: string,
+  excludeAppointmentId?: string
 ) {
   const { organization, branch, service, resourceId, teamMembers } = await getPublicContext(
     slug,
@@ -456,6 +458,7 @@ export async function calculateSlots(
         where: {
           organizationId: organization.id,
           branchId: branch.id,
+          ...(excludeAppointmentId ? { id: { not: excludeAppointmentId } } : {}),
           deletedAt: null,
           startsAt: { lt: new Date(dayEnd.getTime() + 180 * 60_000) },
           endsAt: { gt: new Date(dayStart.getTime() - 180 * 60_000) },
@@ -970,7 +973,8 @@ publicBookingRouter.post(
                     depositPayment: {
                       create: {
                         organizationId: context.organization.id,
-                        amountCents: context.organization.depositAmountCents!
+                        amountCents: context.organization.depositAmountCents!,
+                        method: "mercadopago"
                       }
                     }
                   }

@@ -5,7 +5,10 @@ import {
 } from "./DashboardCalendarCard";
 
 type SummarySidePanelProps = {
+  appointmentIndicatorDays: string[];
   appointments: DashboardAppointment[];
+  disablePreviousMonth?: boolean;
+  minDate?: Date;
   onNextMonth: () => void;
   onPreviousMonth: () => void;
   onSelectAppointment: (appointment: DashboardAppointment) => void;
@@ -15,7 +18,10 @@ type SummarySidePanelProps = {
 };
 
 export function SummarySidePanel({
+  appointmentIndicatorDays,
   appointments,
+  disablePreviousMonth = false,
+  minDate,
   onNextMonth,
   onPreviousMonth,
   onSelectAppointment,
@@ -26,6 +32,9 @@ export function SummarySidePanel({
   return (
     <aside className="min-w-0 space-y-2 xl:sticky xl:top-4 xl:self-start">
       <DashboardCalendarCard
+        appointmentDays={appointmentIndicatorDays}
+        disablePreviousMonth={disablePreviousMonth}
+        minDate={minDate}
         onNextMonth={onNextMonth}
         onPreviousMonth={onPreviousMonth}
         onSelectDate={onSelectDate}

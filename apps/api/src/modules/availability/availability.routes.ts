@@ -261,10 +261,16 @@ availabilityRouter.delete("/exceptions/:exceptionId", authRateLimit, async (requ
 
 availabilityRouter.get("/catalog", async (request, response) => {
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
   const [services, categories] = await Promise.all([
   prisma.service.findMany({
-    where: { organizationId: tenant.organizationId, isActive: true },
+    where: {
+      organizationId: tenant.organizationId,
+      branchId: resolvedBranchId,
+      isActive: true
+    },
     include: { resourceLinks: { include: { resource: true }, take: 1 } },
     orderBy: [{ category: "asc" }, { name: "asc" }]
   }),
@@ -317,11 +323,14 @@ availabilityRouter.post("/catalog/categories", authRateLimit, async (request, re
 availabilityRouter.post("/catalog", authRateLimit, async (request, response) => {
   const data = catalogItemSchema.parse(request.body);
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
   const service = await prisma.$transaction(async (transaction) => {
     const created = await transaction.service.create({
       data: {
         organizationId: tenant.organizationId,
+        branchId: resolvedBranchId,
         createdByUserId: request.auth!.sub,
         name: data.name,
         category: data.category || null,
@@ -362,9 +371,11 @@ availabilityRouter.patch("/catalog/:serviceId", authRateLimit, async (request, r
   const { serviceId } = catalogParamsSchema.parse(request.params);
   const data = catalogItemSchema.parse(request.body);
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
   const service = await prisma.service.findFirst({
-    where: { id: serviceId, organizationId: tenant.organizationId }
+    where: { id: serviceId, organizationId: tenant.organizationId, branchId: resolvedBranchId }
   });
   if (!service) throw new AppError(404, "NOT_FOUND", "Service not found");
 
@@ -409,9 +420,11 @@ availabilityRouter.patch("/catalog/:serviceId", authRateLimit, async (request, r
 availabilityRouter.delete("/catalog/:serviceId", authRateLimit, async (request, response) => {
   const { serviceId } = catalogParamsSchema.parse(request.params);
   const tenant = request.tenant!;
+  const { branchId } = branchQuerySchema.parse(request.query);
+  const resolvedBranchId = await resolveBranchId(tenant.organizationId, branchId);
   requireEditor(tenant.role);
   const result = await prisma.service.updateMany({
-    where: { id: serviceId, organizationId: tenant.organizationId },
+    where: { id: serviceId, organizationId: tenant.organizationId, branchId: resolvedBranchId },
     data: { isActive: false, isOnlineBookable: false }
   });
   if (!result.count) throw new AppError(404, "NOT_FOUND", "Service not found");

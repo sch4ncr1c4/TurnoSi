@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode
 } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useSearchParams } from "react-router-dom";
 import {
   addDays,
@@ -36,6 +36,7 @@ import type { AuthResult } from "../auth/auth.types";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { ManualAppointmentModal } from "./ManualAppointmentModal";
+import { RescheduleAppointmentModal } from "./RescheduleAppointmentModal";
 import { StatusChangeModal } from "./StatusChangeModal";
 import {
   type AppointmentFilter,
@@ -45,7 +46,10 @@ import {
 } from "./dashboard.constants";
 import { type DashboardAppointment } from "./dashboard.data";
 import {
+  clearDashboardAppointmentDepositPayment,
   getDashboardAppointments,
+  getDashboardAppointmentIndicators,
+  getDashboardAppointmentsPage,
   getRecentDashboardReservations,
   getReservationNotificationState,
   markDashboardAppointmentDepositPaid,
@@ -93,7 +97,20 @@ type DashboardPageProps = {
   brand: ReactNode;
 };
 
+type DashboardAppointmentsPageData = {
+  items: DashboardAppointment[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+type DashboardAppointmentsInfiniteData = {
+  pageParams: unknown[];
+  pages: DashboardAppointmentsPageData[];
+};
+
 const dashboardViewStorageKey = "turnosi.dashboard.activeView";
+const calendarMinMonth = new Date(2026, 0, 1);
 const dashboardViews: DashboardView[] = [
   "summary",
   "agenda",
@@ -160,7 +177,6 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     useState<AppointmentFilter>("all");
   const [dayFilter, setDayFilter] = useState("all");
   const [appointmentSearch, setAppointmentSearch] = useState("");
-  const [showAllAppointments, setShowAllAppointments] = useState(false);
   const [settingsHaveUnsavedChanges, setSettingsHaveUnsavedChanges] =
     useState(false);
   const [pendingDashboardView, setPendingDashboardView] =
@@ -174,6 +190,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   >({});
   const [pendingStatusChange, setPendingStatusChange] =
     useState<StatusChangeDraft | null>(null);
+  const [pendingRescheduleAppointment, setPendingRescheduleAppointment] =
+    useState<DashboardAppointment | null>(null);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [reservationSeenUntil, setReservationSeenUntil] = useState(0);
   const [notificationFallbackSince] = useState(
@@ -182,8 +200,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastSoundReservationIdRef = useRef<string | null>(null);
   const notificationFeedLoadedRef = useRef(false);
-  const hiddenToastReservationIdRef = useRef<string | null>(null);
-  const [, refreshHiddenToast] = useState(0);
+  const [hiddenToastReservationId, setHiddenToastReservationId] =
+    useState<string | null>(null);
   const [isReservationToastLeaving, setIsReservationToastLeaving] = useState(false);
   const session = useSessionQuery();
   const subscriptionQuery = useQuery({
@@ -197,22 +215,37 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   const deferredAppointmentSearch = useDeferredValue(
     appointmentSearch.trim().toLowerCase()
   );
+  const deferredAppointmentSearchDigits = deferredAppointmentSearch.replace(/\D/g, "");
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const monthStart = startOfMonth(selectedDate);
+  const monthStart = useMemo(() => startOfMonth(selectedDate), [selectedDate]);
+  const monthEnd = useMemo(() => addMonths(monthStart, 1), [monthStart]);
+  const monthKey = format(monthStart, "yyyy-MM");
+  const canGoToPreviousCalendarMonth = monthStart > calendarMinMonth;
   const appointmentsKey = queryKeys.appointments(format(monthStart, "yyyy-MM"));
+  const appointmentIndicatorsQuery = useQuery({
+    queryKey: queryKeys.appointmentIndicators(monthKey),
+    queryFn: () => getDashboardAppointmentIndicators(monthStart, monthEnd),
+    staleTime: 60 * 1000,
+    enabled:
+      Boolean(session.data?.data.organizations?.[0]) &&
+      session.data?.data.organizations?.[0]?.onboardingCompleted !== false
+  });
   const appointmentsQuery = useQuery({
     queryKey: appointmentsKey,
-    queryFn: () => getDashboardAppointments(monthStart, addMonths(monthStart, 1)),
+    queryFn: () => getDashboardAppointments(monthStart, monthEnd),
     staleTime: 10 * 1000,
     refetchInterval: 10 * 1000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     enabled:
+      activeView === "agenda" &&
       Boolean(session.data?.data.organizations?.[0]) &&
       session.data?.data.organizations?.[0]?.onboardingCompleted !== false
   });
   const allAppointments = appointmentsQuery.data ?? emptyDashboardAppointments;
+  const appointmentIndicatorDays =
+    appointmentIndicatorsQuery.data?.map((indicator) => indicator.date) ?? [];
 
   const handleEscape = useCallback((event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -259,6 +292,29 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   }, [activeView]);
 
   useEffect(() => {
+    if (
+      !session.data?.data.organizations?.[0] ||
+      session.data.data.organizations[0].onboardingCompleted === false
+    ) {
+      return;
+    }
+
+    for (const adjacentMonthStart of [subMonths(monthStart, 1), addMonths(monthStart, 1)]) {
+      if (adjacentMonthStart < calendarMinMonth) continue;
+      const adjacentMonthKey = format(adjacentMonthStart, "yyyy-MM");
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.appointmentIndicators(adjacentMonthKey),
+        queryFn: () =>
+          getDashboardAppointmentIndicators(
+            adjacentMonthStart,
+            addMonths(adjacentMonthStart, 1)
+          ),
+        staleTime: 60 * 1000
+      });
+    }
+  }, [monthStart, queryClient, session.data]);
+
+  useEffect(() => {
     const handleSettingsDirty = (event: Event) => {
       setSettingsHaveUnsavedChanges(
         Boolean((event as CustomEvent<boolean>).detail)
@@ -271,12 +327,76 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
 
   const appointments = getAppointmentsForSelectedPeriod();
+  const summaryRange =
+    scheduleView === "day"
+      ? { from: selectedDate, to: addDays(selectedDate, 1) }
+      : scheduleView === "week"
+        ? {
+            from: startOfWeek(selectedDate, { weekStartsOn: 1 }),
+            to: addDays(endOfWeek(selectedDate, { weekStartsOn: 1 }), 1)
+          }
+        : { from: monthStart, to: addMonths(monthStart, 1) };
+  const summaryStatus =
+    appointmentFilter === "pending"
+      ? "pending"
+      : appointmentFilter === "confirmed"
+        ? "confirmed"
+        : appointmentFilter === "paid"
+          ? "paid"
+          : appointmentFilter === "attended"
+            ? "completed"
+            : appointmentFilter === "cancelled"
+              ? "canceled"
+              : appointmentFilter === "noShow"
+                ? "no_show"
+                : undefined;
+  const summaryDay =
+    scheduleView === "day"
+      ? format(selectedDate, "yyyy-MM-dd")
+      : dayFilter === "all"
+        ? undefined
+        : dayFilter;
+  const summaryPageKey = [
+    summaryRange.from.toISOString(),
+    summaryRange.to.toISOString(),
+    deferredAppointmentSearch,
+    summaryStatus ?? "all",
+    summaryDay ?? "all"
+  ].join("|");
+  const summaryAppointmentsQuery = useInfiniteQuery({
+    queryKey: [
+      "appointments",
+      "summary",
+      summaryPageKey
+    ],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      getDashboardAppointmentsPage({
+        day: summaryDay,
+        from: summaryRange.from,
+        limit: pageParam === 0 ? 5 : 10,
+        offset: pageParam,
+        search: deferredAppointmentSearch,
+        status: summaryStatus,
+        to: summaryRange.to
+      }),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((total, page) => total + page.items.length, 0);
+      return loaded < lastPage.total ? loaded : undefined;
+    },
+    staleTime: 10 * 1000,
+    enabled:
+      activeView === "summary" &&
+      Boolean(session.data?.data.organizations?.[0]) &&
+      session.data?.data.organizations?.[0]?.onboardingCompleted !== false
+  });
+  const summaryAppointments =
+    summaryAppointmentsQuery.data?.pages.flatMap((page) => page.items) ??
+    emptyDashboardAppointments;
+  const summaryTotal = summaryAppointmentsQuery.data?.pages[0]?.total ?? 0;
   const dayOptions = Array.from(
-    new Set(
-      appointments
-        .map((appointment) => appointment.day)
-        .filter((day): day is string => Boolean(day))
-    )
+    { length: Math.max(1, Math.round((summaryRange.to.getTime() - summaryRange.from.getTime()) / (24 * 60 * 60 * 1000))) },
+    (_, index) => format(addDays(summaryRange.from, index), "yyyy-MM-dd")
   );
   const filteredAppointments = appointments.filter((appointment) => {
     const matchesDay =
@@ -288,6 +408,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
       deferredAppointmentSearch.length === 0 ||
       [
         appointment.client,
+        appointment.customerPhone,
+        appointment.customerPhone?.replace(/\D/g, ""),
         appointment.service,
         appointment.assignee,
         appointment.channel,
@@ -296,25 +418,29 @@ export function DashboardPage({ brand }: DashboardPageProps) {
         appointment.depositPayment?.status === "approved" ? "seña pagada" : "",
         appointment.depositPayment?.status === "pending" ? "seña pendiente" : ""
       ]
-        .some((value) =>
-          (value ?? "").toLowerCase().includes(deferredAppointmentSearch)
-        );
+        .some((value) => {
+          const normalizedValue = (value ?? "").toLowerCase();
+          return (
+            normalizedValue.includes(deferredAppointmentSearch) ||
+            (deferredAppointmentSearchDigits.length > 0 &&
+              normalizedValue.replace(/\D/g, "").includes(deferredAppointmentSearchDigits))
+          );
+        });
 
     if (!matchesDay) return false;
     if (!matchesSearch) return false;
     if (appointmentFilter === "attended") return status === "Asistido";
     if (appointmentFilter === "pending") return status === "En espera";
+    if (appointmentFilter === "paid") return status === "Pagado";
     if (appointmentFilter === "confirmed") {
-      return status === "Confirmado" || status === "Pagado";
+      return status === "Confirmado" || status === "Señado";
     }
     if (appointmentFilter === "cancelled") return status === "Cancelado";
     if (appointmentFilter === "noShow") return status === "No asistió";
 
     return true;
   });
-  const visibleAppointments = showAllAppointments
-    ? filteredAppointments
-    : filteredAppointments.slice(0, 5);
+  const visibleAppointments = summaryAppointments;
   const appointmentHours = appointments
     .filter((appointment) => appointment.startsAt)
     .map((appointment) => new Date(appointment.startsAt!).getHours());
@@ -340,15 +466,46 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           })} · Agenda consolidada`
         : `${format(selectedDate, "MMMM", { locale: es })} · Agenda consolidada`;
 
+  function patchAppointmentCaches(
+    appointmentId: string,
+    patch: (appointment: DashboardAppointment) => DashboardAppointment
+  ) {
+    queryClient.setQueryData<DashboardAppointment[]>(
+      appointmentsKey,
+      (current = []) =>
+        current.map((appointment) =>
+          appointment.id === appointmentId ? patch(appointment) : appointment
+        )
+    );
+    queryClient.setQueriesData<DashboardAppointmentsInfiniteData>(
+      { queryKey: ["appointments", "summary"] },
+      (current) =>
+        current
+          ? {
+              ...current,
+              pages: current.pages.map((page) => ({
+                ...page,
+                items: page.items.map((appointment) =>
+                  appointment.id === appointmentId ? patch(appointment) : appointment
+                )
+              }))
+            }
+          : current
+    );
+  }
+
   function getAppointmentStatus(
     appointment: DashboardAppointment
   ): AppointmentStatusLabel {
-    if (appointment.depositPayment?.status === "approved") return "Pagado";
-
-    return (
+    const status =
       appointmentStatusChanges[appointment.id] ??
-      (appointment.attended ? "Asistido" : appointment.status)
-    );
+      (appointment.attended ? "Asistido" : appointment.status);
+
+    if (status === "Confirmado" && appointment.depositPayment?.status === "approved") {
+      return "Señado";
+    }
+
+    return status;
   }
 
   function getAppointmentsForSelectedPeriod(): DashboardAppointment[] {
@@ -382,7 +539,6 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
   function selectScheduleView(view: ScheduleView) {
     setScheduleView(view);
-    setShowAllAppointments(false);
     setDayFilter("all");
   }
 
@@ -393,9 +549,13 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
   function goToPreviousPeriod() {
     setSelectedDate((current) => {
-      if (scheduleView === "day") return subDays(current, 1);
-      if (scheduleView === "week") return subWeeks(current, 1);
-      return subMonths(current, 1);
+      const previous =
+        scheduleView === "day"
+          ? subDays(current, 1)
+          : scheduleView === "week"
+            ? subWeeks(current, 1)
+            : subMonths(current, 1);
+      return previous < calendarMinMonth ? current : previous;
     });
   }
 
@@ -408,7 +568,10 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   }
 
   function goToPreviousCalendarMonth() {
-    setSelectedDate((current) => subMonths(current, 1));
+    setSelectedDate((current) => {
+      const previous = startOfMonth(subMonths(current, 1));
+      return previous < calendarMinMonth ? current : previous;
+    });
   }
 
   function goToNextCalendarMonth() {
@@ -417,12 +580,10 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
   function selectAppointmentFilter(filter: AppointmentFilter) {
     setAppointmentFilter(filter);
-    setShowAllAppointments(false);
   }
 
   function selectDayFilter(day: string) {
     setDayFilter(day);
-    setShowAllAppointments(false);
   }
 
   function requestStatusChange(
@@ -433,6 +594,15 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     setPendingStatusChange({
       appointment,
       currentStatus,
+      depositAmount: appointment.depositPayment?.amountCents
+        ? String(appointment.depositPayment.amountCents / 100)
+        : "",
+      depositMethod:
+        appointment.depositPayment?.method === "bank_transfer"
+          ? "bank_transfer"
+          : appointment.depositPayment?.method === "other"
+            ? "other"
+            : "cash",
       nextStatus: "",
       isCorrection
     });
@@ -449,6 +619,19 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     );
   }
 
+  function updatePendingDepositPayment(
+    updates: Partial<Pick<StatusChangeDraft, "depositAmount" | "depositMethod">>
+  ) {
+    setPendingStatusChange((current) =>
+      current
+        ? {
+            ...current,
+            ...updates
+          }
+        : current
+    );
+  }
+
   async function confirmStatusChange() {
     const draft = pendingStatusChange;
 
@@ -457,31 +640,36 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     setIsChangingStatus(true);
     try {
       const nextStatus = draft.nextStatus as AppointmentStatusLabel;
+      const depositAmountCents = Math.round(
+        Number(draft.depositAmount.replace(",", ".")) * 100
+      );
+      if (nextStatus === "Señado" && (!Number.isFinite(depositAmountCents) || depositAmountCents <= 0)) {
+        return;
+      }
       const paidDepositResult =
-        nextStatus === "Pagado"
-          ? await markDashboardAppointmentDepositPaid(draft.appointment.id)
+        nextStatus === "Señado"
+          ? await markDashboardAppointmentDepositPaid(draft.appointment.id, {
+              amountCents: depositAmountCents,
+              method: draft.depositMethod
+            })
+          : null;
+      const clearedDepositResult =
+        draft.currentStatus === "Señado" && nextStatus !== "Señado"
+          ? await clearDashboardAppointmentDepositPayment(draft.appointment.id)
           : null;
 
-      if (nextStatus !== "Pagado") {
+      if (nextStatus !== "Señado") {
         await updateDashboardAppointmentStatus(draft.appointment.id, nextStatus);
       }
 
-      queryClient.setQueryData<DashboardAppointment[]>(
-        appointmentsKey,
-        (current = []) =>
-          current.map((appointment) =>
-            appointment.id === draft.appointment.id
-              ? {
-                  ...appointment,
-                  status: nextStatus === "Pagado" ? "Confirmado" : nextStatus,
-                  depositPayment:
-                    paidDepositResult?.data.depositPayment ??
-                    appointment.depositPayment,
-                  attended: nextStatus === "Asistido"
-                }
-              : appointment
-          )
-      );
+      patchAppointmentCaches(draft.appointment.id, (appointment) => ({
+        ...appointment,
+        status: nextStatus === "Señado" ? "Confirmado" : nextStatus,
+        depositPayment: clearedDepositResult
+          ? null
+          : paidDepositResult?.data.depositPayment ?? appointment.depositPayment,
+        attended: nextStatus === "Asistido"
+      }));
       if (
         draft.currentStatus === "No asistió" ||
         nextStatus === "No asistió"
@@ -496,6 +684,47 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     } finally {
       setIsChangingStatus(false);
     }
+  }
+
+  async function clearPendingDepositPayment() {
+    const draft = pendingStatusChange;
+    if (!draft || isChangingStatus) return;
+
+    setIsChangingStatus(true);
+    try {
+      await clearDashboardAppointmentDepositPayment(draft.appointment.id);
+      patchAppointmentCaches(draft.appointment.id, (appointment) => ({
+        ...appointment,
+        status: "Confirmado",
+        depositPayment: null,
+        attended: false
+      }));
+      setAppointmentStatusChanges((current) => ({
+        ...current,
+        [draft.appointment.id]: "Confirmado"
+      }));
+      setPendingStatusChange(null);
+    } finally {
+      setIsChangingStatus(false);
+    }
+  }
+
+  function handleAppointmentRescheduled(startsAt: string) {
+    const appointment = pendingRescheduleAppointment;
+    if (!appointment) return;
+
+    const nextDate = new Date(startsAt);
+    patchAppointmentCaches(appointment.id, (item) => ({
+      ...item,
+      startsAt,
+      day: format(nextDate, "yyyy-MM-dd"),
+      time: format(nextDate, "HH:mm")
+    }));
+    setSelectedDate(nextDate);
+    setScheduleView("day");
+    setActiveView("agenda");
+    setPendingRescheduleAppointment(null);
+    void queryClient.invalidateQueries({ queryKey: ["appointments"], exact: false });
   }
 
   function changeDashboardView(view: DashboardView) {
@@ -661,9 +890,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     }
 
     lastSoundReservationIdRef.current = latestReservationId;
-    hiddenToastReservationIdRef.current = null;
+    setHiddenToastReservationId(null);
     setIsReservationToastLeaving(false);
-    refreshHiddenToast((current) => current + 1);
     const audio =
       notificationAudioRef.current ?? new Audio(notificationSoundUrl);
     notificationAudioRef.current = audio;
@@ -673,7 +901,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
   }, [latestNewReservation?.id, recentReservationsQuery.isFetched]);
   const shouldShowReservationToast =
     Boolean(latestNewReservation) &&
-    hiddenToastReservationIdRef.current !== latestNewReservation?.id;
+    hiddenToastReservationId !== latestNewReservation?.id;
 
   useEffect(() => {
     if (!shouldShowReservationToast || !latestNewReservation?.id) return;
@@ -681,9 +909,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
     const timeoutId = window.setTimeout(() => {
       setIsReservationToastLeaving(true);
       hideTimeoutId = window.setTimeout(() => {
-        hiddenToastReservationIdRef.current = latestNewReservation.id;
+        setHiddenToastReservationId(latestNewReservation.id);
         setIsReservationToastLeaving(false);
-        refreshHiddenToast((current) => current + 1);
       }, 220);
     }, 10_000);
     return () => {
@@ -781,17 +1008,20 @@ export function DashboardPage({ brand }: DashboardPageProps) {
               {effectiveActiveView === "agenda" ? (
                 <DashboardAgendaView
                   appointments={allAppointments}
+                  disablePreviousMonth={!canGoToPreviousCalendarMonth}
                   filteredAppointments={filteredAppointments}
+                  getAppointmentStatus={getAppointmentStatus}
+                  minDate={calendarMinMonth}
                   onNextMonth={goToNextCalendarMonth}
                   scheduleView={scheduleView}
                   searchTerm={appointmentSearch}
                   selectedDate={selectedDate}
                   onNextPeriod={goToNextPeriod}
-                  onSearchTermChange={setAppointmentSearch}
                   onToday={goToToday}
                   onPreviousMonth={goToPreviousCalendarMonth}
                   onPreviousPeriod={goToPreviousPeriod}
                   onRequestStatusChange={requestStatusChange}
+                  onRequestReschedule={setPendingRescheduleAppointment}
                   onSelectDate={setSelectedDate}
                   onSelectScheduleView={selectScheduleView}
                 />
@@ -800,7 +1030,7 @@ export function DashboardPage({ brand }: DashboardPageProps) {
               ) : effectiveActiveView === "team" ? (
                 <DashboardTeamView />
               ) : effectiveActiveView === "availability" ? (
-                <DashboardAvailabilityView />
+                <DashboardAvailabilityView subscription={subscriptionQuery.data} />
               ) : effectiveActiveView === "settings" ? (
                 <DashboardSettingsView
                   isOnboarding={onboardingRequired}
@@ -833,10 +1063,14 @@ export function DashboardPage({ brand }: DashboardPageProps) {
               ) : (
                 <DashboardSummaryView
                   appointmentFilter={appointmentFilter}
+                  appointmentIndicatorDays={appointmentIndicatorDays}
                   dateFilterLabel={scheduleView === "week" ? "Día" : "Fecha"}
+                  disablePreviousMonth={!canGoToPreviousCalendarMonth}
+                  minDate={calendarMinMonth}
                   dayFilter={dayFilter}
                   dayOptions={dayOptions}
-                  filteredAppointments={filteredAppointments}
+                  filteredAppointments={summaryAppointments}
+                  filteredTotal={summaryTotal}
                   getAppointmentStatus={getAppointmentStatus}
                   hasActiveFilters={
                     appointmentFilter !== "all" ||
@@ -844,15 +1078,19 @@ export function DashboardPage({ brand }: DashboardPageProps) {
                     appointmentSearch.trim().length > 0
                   }
                   hasHiddenAppointments={
-                    filteredAppointments.length > visibleAppointments.length
+                    Boolean(summaryAppointmentsQuery.hasNextPage)
                   }
                   onClearFilters={() => {
                     setAppointmentFilter("all");
                     setDayFilter("all");
                     setAppointmentSearch("");
-                    setShowAllAppointments(false);
                   }}
+                  isLoadingAppointments={summaryAppointmentsQuery.isFetchingNextPage}
+                  onLoadMoreAppointments={() =>
+                    void summaryAppointmentsQuery.fetchNextPage()
+                  }
                   onRequestStatusChange={requestStatusChange}
+                  onRequestReschedule={setPendingRescheduleAppointment}
                   onNextMonth={goToNextCalendarMonth}
                   onPreviousMonth={goToPreviousCalendarMonth}
                   onSelectDate={setSelectedDate}
@@ -866,8 +1104,6 @@ export function DashboardPage({ brand }: DashboardPageProps) {
                   scheduleTitle={scheduleTitle}
                   scheduleView={scheduleView}
                   selectedDate={selectedDate}
-                  setShowAllAppointments={setShowAllAppointments}
-                  showAllAppointments={showAllAppointments}
                   visibleAppointments={visibleAppointments}
                 />
               )}
@@ -883,7 +1119,9 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           onCancel={() => {
             if (!isChangingStatus) setPendingStatusChange(null);
           }}
+          onClearDepositPayment={clearPendingDepositPayment}
           onConfirm={confirmStatusChange}
+          onDepositPaymentChange={updatePendingDepositPayment}
           onSelectNextStatus={(status) => {
             if (!isChangingStatus) selectNextStatus(status);
           }}
@@ -919,6 +1157,13 @@ export function DashboardPage({ brand }: DashboardPageProps) {
             setShowManualAppointment(false);
             setActiveView("agenda");
           }}
+        />
+      )}
+      {pendingRescheduleAppointment && (
+        <RescheduleAppointmentModal
+          appointment={pendingRescheduleAppointment}
+          onClose={() => setPendingRescheduleAppointment(null)}
+          onRescheduled={handleAppointmentRescheduled}
         />
       )}
       {shouldShowReservationToast && latestNewReservation && (

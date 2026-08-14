@@ -1,0 +1,107 @@
+:root {
+  --color-page: #ffffff;
+  --color-dashboard-page: #ffffff;
+  --color-surface: rgba(255, 255, 255, 0.86);
+  --color-chip: rgba(253, 134, 6, 0.12);
+  --color-chip-strong: #fd8606;
+  --color-border: rgba(32, 24, 54, 0.14);
+  --color-border-strong: rgba(32, 24, 54, 0.3);
+  --color-ink: #201836;
+  --color-muted: #64625a;
+  --color-muted-strong: #514f49;
+  --color-accent: #fd8606;
+  --color-button-text: #ffffff;
+  --color-status: #201836;
+  --color-status-soft: rgba(253, 134, 6, 0.14);
+  color: var(--color-ink);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0) 28%),
+    var(--color-page);
+  font-family: "Geist", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: auto;
+  overflow-y: scroll;
+}
+
+
+body {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  background: var(--color-page);
+  overflow-x: clip;
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: "Geist", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+.font-mono {
+  font-family: "JetBrains Mono", monospace;
+}
+
+button,
+select,
+[role="button"] {
+  cursor: pointer;
+}
+
+.page-shell {
+  background: var(--color-page);
+}
+
+.dashboard-page {
+  background: var(--color-dashboard-page);
+  font-weight: 500;
+}
+
+.stable-scrollbar {
+  scrollbar-gutter: auto;
+}
+
+input::placeholder {
+  color: var(--color-muted);
+}
+
+input,
+textarea {
+  color: var(--color-ink);
+}
+
+textarea {
+  resize: none;
+}
+
+@keyframes auth-progress {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  55% {
+    transform: translateX(35%);
+  }
+
+  100% {
+    transform: translateX(210%);
+  }
+}
+

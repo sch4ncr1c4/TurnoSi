@@ -1257,8 +1257,8 @@ function moneyToCents(value: string) {
           <CardBody className="grid gap-3 p-3 sm:p-4 md:grid-cols-2">
             {activeTab === "business" && (
               <>
-                <section className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 md:col-span-2 sm:p-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-                  <div className="min-w-0">
+                <section className="grid items-start gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 md:col-span-2 sm:p-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+                  <div className="min-w-0 self-start">
                     <div>
                       <div className="mb-2 flex items-center gap-2 text-sm">
                         <span className="font-semibold text-[var(--color-muted-strong)]">
@@ -1268,21 +1268,21 @@ function moneyToCents(value: string) {
                           Opcional
                         </span>
                       </div>
-                      <div className="grid grid-cols-[108px_minmax(0,1fr)] gap-3">
-                        <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-2">
+                      <div className="grid items-start gap-3 sm:grid-cols-[96px_minmax(0,1fr)]">
+                        <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-full border border-[var(--color-border)] bg-[#ffffff] p-2 shadow-sm">
                           {logoPreview ? (
                             <img
                               src={logoPreview}
                               alt="Logo del negocio"
-                              className="h-full w-full rounded-lg object-contain"
+                              className="h-full w-full rounded-full object-cover"
                             />
                           ) : (
-                            <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--color-ink)] text-xl font-semibold text-white">
+                            <span className="grid h-full w-full place-items-center rounded-full bg-[var(--color-ink)] text-xl font-semibold text-white">
                               {settings.businessName.charAt(0).toUpperCase() || "+"}
                             </span>
                           )}
                         </div>
-                        <label className="grid h-28 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
+                        <label className="grid min-h-24 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
                           <span>
                             <span className="block text-xl leading-none">↥</span>
                             <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">

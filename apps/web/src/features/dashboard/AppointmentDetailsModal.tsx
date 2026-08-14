@@ -35,6 +35,8 @@ export function AppointmentDetailsModal({
     : appointment.day ?? "Fecha no disponible";
   const dateTimeLabel = `${dateLabel}, ${appointment.time}`;
   const depositLabel = getDepositPaymentLabel(appointment);
+  const isPending = appointment.status === "En espera";
+  const primaryStatusActionLabel = isPending ? "Confirmar turno" : "Cambiar estado";
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -91,6 +93,10 @@ export function AppointmentDetailsModal({
         <div className="border-t border-[var(--color-border)] px-5 sm:px-7">
           <div className="divide-y divide-[var(--color-border)]">
             <AppointmentDetail label="Cliente" value={appointment.client} />
+            <AppointmentDetail
+              label="Contacto"
+              value={appointment.customerPhone || "Sin teléfono cargado"}
+            />
             <AppointmentStatusDetail
               status={appointment.status}
               onClick={onRequestStatusChange}
@@ -132,9 +138,13 @@ export function AppointmentDetailsModal({
             <button
               type="button"
               onClick={onRequestStatusChange}
-              className={`rounded-lg bg-[var(--color-accent)] px-7 py-3 text-sm font-semibold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(253,134,6,0.22)] ${buttonMotionClass}`}
+              className={`rounded-lg px-7 py-3 text-sm font-semibold shadow-[0_14px_30px_rgba(253,134,6,0.22)] ${
+                isPending
+                  ? "bg-[var(--color-accent)] text-[var(--color-button-text)]"
+                  : "border border-[var(--color-border-strong)] bg-[#ffffff] text-[var(--color-ink)] shadow-none"
+              } ${buttonMotionClass}`}
             >
-              Confirmar
+              {primaryStatusActionLabel}
             </button>
           </div>
         </footer>
