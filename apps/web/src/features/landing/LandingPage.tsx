@@ -1,11 +1,9 @@
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 import { billingPlans } from "../billing/billing.plans";
 import turnosiLogo from "@/components/assets/logos/turnosi-horizontal.svg";
-import {
-  previewRows
-} from "./landing.data";
 
 type LandingPageProps = {
   brand: ReactNode;
@@ -37,6 +35,13 @@ const navigationLinks = [
 export function LandingPage({ brand }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
+  const revealInitial = shouldReduceMotion ? false : { opacity: 0, y: 30 };
+  const revealInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0 };
+  const previewInitial = shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 };
+  const previewInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 };
+  const motionViewport = { once: true, amount: 0.22 };
+  const smoothTransition = { duration: 0.72, ease: [0.22, 1, 0.36, 1] as const };
 
   useLayoutEffect(() => {
     const previousHtmlBackground = document.documentElement.style.backgroundColor;
@@ -114,7 +119,7 @@ export function LandingPage({ brand }: LandingPageProps) {
       <main>
         <section
           id="inicio"
-          className="landing-hero-shell relative z-10 scroll-mt-24 overflow-hidden border-b border-[var(--color-border)] pt-[76px] text-[var(--color-button-text)] sm:pt-[70px]"
+          className="landing-hero-shell relative z-10 scroll-mt-24 border-b border-[var(--color-border)] pt-[76px] text-[var(--color-button-text)] sm:pt-[70px]"
         >
           <header
             className={`landing-hero-nav fixed z-50 ${
@@ -504,174 +509,293 @@ export function LandingPage({ brand }: LandingPageProps) {
               </div>
             </div>
           </div>
+          <div className="landing-hero-wave" aria-hidden="true" />
         </section>
 
         <section
           id="funciones"
-          className="soft-section-divider scroll-mt-24 bg-[rgba(255,251,244,0.72)] px-5 py-12 sm:px-7"
+          className="landing-functions-section soft-section-divider scroll-mt-24 px-5 py-14 sm:px-7 lg:py-16"
         >
           <div className="mx-auto max-w-7xl">
-            <div className="landing-rise mx-auto max-w-3xl text-center">
+            <motion.div
+              className="mx-auto max-w-4xl text-center"
+              initial={revealInitial}
+              whileInView={revealInView}
+              viewport={motionViewport}
+              transition={smoothTransition}
+            >
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                Funciones
+                Todo en un solo lugar
               </p>
-              <h2 className="mt-4 text-3xl font-semibold sm:text-4xl lg:text-5xl">
-                La operación diaria, en una sola vista.
+              <h2 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+                Menos tiempo organizando. Más turnos bajo control.
               </h2>
-              <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
-                Agenda, reservas, equipo y clientes conectados sin duplicar datos.
+              <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted-strong)]">
+                TurnoSi conecta agenda, reservas online, clientes y equipo para que cada día fluya con menos fricción.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="mt-10 grid gap-4">
-              <article data-scroll-reveal className="landing-scroll-reveal landing-feature-card overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] shadow-[0_10px_28px_rgba(32,24,54,0.03)]">
-                <div className="grid gap-0 lg:grid-cols-[0.34fr_0.66fr]">
-                  <div className="border-b border-[var(--color-border)] p-5 lg:border-b-0 lg:border-r">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                      Agenda y reservas
-                    </span>
-                    <h3 className="mt-3 text-2xl font-semibold">
-                      Turnos, horarios y responsables en una vista clara.
-                    </h3>
-                    <p className="mt-3 text-sm leading-7 text-[var(--color-muted-strong)]">
-                      La agenda se alimenta de las reservas online y te deja ver rápido qué sigue, quién atiende y qué estado tiene cada turno.
-                    </p>
-                    <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3 lg:grid-cols-1">
-                      {[
-                        ["12", "turnos del día"],
-                        ["6", "espacios disponibles"],
-                        ["2", "sedes activas"]
-                      ].map(([value, label]) => (
-                        <div key={label} className="rounded-xl border border-[var(--color-border)] bg-white/60 px-4 py-3">
-                          <p className="font-mono text-xl font-semibold">{value}</p>
-                          <p className="mt-1 text-xs text-[var(--color-muted-strong)]">{label}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-4 sm:p-5">
-                    <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">Resumen del día</p>
-                        <p className="mt-1 text-xs text-[var(--color-muted-strong)]">
-                          Miércoles 22 · Sede principal · 09:00 a 20:00
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-[rgba(253,134,6,0.1)] px-3 py-1 text-xs font-semibold text-[var(--color-accent)]">
-                        Reservas online
-                      </span>
-                    </div>
-                    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/72">
-                      <div className="grid grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_112px] border-b border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)] sm:grid-cols-[78px_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_112px]">
-                        <span>Hora</span>
-                        <span>Servicio</span>
-                        <span>Cliente</span>
-                        <span className="hidden sm:block">Responsable</span>
-                        <span>Estado</span>
-                      </div>
-                      {previewRows.slice(0, 5).map((row) => (
-                        <div
-                          key={`${row.time}-${row.customer}`}
-                          className="landing-mockup-row grid grid-cols-[70px_minmax(0,1.2fr)_minmax(0,1fr)_112px] items-center border-b border-[var(--color-border)] px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[78px_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_112px]"
-                        >
-                          <span className="font-semibold text-[var(--color-accent)]">{row.time}</span>
-                          <span className="min-w-0 truncate font-semibold">{row.service}</span>
-                          <span className="min-w-0 truncate text-[var(--color-muted-strong)]">{row.customer}</span>
-                          <span className="hidden min-w-0 truncate text-[var(--color-muted-strong)] sm:block">
-                            {row.responsible}
-                          </span>
-                          <span
-                            className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                              row.status === "Pagado"
-                                ? "bg-[rgba(64,145,91,0.12)] text-[#347548]"
-                                : row.status === "En espera"
-                                  ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-accent)]"
-                                  : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
-                            }`}
-                          >
-                            {row.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+            <div className="landing-functions-layout mt-11">
+              <motion.article
+                className="landing-feature-card landing-function-block landing-function-block--agenda"
+                initial={revealInitial}
+                whileInView={revealInView}
+                whileHover={shouldReduceMotion ? undefined : { y: -4 }}
+                viewport={motionViewport}
+                transition={{ ...smoothTransition, delay: 0.08 }}
+              >
+                <div className="landing-function-copy">
+                  <p className="landing-function-eyebrow">Agenda inteligente</p>
+                  <h3>Tu día completo, claro desde el primer vistazo.</h3>
+                  <p>
+                    Visualizá tu jornada, asigná responsables y controlá el estado de cada turno sin tener que abrir mil ventanas.
+                  </p>
+                  <div className="landing-function-points">
+                    {["Estados y señas visibles.", "Responsables por turno.", "Vista diaria, semanal o mensual."].map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
                   </div>
                 </div>
-              </article>
 
-              <div className="grid gap-4 lg:grid-cols-2">
-                <article data-scroll-reveal className="landing-scroll-reveal landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_28px_rgba(32,24,54,0.025)]">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                        Equipo y permisos
-                      </p>
-                      <h3 className="mt-2 text-xl font-semibold">Quién atiende y qué puede gestionar.</h3>
-                    </div>
-                    <span className="rounded-full bg-[rgba(32,24,54,0.06)] px-3 py-1 text-xs font-semibold text-[var(--color-muted-strong)]">
-                      3 roles
-                    </span>
-                  </div>
-                  <div className="mt-5 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/64">
-                    {[
-                      ["Laura Méndez", "Propietaria", "Sede principal", "4 turnos hoy"],
-                      ["Laura Ruiz", "Administradora", "Barber Shop Ramos", "3 turnos hoy"],
-                      ["Marcos Vega", "Miembro", "Sede principal", "2 turnos hoy"]
-                    ].map(([name, role, branch, load]) => (
-                      <div key={name} className="landing-mockup-row grid gap-2 px-3 py-3 text-sm sm:grid-cols-[1fr_0.8fr_0.7fr] sm:items-center">
-                        <div>
-                          <p className="font-semibold">{name}</p>
-                          <p className="mt-0.5 text-xs text-[var(--color-muted)]">{branch}</p>
-                        </div>
-                        <span className="text-xs font-semibold text-[var(--color-muted-strong)]">{role}</span>
-                        <span className="text-xs text-[var(--color-muted-strong)]">{load}</span>
-                      </div>
+                <motion.div
+                  className="landing-agenda-preview"
+                  aria-label="Vista previa de agenda"
+                  initial={previewInitial}
+                  whileInView={previewInView}
+                  viewport={motionViewport}
+                  transition={{ ...smoothTransition, delay: 0.18 }}
+                >
+                  <div className="landing-agenda-sidebar">
+                    <img src={turnosiLogo} alt="" />
+                    {["Resumen", "Agenda", "Clientes", "Equipo", "Config."].map((item) => (
+                      <span key={item} className={item === "Agenda" ? "is-active" : undefined}>
+                        {item}
+                      </span>
                     ))}
+                    <button type="button">+ Nuevo turno</button>
                   </div>
-                </article>
 
-                <article data-scroll-reveal className="landing-scroll-reveal landing-feature-card rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] p-5 shadow-[0_10px_28px_rgba(32,24,54,0.025)]">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                        Clientes y seguimiento
-                      </p>
-                      <h3 className="mt-2 text-xl font-semibold">Historial útil para atender mejor.</h3>
+                  <div className="landing-agenda-board">
+                    <div className="landing-window-bar">
+                      <div>
+                        <strong>Agenda</strong>
+                        <span>Miércoles 22 de mayo, 2026</span>
+                      </div>
+                      <div className="landing-window-tabs">
+                        <span className="is-active">Día</span>
+                        <span>Semana</span>
+                        <span>Mes</span>
+                      </div>
                     </div>
-                    <span className="rounded-full bg-[rgba(32,24,54,0.06)] px-3 py-1 text-xs font-semibold text-[var(--color-muted-strong)]">
-                      Fichas
-                    </span>
-                  </div>
-                  <div className="mt-5 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-white/64">
-                    {[
-                      ["Julieta Fernández", "Próximo turno 10:00", "Corte de pelo", "Confirmado"],
-                      ["Martín Ramos", "Próximo turno 10:30", "Barba completa", "Pagado"],
-                      ["Diego Torres", "Próximo turno 12:00", "Corte + barba", "En espera"]
-                    ].map(([name, next, lastService, status]) => (
-                      <div key={name} className="landing-mockup-row grid gap-3 px-3 py-3 text-sm sm:grid-cols-[1fr_1fr_auto] sm:items-center">
-                        <div>
-                          <p className="font-semibold">{name}</p>
-                          <p className="mt-0.5 text-xs text-[var(--color-muted)]">{next}</p>
-                        </div>
-                        <p className="text-xs text-[var(--color-muted-strong)]">
-                          Último servicio: <span className="font-semibold text-[var(--color-ink)]">{lastService}</span>
-                        </p>
-                        <span
-                          className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                            status === "Pagado"
-                              ? "bg-[rgba(64,145,91,0.12)] text-[#347548]"
-                              : status === "En espera"
-                                ? "bg-[rgba(253,134,6,0.12)] text-[var(--color-accent)]"
-                                : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
-                          }`}
-                        >
-                          {status}
+
+                    <div className="landing-schedule-grid">
+                      <span className="landing-schedule-head">Hora</span>
+                      {["Cristian", "Martina", "Nicolás"].map((person) => (
+                        <span key={person} className="landing-schedule-head">
+                          {person}
                         </span>
+                      ))}
+
+                      {["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"].map((time) => (
+                        <span key={time} className="landing-schedule-time">
+                          {time}
+                        </span>
+                      ))}
+
+                      <span className="landing-schedule-event landing-schedule-event--green">Corte pelo <small>Juan Pérez</small></span>
+                      <span className="landing-schedule-event landing-schedule-event--violet">Perfilado <small>Confirmado</small></span>
+                      <span className="landing-schedule-event landing-schedule-event--orange">Corte + barba <small>Señado</small></span>
+                      <span className="landing-schedule-event landing-schedule-event--green landing-schedule-event--wide">Color y corte <small>Pagado</small></span>
+                      <span className="landing-schedule-event landing-schedule-event--violet">Barba completa <small>Martín</small></span>
+                    </div>
+
+                    <div className="landing-function-toast">
+                      <span>✓</span>
+                      <div>
+                        <strong>Nuevo turno confirmado</strong>
+                        <small>Corte de pelo · Viernes 24/05 16:00</small>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </article>
+                </motion.div>
+              </motion.article>
+
+              <div className="landing-functions-split">
+                <motion.article
+                  className="landing-feature-card landing-function-block landing-function-block--booking"
+                  initial={revealInitial}
+                  whileInView={revealInView}
+                  whileHover={shouldReduceMotion ? undefined : { y: -4 }}
+                  viewport={motionViewport}
+                  transition={{ ...smoothTransition, delay: 0.12 }}
+                >
+                  <motion.div
+                    className="landing-booking-preview"
+                    aria-label="Vista previa de reserva online"
+                    initial={previewInitial}
+                    whileInView={previewInView}
+                    viewport={motionViewport}
+                    transition={{ ...smoothTransition, delay: 0.2 }}
+                  >
+                    <div className="landing-booking-steps">
+                      {["Servicio", "Fecha", "Hora", "Confirmación"].map((step, index) => (
+                        <span key={step} className={index === 0 ? "is-active" : undefined}>
+                          {index + 1}
+                          <small>{step}</small>
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="landing-booking-grid">
+                      <div className="landing-booking-services">
+                        {[
+                          ["Corte de pelo", "30 min"],
+                          ["Barba completa", "30 min"],
+                          ["Corte + barba", "60 min"],
+                          ["Color y corte", "90 min"]
+                        ].map(([service, duration], index) => (
+                          <span key={service} className={index === 0 ? "is-selected" : undefined}>
+                            <strong>{service}</strong>
+                            <small>{duration}</small>
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="landing-booking-calendar">
+                        <div>
+                          <strong>Mayo 2026</strong>
+                          <span>‹ ›</span>
+                        </div>
+                        {Array.from({ length: 28 }, (_, index) => (
+                          <span key={index} className={index === 18 ? "is-selected" : index > 20 ? "is-muted" : undefined}>
+                            {index + 1}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="landing-booking-hours">
+                        {["09:00", "10:30", "12:00", "14:30", "16:00", "19:00"].map((hour) => (
+                          <span key={hour} className={hour === "10:30" ? "is-selected" : undefined}>
+                            {hour}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="landing-booking-confirm">
+                        <span>✓</span>
+                        <strong>¡Listo, tu turno está confirmado!</strong>
+                        <small>Corte de pelo · Viernes 24/05 a las 10:30</small>
+                        <button type="button">Ver mi turno</button>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  <div className="landing-function-copy">
+                    <p className="landing-function-eyebrow">Reservas online</p>
+                    <h3>Tus clientes reservan incluso cuando no estás.</h3>
+                    <p>
+                      Eligen servicio, fecha y horario desde tu página pública. Vos recibís el turno ya ordenado en agenda.
+                    </p>
+                    <div className="landing-function-points">
+                      {["Reservas 24/7.", "Menos mensajes manuales.", "Confirmación simple."].map((item) => (
+                        <span key={item}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                </motion.article>
+
+                <motion.article
+                  className="landing-feature-card landing-function-block landing-function-block--clients"
+                  initial={revealInitial}
+                  whileInView={revealInView}
+                  whileHover={shouldReduceMotion ? undefined : { y: -4 }}
+                  viewport={motionViewport}
+                  transition={{ ...smoothTransition, delay: 0.18 }}
+                >
+                  <div className="landing-function-copy">
+                    <p className="landing-function-eyebrow">Clientes y equipo</p>
+                    <h3>Toda la información para atender mejor.</h3>
+                    <p>
+                      Historial, contacto, permisos y responsables claros para que el negocio no dependa de una sola persona.
+                    </p>
+                  </div>
+
+                  <motion.div
+                    className="landing-client-preview"
+                    aria-label="Vista previa de clientes y equipo"
+                    initial={previewInitial}
+                    whileInView={previewInView}
+                    viewport={motionViewport}
+                    transition={{ ...smoothTransition, delay: 0.26 }}
+                  >
+                    <div>
+                      <div className="landing-client-header">
+                        <div>
+                          <strong>Historial del cliente</strong>
+                          <span>Juan Pérez · Cliente desde abril</span>
+                        </div>
+                        <span>JP</span>
+                      </div>
+                      {[
+                        ["15/05/2026", "Corte de pelo", "Confirmado"],
+                        ["30/04/2026", "Barba completa", "Pagado"],
+                        ["10/04/2026", "Corte + barba", "Señado"]
+                      ].map(([date, service, status]) => (
+                        <div key={`${date}-${service}`} className="landing-client-row">
+                          <span>{date}</span>
+                          <strong>{service}</strong>
+                          <small>{status}</small>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <div className="landing-client-header">
+                        <div>
+                          <strong>Equipo y permisos</strong>
+                          <span>Acceso por rol y sede</span>
+                        </div>
+                        <button type="button">+ Invitar</button>
+                      </div>
+                      {[
+                        ["Cristian Schinocca", "Propietario", "Activo"],
+                        ["Martina Ramos", "Agenda y clientes", "Activo"],
+                        ["Nicolás Silva", "Agenda", "Activo"]
+                      ].map(([name, role, status]) => (
+                        <div key={name} className="landing-client-row">
+                          <strong>{name}</strong>
+                          <span>{role}</span>
+                          <small>{status}</small>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </motion.article>
               </div>
+
+              <motion.div
+                className="landing-functions-cta"
+                initial={revealInitial}
+                whileInView={revealInView}
+                viewport={motionViewport}
+                transition={{ ...smoothTransition, delay: 0.18 }}
+              >
+                <div>
+                  <img src={turnosiLogo} alt="" />
+                  <div>
+                    <h3>Organizá tu negocio. Enfocate en lo que importa.</h3>
+                    <p>Miles de profesionales ya gestionan sus turnos con TurnoSi.</p>
+                  </div>
+                </div>
+                <div>
+                  <a href="#resources" className="landing-link">
+                    Ver cómo funciona
+                  </a>
+                  <Link to="/crear-cuenta" className="landing-cta">
+                    Crear cuenta gratis
+                  </Link>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
