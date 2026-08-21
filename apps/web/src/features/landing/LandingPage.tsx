@@ -302,6 +302,8 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <span />
                   <span />
                   <span />
+                  <span />
+                  <span />
                 </div>
                 <div className="landing-product-board absolute -right-2 left-6 top-12 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[1080px]:block">
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px]">
@@ -405,7 +407,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </div>
 
                 <div className="landing-product-mobile-board min-[1080px]:hidden">
-                  <div className="grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
+                  <div className="landing-product-mobile-panel grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
                       <img src={turnosiLogo} alt="TurnoSi" className="h-5 w-auto min-w-[58px] opacity-95" />
                       <div className="mt-8 space-y-3">
