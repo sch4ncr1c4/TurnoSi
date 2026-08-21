@@ -305,8 +305,8 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <span />
                   <span />
                 </div>
-                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)] min-[1080px]:block">
-                  <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px]">
+                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden min-[1080px]:block">
+                  <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
                       <div className="mb-8 flex items-center gap-2">
                         <img src={turnosiLogo} alt="TurnoSi" className="h-6 w-auto opacity-95" />
@@ -404,6 +404,21 @@ export function LandingPage({ brand }: LandingPageProps) {
                       </div>
                     </div>
                   </div>
+
+                  <div className="landing-reservation-toast">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-9 w-9 place-items-center rounded-full bg-[rgba(253,134,6,0.16)] text-sm font-semibold text-[var(--color-accent)]">
+                        TS
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-white">Nueva reserva recibida</p>
+                        <p className="mt-1 truncate text-[11px] text-white/58">
+                          Corte de pelo · Viernes 16:00
+                        </p>
+                      </div>
+                      <span className="h-2 w-2 rounded-full bg-[#72d59b]" />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="landing-product-mobile-board min-[1080px]:hidden">
@@ -494,21 +509,6 @@ export function LandingPage({ brand }: LandingPageProps) {
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] font-semibold text-white">Nueva reserva recibida</p>
                       <div className="mt-1 h-2 w-28 rounded bg-white/18" />
-                    </div>
-                    <span className="h-2 w-2 rounded-full bg-[#72d59b]" />
-                  </div>
-                </div>
-
-                <div className="landing-reservation-toast hidden min-[1080px]:block">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[rgba(253,134,6,0.16)] text-sm font-semibold text-[var(--color-accent)]">
-                      TS
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-white">Nueva reserva recibida</p>
-                      <p className="mt-1 truncate text-[11px] text-white/58">
-                        Corte de pelo · Viernes 16:00
-                      </p>
                     </div>
                     <span className="h-2 w-2 rounded-full bg-[#72d59b]" />
                   </div>
