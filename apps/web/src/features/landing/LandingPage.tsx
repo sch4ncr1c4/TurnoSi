@@ -524,14 +524,14 @@ export function LandingPage({ brand }: LandingPageProps) {
               viewport={motionViewport}
               transition={smoothTransition}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                Todo en un solo lugar
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                Funciones
               </p>
-              <h2 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-                Menos tiempo organizando. Más turnos bajo control.
+              <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-medium leading-[1.08] tracking-[-0.04em] sm:text-4xl lg:text-[3.35rem]">
+                Todo lo que necesitás para gestionar turnos sin fricción.
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted-strong)]">
-                TurnoSi conecta agenda, reservas online, clientes y equipo para que cada día fluya con menos fricción.
+              <p className="mx-auto mt-5 max-w-2xl text-[0.95rem] leading-7 text-[var(--color-muted-strong)]">
+                Agenda, reservas online, clientes y equipo conectados para trabajar con más orden.
               </p>
             </motion.div>
 
@@ -540,95 +540,102 @@ export function LandingPage({ brand }: LandingPageProps) {
                 className="landing-feature-card landing-function-block landing-function-block--agenda"
                 initial={revealInitial}
                 whileInView={revealInView}
-                whileHover={shouldReduceMotion ? undefined : { y: -4 }}
                 viewport={motionViewport}
                 transition={{ ...smoothTransition, delay: 0.08 }}
               >
                 <div className="landing-function-copy">
-                  <p className="landing-function-eyebrow">Agenda inteligente</p>
-                  <h3>Tu día completo, claro desde el primer vistazo.</h3>
+                  <p className="landing-function-eyebrow">01 · Agenda clara</p>
+                  <h3>Todos tus turnos, claros de un vistazo.</h3>
                   <p>
-                    Visualizá tu jornada, asigná responsables y controlá el estado de cada turno sin tener que abrir mil ventanas.
+                    Horarios, responsables y estados en una sola vista.
                   </p>
                   <div className="landing-function-points">
-                    {["Estados y señas visibles.", "Responsables por turno.", "Vista diaria, semanal o mensual."].map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
+                    <span>Vista diaria, semanal y mensual.</span>
+                    <span>Señas y pagos visibles.</span>
+                    <span>Reprogramación desde el turno.</span>
                   </div>
                 </div>
 
                 <motion.div
-                  className="landing-agenda-preview"
-                  aria-label="Vista previa de agenda"
-                  initial={previewInitial}
-                  whileInView={previewInView}
+                  className="landing-appointment-stream"
+                  aria-label="Turnos entrando a la agenda"
+                  initial={shouldReduceMotion ? false : { opacity: 0 }}
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1 }}
                   viewport={motionViewport}
-                  transition={{ ...smoothTransition, delay: 0.18 }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
                 >
-                  <div className="landing-agenda-sidebar">
-                    <img src={turnosiLogo} alt="" />
-                    {["Resumen", "Agenda", "Clientes", "Equipo", "Config."].map((item) => (
-                      <span key={item} className={item === "Agenda" ? "is-active" : undefined}>
-                        {item}
-                      </span>
+                  <div className="landing-appointment-plane">
+                    {[
+                      [
+                        ["09:00", "Corte de pelo", "Confirmado"],
+                        ["10:30", "Limpieza dental", "Señado"],
+                        ["12:00", "Color y corte", "En espera"],
+                        ["14:30", "Consulta odontológica", "Pagado"],
+                        ["16:00", "Barba completa", "Confirmado"]
+                      ],
+                      [
+                        ["09:30", "Control mensual", "Señado"],
+                        ["11:00", "Consulta inicial", "Confirmado"],
+                        ["13:30", "Perfilado", "Pagado"],
+                        ["15:00", "Ortodoncia", "En espera"],
+                        ["18:00", "Corte + barba", "Confirmado"]
+                      ]
+                    ].map((column, columnIndex) => (
+                      <div
+                        key={columnIndex}
+                        className={`landing-appointment-track landing-appointment-track--${columnIndex + 1}`}
+                      >
+                        {[0, 1, 2].map((groupIndex) => (
+                          <div key={groupIndex} className="landing-appointment-group" aria-hidden={groupIndex > 0}>
+                            {column.map(([time, service, status]) => (
+                              <div key={`${service}-${time}-${groupIndex}`} className="landing-appointment-pill">
+                                <span>{time}</span>
+                                <strong>{service}</strong>
+                                <small data-status={status}>{status}</small>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     ))}
-                    <button type="button">+ Nuevo turno</button>
-                  </div>
-
-                  <div className="landing-agenda-board">
-                    <div className="landing-window-bar">
-                      <div>
-                        <strong>Agenda</strong>
-                        <span>Miércoles 22 de mayo, 2026</span>
-                      </div>
-                      <div className="landing-window-tabs">
-                        <span className="is-active">Día</span>
-                        <span>Semana</span>
-                        <span>Mes</span>
-                      </div>
-                    </div>
-
-                    <div className="landing-schedule-grid">
-                      <span className="landing-schedule-head">Hora</span>
-                      {["Cristian", "Martina", "Nicolás"].map((person) => (
-                        <span key={person} className="landing-schedule-head">
-                          {person}
-                        </span>
-                      ))}
-
-                      {["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"].map((time) => (
-                        <span key={time} className="landing-schedule-time">
-                          {time}
-                        </span>
-                      ))}
-
-                      <span className="landing-schedule-event landing-schedule-event--green">Corte pelo <small>Juan Pérez</small></span>
-                      <span className="landing-schedule-event landing-schedule-event--violet">Perfilado <small>Confirmado</small></span>
-                      <span className="landing-schedule-event landing-schedule-event--orange">Corte + barba <small>Señado</small></span>
-                      <span className="landing-schedule-event landing-schedule-event--green landing-schedule-event--wide">Color y corte <small>Pagado</small></span>
-                      <span className="landing-schedule-event landing-schedule-event--violet">Barba completa <small>Martín</small></span>
-                    </div>
-
-                    <div className="landing-function-toast">
-                      <span>✓</span>
-                      <div>
-                        <strong>Nuevo turno confirmado</strong>
-                        <small>Corte de pelo · Viernes 24/05 16:00</small>
-                      </div>
-                    </div>
                   </div>
                 </motion.div>
+
+                <div className="landing-agenda-sparkles" aria-hidden="true">
+                  {Array.from({ length: 7 }, (_, index) => (
+                    <span key={index} />
+                  ))}
+                </div>
               </motion.article>
 
               <div className="landing-functions-split">
                 <motion.article
-                  className="landing-feature-card landing-function-block landing-function-block--booking"
+                  className="landing-feature-card landing-function-block landing-function-block--booking landing-function-card-dark"
                   initial={revealInitial}
                   whileInView={revealInView}
                   whileHover={shouldReduceMotion ? undefined : { y: -4 }}
                   viewport={motionViewport}
                   transition={{ ...smoothTransition, delay: 0.12 }}
                 >
+                  <div className="landing-function-copy">
+                    <span className="landing-function-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M8 12h8M8 16h5M7 4.5h10A2.5 2.5 0 0 1 19.5 7v10A2.5 2.5 0 0 1 17 19.5H7A2.5 2.5 0 0 1 4.5 17V7A2.5 2.5 0 0 1 7 4.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                        <path d="M8 8h.01M12 8h.01M16 8h.01" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                    <p className="landing-function-eyebrow">02 · Reserva pública</p>
+                    <h3>El cliente reserva sin escribirte para cada horario.</h3>
+                    <p>
+                      Tu página pública muestra servicios, horarios disponibles y confirmación conectada a tu agenda.
+                    </p>
+                    <div className="landing-function-points">
+                      <span>Reservas 24/7 desde cualquier dispositivo.</span>
+                      <span>Disponibilidad real según sede, servicio y profesional.</span>
+                      <span>Señas y pagos listos para escalar la operación.</span>
+                    </div>
+                  </div>
+
                   <motion.div
                     className="landing-booking-preview"
                     aria-label="Vista previa de reserva online"
@@ -690,22 +697,10 @@ export function LandingPage({ brand }: LandingPageProps) {
                     </div>
                   </motion.div>
 
-                  <div className="landing-function-copy">
-                    <p className="landing-function-eyebrow">Reservas online</p>
-                    <h3>Tus clientes reservan incluso cuando no estás.</h3>
-                    <p>
-                      Eligen servicio, fecha y horario desde tu página pública. Vos recibís el turno ya ordenado en agenda.
-                    </p>
-                    <div className="landing-function-points">
-                      {["Reservas 24/7.", "Menos mensajes manuales.", "Confirmación simple."].map((item) => (
-                        <span key={item}>{item}</span>
-                      ))}
-                    </div>
-                  </div>
                 </motion.article>
 
                 <motion.article
-                  className="landing-feature-card landing-function-block landing-function-block--clients"
+                  className="landing-feature-card landing-function-block landing-function-block--clients landing-function-card-dark"
                   initial={revealInitial}
                   whileInView={revealInView}
                   whileHover={shouldReduceMotion ? undefined : { y: -4 }}
@@ -713,11 +708,21 @@ export function LandingPage({ brand }: LandingPageProps) {
                   transition={{ ...smoothTransition, delay: 0.18 }}
                 >
                   <div className="landing-function-copy">
-                    <p className="landing-function-eyebrow">Clientes y equipo</p>
-                    <h3>Toda la información para atender mejor.</h3>
+                    <span className="landing-function-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M9.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM4.5 18.5c.8-2.6 2.55-4.1 5-4.1s4.2 1.5 5 4.1M16.5 11.5a2.45 2.45 0 1 0 0-4.9M15.5 14.5c1.9.2 3.25 1.45 4 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                    <p className="landing-function-eyebrow">03 · Clientes y equipo</p>
+                    <h3>Historial, contacto y permisos sin mezclar responsabilidades.</h3>
                     <p>
-                      Historial, contacto, permisos y responsables claros para que el negocio no dependa de una sola persona.
+                      Cada cliente queda unificado por contacto, y cada persona del equipo accede solo a lo que necesita.
                     </p>
+                    <div className="landing-function-points">
+                      <span>Clientes duplicados reducidos por teléfono o email.</span>
+                      <span>Roles para propietario, administrador y miembros.</span>
+                      <span>Ausencias, pagos y seguimiento en un mismo perfil.</span>
+                    </div>
                   </div>
 
                   <motion.div
@@ -732,7 +737,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                       <div className="landing-client-header">
                         <div>
                           <strong>Historial del cliente</strong>
-                          <span>Juan Pérez · Cliente desde abril</span>
+                          <span>Cliente desde abril</span>
                         </div>
                         <span>JP</span>
                       </div>
@@ -758,7 +763,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                         <button type="button">+ Invitar</button>
                       </div>
                       {[
-                        ["Cristian Schinocca", "Propietario", "Activo"],
+                        ["Sofía Díaz", "Propietaria", "Activo"],
                         ["Martina Ramos", "Agenda y clientes", "Activo"],
                         ["Nicolás Silva", "Agenda", "Activo"]
                       ].map(([name, role, status]) => (
@@ -773,29 +778,6 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </motion.article>
               </div>
 
-              <motion.div
-                className="landing-functions-cta"
-                initial={revealInitial}
-                whileInView={revealInView}
-                viewport={motionViewport}
-                transition={{ ...smoothTransition, delay: 0.18 }}
-              >
-                <div>
-                  <img src={turnosiLogo} alt="" />
-                  <div>
-                    <h3>Organizá tu negocio. Enfocate en lo que importa.</h3>
-                    <p>Miles de profesionales ya gestionan sus turnos con TurnoSi.</p>
-                  </div>
-                </div>
-                <div>
-                  <a href="#resources" className="landing-link">
-                    Ver cómo funciona
-                  </a>
-                  <Link to="/crear-cuenta" className="landing-cta">
-                    Crear cuenta gratis
-                  </Link>
-                </div>
-              </motion.div>
             </div>
           </div>
         </section>
