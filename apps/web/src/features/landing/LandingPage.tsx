@@ -260,12 +260,12 @@ export function LandingPage({ brand }: LandingPageProps) {
           </header>
 
           <div className="landing-hero-content relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1460px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-12 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] xl:items-center xl:gap-12 xl:px-8 xl:py-12 2xl:gap-16">
-            <div className="landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left xl:order-none xl:mx-0 xl:translate-x-12 xl:justify-self-center 2xl:translate-x-16">
+            <div className="landing-hero-copy landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left xl:order-none xl:mx-0 xl:translate-x-12 xl:justify-self-center 2xl:translate-x-16">
               <h1 className="max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-[660px] xl:text-6xl">
                 Gestioná tus turnos de forma{" "}
                 <span className="text-white">simple</span>.
               </h1>
-              <div className="mx-auto mt-4 max-w-full space-y-2 text-sm leading-7 text-white/70 [text-wrap:balance] sm:mx-0 sm:mt-5 sm:max-w-xl sm:text-base sm:leading-8">
+              <div className="landing-hero-copy__description mx-auto mt-4 max-w-full space-y-2 text-sm leading-7 text-white/70 [text-wrap:balance] sm:mx-0 sm:mt-5 sm:max-w-xl sm:text-base sm:leading-8">
                 <p>
                   Organizá reservas, horarios, equipo y clientes desde un panel
                   claro.
@@ -276,7 +276,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </p>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-row">
+              <div className="landing-hero-copy__actions mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-row">
                 <a
                   href="#funciones"
                   className="landing-cta inline-flex w-full min-w-0 items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 sm:w-auto"
@@ -467,7 +467,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                           <span>Turno</span>
                           <span>Estado</span>
                         </div>
-                        {[0, 1, 2, 3].map((item) => (
+                        {[0, 1].map((item) => (
                           <div
                             key={item}
                             className="grid grid-cols-[42px_minmax(0,1fr)_54px] items-center gap-2 border-b border-[var(--color-border)] px-2.5 py-2.5 last:border-b-0"
@@ -532,14 +532,14 @@ export function LandingPage({ brand }: LandingPageProps) {
               viewport={motionViewport}
               transition={smoothTransition}
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
                 Funciones
               </p>
               <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-medium leading-[1.08] tracking-[-0.04em] sm:text-4xl lg:text-[3.35rem]">
-                Todo lo que necesitás para gestionar turnos sin fricción.
+                Todo para gestionar tus turnos.
               </h2>
               <p className="mx-auto mt-5 max-w-2xl text-[0.95rem] leading-7 text-[var(--color-muted-strong)]">
-                Agenda, reservas online, clientes y equipo conectados para trabajar con más orden.
+                Agenda, clientes y equipo en un solo lugar.
               </p>
             </motion.div>
 
