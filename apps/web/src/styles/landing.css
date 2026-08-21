@@ -220,10 +220,7 @@ body:has(.landing-hero-shell) {
 .landing-hero-shell {
   overflow: visible;
   border-bottom-color: transparent !important;
-  background:
-    radial-gradient(circle at 77% 48%, rgba(255, 255, 255, 0.095), transparent 24%),
-    radial-gradient(circle at 82% 46%, rgba(255, 255, 255, 0.06), transparent 29%),
-    var(--color-ink);
+  background: var(--color-ink);
 }
 
 .landing-hero-shell::before,
@@ -234,43 +231,75 @@ body:has(.landing-hero-shell) {
 }
 
 .landing-hero-shell::before {
-  inset: 0;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse at 90% 48%, transparent 42%, rgba(255, 132, 0, 0.12) 42.12%, transparent 42.42%),
-    radial-gradient(ellipse at 88% 46%, transparent 54%, rgba(255, 255, 255, 0.05) 54.12%, transparent 54.36%),
-    radial-gradient(circle at 50% 45%, transparent 48%, rgba(7, 4, 18, 0.38) 100%);
-  mask-image: linear-gradient(112deg, transparent 0%, transparent 45%, #000 63%, #000 78%, transparent 98%);
-  transform-origin: 82% 48%;
-  animation: landing-orbit-drift 18s ease-in-out infinite;
+  content: none;
 }
 
 .landing-hero-shell::after {
-  right: -29%;
-  top: 7%;
+  content: none;
+}
+
+.landing-hero-orbits {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   z-index: 0;
-  width: min(980px, 86vw);
-  aspect-ratio: 1;
-  opacity: 0.05;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  width: 145%;
+  height: 130%;
+  pointer-events: none;
+  border: 1px solid rgba(253, 134, 6, 0.12);
   border-radius: 50%;
-  transform: rotate(-14deg);
-  mask-image: linear-gradient(120deg, transparent 0%, #000 20%, #000 48%, transparent 62%);
-  transform-origin: 50% 50%;
-  animation: landing-orbit-ring 24s ease-in-out infinite;
+  transform: translate(-50%, -50%) perspective(500px) rotateY(-10deg);
+  transform-origin: center;
+}
+
+.landing-hero-orbits::before,
+.landing-hero-orbits::after,
+.landing-hero-orbits > span {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 50%;
+  content: "";
+}
+
+.landing-hero-orbits::before {
+  inset: 7.5%;
+}
+
+.landing-hero-orbits::after {
+  inset: 15%;
+  border-color: rgba(253, 134, 6, 0.11);
+}
+
+.landing-hero-orbits > span:nth-child(1) {
+  inset: 22.5%;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.landing-hero-orbits > span:nth-child(2) {
+  inset: 30%;
+  border-color: rgba(253, 134, 6, 0.09);
+}
+
+.landing-hero-orbits > span:nth-child(3) {
+  inset: 37.5%;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.landing-hero-orbits > span:nth-child(4) {
+  inset: 45%;
+  border-color: rgba(253, 134, 6, 0.08);
 }
 
 .landing-hero-wave {
   position: absolute;
   right: 0;
-  bottom: -74px;
+  bottom: -40px;
   left: 0;
   z-index: 1;
-  height: clamp(120px, 10vw, 170px);
+  height: clamp(72px, 6vw, 96px);
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(32, 24, 54, 0) 0%, var(--color-ink) 24%, var(--color-ink) 100%);
-  clip-path: ellipse(96% 78% at 50% 0%);
+  background: var(--color-ink);
+  clip-path: ellipse(62% 100% at 50% 0%);
   transform-origin: 50% 100%;
   animation: landing-hero-wave-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) 220ms both;
 }
@@ -424,33 +453,6 @@ body:has(.landing-hero-shell) {
   overflow: visible;
 }
 
-.landing-product-scene::before,
-.landing-product-scene::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  pointer-events: none;
-  border: 1.2px solid rgba(255, 255, 255, 0.14);
-  border-radius: 50%;
-  mask-image: linear-gradient(104deg, transparent 0%, #000 18%, #000 56%, transparent 78%);
-}
-
-.landing-product-scene::before {
-  inset: -4% -8% 16% 11%;
-  transform: rotate(-11deg);
-  animation: landing-product-orbit-primary 16s ease-in-out infinite;
-}
-
-.landing-product-scene::after {
-  inset: 18% -14% 18% 18%;
-  opacity: 0.07;
-  border-color: rgba(255, 255, 255, 0.05);
-  border-width: 1px;
-  transform: rotate(-13deg);
-  mask-image: linear-gradient(104deg, transparent 0%, transparent 18%, #000 36%, #000 62%, transparent 78%);
-  animation: landing-product-orbit-secondary 20s ease-in-out infinite;
-}
-
 .landing-product-board {
   z-index: 1;
   transform: rotateY(-10deg) translate3d(-100px, -70px, -100px);
@@ -507,6 +509,10 @@ body:has(.landing-hero-shell) {
 }
 
 @media (max-width: 948px) {
+  .landing-hero-orbits {
+    display: none;
+  }
+
   .landing-hero-shell {
     padding-top: calc(112px + env(safe-area-inset-top)) !important;
   }
@@ -1767,10 +1773,10 @@ body:has(.landing-hero-shell) {
 @media (max-width: 760px) {
   .landing-hero-wave {
     right: 0;
-    bottom: -56px;
+    bottom: -28px;
     left: 0;
-    height: 116px;
-    clip-path: ellipse(112% 76% at 50% 0%);
+    height: 64px;
+    clip-path: ellipse(72% 100% at 50% 0%);
   }
 
   .landing-functions-section {
