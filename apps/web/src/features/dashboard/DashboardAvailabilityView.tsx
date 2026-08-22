@@ -762,6 +762,7 @@ export function DashboardAvailabilityView({ subscription }: DashboardAvailabilit
           <AvailabilityWeeklySchedule
             activeDayMenu={activeDayMenu}
             availability={availability}
+            onCloseDayMenu={() => setActiveDayMenu(null)}
             onDuplicateAll={duplicateDayToAll}
             onDuplicateDay={openDuplicateDialog}
             onRemoveSlot={removeSlot}

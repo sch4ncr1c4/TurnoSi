@@ -224,6 +224,7 @@ export function DashboardSettingsView({
   const [toast, setToast] = useState("");
   const [activeTab, setActiveTab] = useState<SettingsTab>("business");
   const settingsTabButtonRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({});
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [accountHasUnsavedChanges, setAccountHasUnsavedChanges] = useState(false);
   const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
   const [showUnsavedState, setShowUnsavedState] = useState(false);
@@ -287,6 +288,14 @@ export function DashboardSettingsView({
         : activeTab === "payments"
           ? hasPaymentChanges
           : false;
+
+  useEffect(() => {
+    const textarea = descriptionTextareaRef.current;
+    if (!textarea || activeTab !== "business") return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [activeTab, settings.description]);
 
   useEffect(() => {
     const organization = settingsQuery.data;
@@ -1364,13 +1373,14 @@ function moneyToCents(value: string) {
                         Descripción pública
                       </span>
                       <textarea
+                        ref={descriptionTextareaRef}
                         value={settings.description}
                         maxLength={settingsFieldLimits.description}
                         placeholder="Contá brevemente qué servicios ofrece tu negocio."
                         onChange={(event) =>
                           updateSetting("description", event.target.value)
                         }
-                        className={`min-h-32 resize-none rounded-md border bg-[#ffffff] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`min-h-32 resize-none overflow-hidden rounded-md border bg-[#ffffff] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.description !== savedSettings.description
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1858,7 +1868,7 @@ function moneyToCents(value: string) {
 
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[rgba(32,24,54,0.08)]">
               <div
-                className="h-full rounded-full bg-[#2f7d45] transition-all duration-500"
+                className="h-full rounded-full bg-[#2f7d45]"
                 style={{
                   width: `${profileCompletionPercent}%`,
                   backgroundColor: profileCompletionColor

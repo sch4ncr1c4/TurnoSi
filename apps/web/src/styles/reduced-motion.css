@@ -41,6 +41,12 @@
     transform: none;
   }
 
+  .dashboard-sidebar-plan-button::before,
+  .dashboard-sidebar-plan-arrow,
+  .dashboard-sidebar-logout::before {
+    transition: none;
+  }
+
   .landing-booking-services span,
   .landing-booking-hours span,
   .landing-booking-confirm {

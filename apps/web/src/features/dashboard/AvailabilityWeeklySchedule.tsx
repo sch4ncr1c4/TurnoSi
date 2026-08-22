@@ -1,4 +1,4 @@
-import { useRef, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
 
 import { StatusBadge, TimeInput } from "../../components/ui";
 import trashIcon from "../../components/assets/icons/actions/trash.svg";
@@ -9,6 +9,7 @@ type AvailabilityWeeklyScheduleProps = {
   activeDayMenu: number | null;
   availability: WeeklyAvailabilityDay[];
   onDuplicateAll: (dayIndex: number) => void;
+  onCloseDayMenu: () => void;
   onRemoveSlot: (dayIndex: number, slotIndex: number) => void;
   onDuplicateDay: (dayIndex: number) => void;
   onToggleBreak: (dayIndex: number) => void;
@@ -27,6 +28,7 @@ export function AvailabilityWeeklySchedule({
   activeDayMenu,
   availability,
   onDuplicateAll,
+  onCloseDayMenu,
   onRemoveSlot,
   onDuplicateDay,
   onToggleBreak,
@@ -35,6 +37,19 @@ export function AvailabilityWeeklySchedule({
   onUpdateBreakTime,
   onUpdateSlotTime
 }: AvailabilityWeeklyScheduleProps) {
+  useEffect(() => {
+    if (activeDayMenu === null) return;
+
+    const closeOnOutsidePointer = (event: globalThis.PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("[data-day-actions]")) return;
+      onCloseDayMenu();
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [activeDayMenu, onCloseDayMenu]);
+
   return (
     <>
       <div className="divide-y divide-[var(--color-border)] min-[1500px]:hidden">
@@ -49,7 +64,7 @@ export function AvailabilityWeeklySchedule({
                 </span>
                 <p className="text-sm font-semibold">{day.day}</p>
               </div>
-              <div className="relative flex shrink-0 items-center gap-2">
+              <div data-day-actions className="relative flex shrink-0 items-center gap-2">
                 <StatusBadge enabled={day.enabled} status={day.status} />
                 <button
                   type="button"
@@ -190,7 +205,7 @@ export function AvailabilityWeeklySchedule({
                 <div className="flex justify-center">
                   <StatusBadge enabled={day.enabled} status={day.status} />
                 </div>
-                <div className="relative">
+                <div data-day-actions className="relative">
                   <button
                     type="button"
                     onClick={() => onToggleDayMenu(dayIndex)}

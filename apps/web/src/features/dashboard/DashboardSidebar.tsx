@@ -17,7 +17,7 @@ import navHomeIcon from "../../components/assets/icons/navigation/home.svg";
 import navSettingsIcon from "../../components/assets/icons/navigation/settings.svg";
 import navTeamIcon from "../../components/assets/icons/navigation/team.svg";
 import navTeamSettingsIcon from "../../components/assets/icons/navigation/team-settings.svg";
-import sparklesIcon from "../../components/assets/sparkles.svg";
+import astroidIcon from "../../components/assets/icons/actions/astroid.svg";
 
 const dashboardNavIcons: Partial<Record<DashboardView, string>> = {
   summary: navHomeIcon,
@@ -150,7 +150,8 @@ export function DashboardSidebar({
         </button>
       </div>
 
-      <nav className="dashboard-sidebar-nav mt-8 space-y-1 md:mt-7 md:shrink-0">
+      <p className="dashboard-sidebar-section-label">Espacio de trabajo</p>
+      <nav className="dashboard-sidebar-nav space-y-1 md:shrink-0">
         {dashboardSections.map((section, index) => {
           const view =
             section.label === "Agenda"
@@ -179,10 +180,8 @@ export function DashboardSidebar({
                 onChangeView(view);
                 setIsMobileMenuOpen(false);
               }}
-              className={`block w-full rounded-md px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-35 ${
-                isActive
-                  ? "bg-white/10 font-medium text-white"
-                  : "text-white/68 hover:bg-white/8 hover:text-white"
+              className={`dashboard-sidebar-nav-item block w-full text-left text-sm disabled:cursor-not-allowed disabled:opacity-35 ${
+                isActive ? "is-active" : ""
               }`}
             >
               <span className="flex items-center gap-3">
@@ -191,7 +190,7 @@ export function DashboardSidebar({
                     src={icon}
                     alt=""
                     aria-hidden="true"
-                    className="h-5 w-5 shrink-0 opacity-90 invert"
+                    className="dashboard-sidebar-nav-icon h-5 w-5 shrink-0 invert"
                   />
                 )}
                 <span className="min-w-0 flex-1">{section.label}</span>
@@ -231,7 +230,7 @@ export function DashboardSidebar({
         <span>Nuevo turno</span>
       </button>
 
-      <div className="dashboard-sidebar-footer mt-6 border-t border-white/12 pt-5 md:mt-auto md:shrink-0 md:pt-5">
+      <div className="dashboard-sidebar-footer mt-6 border-t border-white/10 pt-5 md:mt-auto md:shrink-0 md:pt-5">
         <div className="dashboard-sidebar-organization mb-5 rounded-xl border border-white/12 bg-white/[0.04] p-3">
           <div className="flex items-center gap-3">
             <div className="dashboard-sidebar-org-avatar flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-white/10">
@@ -251,7 +250,7 @@ export function DashboardSidebar({
               )}
             </div>
 
-            <div className="min-w-0">
+            <div className="dashboard-sidebar-org-copy min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
                 Organización
               </p>
@@ -263,7 +262,7 @@ export function DashboardSidebar({
                 {account.role ? ` · ${account.role}` : ""}
               </p>
               {currentPlan && (
-                <p className="mt-1 text-xs font-semibold text-[var(--color-accent)]">
+                <p className="dashboard-sidebar-current-plan mt-1 text-xs font-semibold text-[var(--color-accent)]">
                   Plan {currentPlan}
                 </p>
               )}
@@ -279,13 +278,13 @@ export function DashboardSidebar({
               onOpenBillingPlans();
               setIsMobileMenuOpen(false);
             }}
-            className="dashboard-sidebar-plan-button group relative flex w-full items-center gap-3 overflow-hidden rounded-md border border-white/14 bg-white/[0.045] px-3.5 py-3 text-left text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(253,134,6,0.5)] hover:bg-white/[0.07] hover:shadow-[0_16px_36px_rgba(0,0,0,0.18)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-35"
+            className="dashboard-sidebar-plan-button group relative flex w-full items-center gap-3 overflow-hidden rounded-md border px-3.5 py-3 text-left text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-35"
           >
             <img
-              src={sparklesIcon}
+              src={astroidIcon}
               alt=""
               aria-hidden="true"
-              className="dashboard-sidebar-plan-sparkles h-5 w-5 shrink-0"
+              className="dashboard-sidebar-plan-icon h-5 w-5 shrink-0"
             />
             <span className="min-w-0 flex-1">Mejorar plan</span>
             <span className="dashboard-sidebar-plan-badge">PRO</span>
@@ -304,7 +303,7 @@ export function DashboardSidebar({
           onClick={() => void handleLogout()}
           className="dashboard-sidebar-logout mt-5 w-full rounded-md border border-white/20 px-4 py-2.5 text-sm font-medium text-white/72 hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
         >
-          {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+          <span>{isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}</span>
         </button>
       </div>
     </aside>
