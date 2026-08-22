@@ -41,6 +41,13 @@
     transform: none;
   }
 
+  .landing-booking-services span,
+  .landing-booking-hours span,
+  .landing-booking-confirm {
+    animation: none;
+    transition: none;
+  }
+
   .booking-skeleton::after {
     animation: none;
   }

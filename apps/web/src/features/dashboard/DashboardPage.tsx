@@ -10,6 +10,7 @@ import {
   type ReactNode
 } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Navigate, useSearchParams } from "react-router-dom";
 import {
   addDays,
@@ -167,6 +168,7 @@ function DashboardSectionFallback() {
 }
 
 export function DashboardPage({ brand }: DashboardPageProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [activeView, setActiveView] = useState<DashboardView>(
     getInitialDashboardView
   );
@@ -1005,7 +1007,16 @@ export function DashboardPage({ brand }: DashboardPageProps) {
               </div>
             )}
             <Suspense fallback={<DashboardSectionFallback />}>
-              {effectiveActiveView === "agenda" ? (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={effectiveActiveView}
+                  className="dashboard-view-transition"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 14, scale: 0.995 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, y: -7, scale: 0.998 }}
+                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                >
+                {effectiveActiveView === "agenda" ? (
                 <DashboardAgendaView
                   appointments={allAppointments}
                   disablePreviousMonth={!canGoToPreviousCalendarMonth}
@@ -1107,6 +1118,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
                   visibleAppointments={visibleAppointments}
                 />
               )}
+                </motion.div>
+              </AnimatePresence>
             </Suspense>
           </div>
         </section>

@@ -29,6 +29,27 @@ const navigationLinks = [
   }
 ];
 
+const bookingPreviewSteps = [
+  {
+    service: "Corte de pelo",
+    duration: "30 min",
+    hours: ["09:00", "10:30", "12:00"],
+    selectedHour: "09:00"
+  },
+  {
+    service: "Barba completa",
+    duration: "30 min",
+    hours: ["11:00", "12:30", "14:00"],
+    selectedHour: "12:30"
+  },
+  {
+    service: "Consulta odontológica",
+    duration: "45 min",
+    hours: ["14:30", "16:00", "17:30"],
+    selectedHour: "17:30"
+  }
+] as const;
+
 function LandingCardDots({ count = 7 }: { count?: number }) {
   return (
     <div className="landing-agenda-sparkles" aria-hidden="true">
@@ -42,7 +63,10 @@ function LandingCardDots({ count = 7 }: { count?: number }) {
 export function LandingPage({ brand }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [bookingPreviewIndex, setBookingPreviewIndex] = useState(0);
+  const [bookingPreviewPhase, setBookingPreviewPhase] = useState(0);
   const shouldReduceMotion = useReducedMotion();
+  const bookingPreview = bookingPreviewSteps[bookingPreviewIndex];
   const revealInitial = shouldReduceMotion ? false : { opacity: 0, y: 30 };
   const revealInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0 };
   const previewInitial = shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 };
@@ -85,6 +109,28 @@ export function LandingPage({ brand }: LandingPageProps) {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      setBookingPreviewPhase(2);
+      return;
+    }
+
+    setBookingPreviewPhase(0);
+    const selectService = window.setTimeout(() => setBookingPreviewPhase(1), 650);
+    const selectHour = window.setTimeout(() => setBookingPreviewPhase(2), 1600);
+    const hideSelection = window.setTimeout(() => setBookingPreviewPhase(3), 3900);
+    const nextService = window.setTimeout(() => {
+      setBookingPreviewIndex((current) => (current + 1) % bookingPreviewSteps.length);
+    }, 4400);
+
+    return () => {
+      window.clearTimeout(selectService);
+      window.clearTimeout(selectHour);
+      window.clearTimeout(hideSelection);
+      window.clearTimeout(nextService);
+    };
+  }, [bookingPreviewIndex, shouldReduceMotion]);
 
   useEffect(() => {
     const elements = Array.from(
@@ -188,7 +234,7 @@ export function LandingPage({ brand }: LandingPageProps) {
               </a>
               <a
                 href="/register"
-                className={`landing-hero-nav__cta rounded-md bg-[var(--color-accent)] font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 ${
+                className={`landing-cta landing-hero-nav__cta rounded-md bg-[var(--color-accent)] font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${
                   isScrolled ? "landing-hero-nav__cta--compact px-3.5 py-1.5 text-[0.92rem]" : "px-4 py-2 text-sm"
                 }`}
               >
@@ -659,30 +705,47 @@ export function LandingPage({ brand }: LandingPageProps) {
                     viewport={motionViewport}
                     transition={{ ...smoothTransition, delay: 0.2 }}
                   >
-                    <div className="landing-booking-grid">
-                      <div className="landing-booking-services">
-                        <small>Servicio</small>
-                        <span className="is-selected">
-                          <strong>Corte de pelo</strong>
-                          <small>30 min</small>
-                        </span>
-                      </div>
+                    <div className="landing-booking-stage">
+                        <div className="landing-booking-grid">
+                          <motion.div
+                            key={bookingPreview.service}
+                            className="landing-booking-services"
+                            initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                            animate={bookingPreviewPhase === 3 ? { opacity: 0, y: -5 } : { opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                          >
+                            <small>Servicio</small>
+                            <span className={bookingPreviewPhase >= 1 && bookingPreviewPhase < 3 ? "is-selected" : undefined}>
+                              <strong>{bookingPreview.service}</strong>
+                              <small>{bookingPreview.duration}</small>
+                            </span>
+                          </motion.div>
 
-                      <div className="landing-booking-hours">
-                        <small>Horario</small>
-                        {["09:00", "10:30", "12:00"].map((hour) => (
-                          <span key={hour} className={hour === "10:30" ? "is-selected" : undefined}>
-                            {hour}
-                          </span>
-                        ))}
-                      </div>
+                          <motion.div
+                            key={`${bookingPreview.service}-hours`}
+                            className="landing-booking-hours"
+                            initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                            animate={bookingPreviewPhase === 3 ? { opacity: 0, y: -5 } : { opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                          >
+                            <small>Horario</small>
+                            {bookingPreview.hours.map((hour) => (
+                              <span
+                                key={hour}
+                                className={bookingPreviewPhase === 2 && hour === bookingPreview.selectedHour ? "is-selected" : undefined}
+                              >
+                                {hour}
+                              </span>
+                            ))}
+                          </motion.div>
 
-                      <div className="landing-booking-confirm">
-                        <span>
-                          <img src={statusCheckIcon} alt="" aria-hidden="true" className="h-6 w-6 brightness-0 invert" />
-                        </span>
-                        <strong>Turno confirmado</strong>
-                        <small>Viernes 24/05 · 10:30</small>
+                        <div className={`landing-booking-confirm${bookingPreviewPhase === 2 ? " is-visible" : ""}`}>
+                            <span>
+                              <img src={statusCheckIcon} alt="" aria-hidden="true" className="h-6 w-6 brightness-0 invert" />
+                            </span>
+                          <strong>Turno confirmado</strong>
+                          <small>{bookingPreview.service} · {bookingPreview.selectedHour}</small>
+                        </div>
                       </div>
                     </div>
                     <LandingCardDots count={11} />
@@ -780,12 +843,10 @@ export function LandingPage({ brand }: LandingPageProps) {
             <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-pricing-heading">
                 <p className="landing-section-eyebrow">Precios</p>
                 <h2 className="landing-page-title">
-                  Pagás por el tamaño real de tu operación.
+                  Un plan para cada etapa de tu negocio.
                 </h2>
                 <p>
-                  Cada plan tiene límites concretos para evitar abusos y que el
-                  sistema siga siendo estable. La prueba gratis usa el plan Inicial
-                  durante 7 días.
+                  Empezá con lo que necesitás hoy y cambiá de plan cuando tu equipo crezca.
                 </p>
             </div>
 

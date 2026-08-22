@@ -101,7 +101,7 @@ export function DashboardCustomersView() {
           </div>
         </CardHeader>
         <CardBody className="p-0">
-          <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-[rgba(240,234,217,0.32)] p-3 lg:flex-row lg:items-end lg:justify-start">
+          <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-white p-3 lg:flex-row lg:items-end lg:justify-start">
             <label className="w-full min-w-0 lg:max-w-xl xl:max-w-2xl">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 Buscar

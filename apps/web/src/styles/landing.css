@@ -261,6 +261,9 @@ body:has(.landing-hero-shell) {
   pointer-events: none;
   border: 1px solid rgba(253, 134, 6, 0.12);
   border-radius: 50%;
+  box-shadow:
+    0 0 24px rgba(253, 134, 6, 0.08),
+    inset 0 0 20px rgba(253, 134, 6, 0.045);
   transform: translate(-50%, -50%) perspective(500px) rotateY(-10deg);
   transform-origin: center;
 }
@@ -281,6 +284,9 @@ body:has(.landing-hero-shell) {
 .landing-hero-orbits::after {
   inset: 11%;
   border-color: rgba(253, 134, 6, 0.11);
+  box-shadow:
+    0 0 18px rgba(253, 134, 6, 0.09),
+    inset 0 0 16px rgba(253, 134, 6, 0.045);
 }
 
 .landing-hero-orbits > span:nth-child(1) {
@@ -291,6 +297,9 @@ body:has(.landing-hero-shell) {
 .landing-hero-orbits > span:nth-child(2) {
   inset: 22%;
   border-color: rgba(253, 134, 6, 0.09);
+  box-shadow:
+    0 0 16px rgba(253, 134, 6, 0.08),
+    inset 0 0 14px rgba(253, 134, 6, 0.04);
 }
 
 .landing-hero-orbits > span:nth-child(3) {
@@ -301,6 +310,9 @@ body:has(.landing-hero-shell) {
 .landing-hero-orbits > span:nth-child(4) {
   inset: 33%;
   border-color: rgba(253, 134, 6, 0.08);
+  box-shadow:
+    0 0 14px rgba(253, 134, 6, 0.075),
+    inset 0 0 12px rgba(253, 134, 6, 0.04);
 }
 
 .landing-hero-orbits > span:nth-child(5) {
@@ -311,6 +323,16 @@ body:has(.landing-hero-shell) {
 .landing-hero-orbits > span:nth-child(6) {
   inset: 44%;
   border-color: rgba(253, 134, 6, 0.07);
+  box-shadow:
+    0 0 12px rgba(253, 134, 6, 0.07),
+    inset 0 0 10px rgba(253, 134, 6, 0.035);
+}
+
+.landing-hero-orbits::before,
+.landing-hero-orbits > span:nth-child(odd) {
+  box-shadow:
+    0 0 14px rgba(255, 255, 255, 0.045),
+    inset 0 0 12px rgba(151, 128, 193, 0.04);
 }
 
 .landing-hero-wave {
@@ -1041,6 +1063,15 @@ body:has(.landing-hero-shell) {
   gap: 12px;
 }
 
+.landing-booking-stage {
+  display: grid;
+}
+
+.landing-booking-stage > .landing-booking-grid {
+  grid-area: 1 / 1;
+  width: 100%;
+}
+
 .landing-booking-services,
 .landing-booking-hours,
 .landing-booking-calendar,
@@ -1055,6 +1086,12 @@ body:has(.landing-hero-shell) {
   border-radius: 9px;
   padding: 8px 10px;
   font-size: 0.68rem;
+  transition:
+    color 420ms ease,
+    border-color 420ms ease,
+    background-color 420ms ease,
+    box-shadow 520ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .landing-booking-services strong,
@@ -1073,6 +1110,24 @@ body:has(.landing-hero-shell) {
   background: rgba(253, 134, 6, 0.07);
   color: var(--color-accent);
   font-weight: 850;
+  animation: landing-booking-select 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes landing-booking-select {
+  0% {
+    transform: scale(0.99);
+    box-shadow: 0 0 0 0 rgba(253, 134, 6, 0);
+  }
+
+  55% {
+    transform: scale(1.012);
+    box-shadow: 0 0 0 4px rgba(253, 134, 6, 0.12);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(253, 134, 6, 0);
+  }
 }
 
 .landing-booking-calendar {
@@ -1113,6 +1168,14 @@ body:has(.landing-hero-shell) {
   border-radius: 13px;
   padding: 14px;
   text-align: center;
+  opacity: 0.48;
+  transform: translateY(3px);
+  transition: opacity 480ms ease, transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-booking-confirm.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .landing-booking-confirm > span {
@@ -1664,6 +1727,8 @@ body:has(.landing-hero-shell) {
 
 .landing-client-preview {
   min-height: 170px;
+  flex: 1;
+  margin-top: clamp(28px, 3vw, 40px);
   align-content: start;
   background: rgba(10, 7, 18, 0.3);
   color: white;

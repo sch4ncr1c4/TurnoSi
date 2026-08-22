@@ -499,7 +499,13 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                     disabled={isSubmitting}
                     className="mt-2 inline-flex h-11 w-full items-center justify-center gap-3 rounded-lg bg-[var(--color-ink)] px-5 text-sm font-bold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(32,24,54,0.2)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent)] hover:text-[var(--color-button-text)]"
                   >
-                    <span>{isSubmitting ? "Procesando..." : config.submitLabel}</span>
+                    <span>
+                      {isSubmitting
+                        ? route === "login"
+                          ? "Ingresando..."
+                          : "Creando cuenta..."
+                        : config.submitLabel}
+                    </span>
                     {!isSubmitting && <span aria-hidden="true">→</span>}
                   </button>
                 </form>
