@@ -47,8 +47,12 @@ export function LandingPage({ brand }: LandingPageProps) {
   const revealInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0 };
   const previewInitial = shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 };
   const previewInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 };
+  const featureInitial = shouldReduceMotion ? false : { opacity: 0, y: 46, scale: 0.975 };
+  const featureInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 };
   const motionViewport = { once: true, amount: 0.22 };
+  const featureViewport = { once: true, amount: 0.16, margin: "0px 0px -6% 0px" };
   const smoothTransition = { duration: 0.72, ease: [0.22, 1, 0.36, 1] as const };
+  const featureTransition = { duration: 0.82, ease: [0.16, 1, 0.3, 1] as const };
 
   useLayoutEffect(() => {
     const previousHtmlBackground = document.documentElement.style.backgroundColor;
@@ -268,7 +272,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
           <div className="landing-hero-content relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1460px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-12 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] xl:items-center xl:gap-12 xl:px-8 xl:py-12 2xl:gap-16">
             <div className="landing-hero-copy landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left xl:order-none xl:mx-0 xl:translate-x-12 xl:justify-self-center 2xl:translate-x-16">
-              <h1 className="max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-[660px] xl:text-6xl">
+              <h1 className="landing-page-title max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-[660px] xl:text-6xl">
                 Gestioná tus turnos de forma{" "}
                 <span className="text-white">simple</span>.
               </h1>
@@ -542,7 +546,7 @@ export function LandingPage({ brand }: LandingPageProps) {
               <p className="landing-section-eyebrow">
                 Funciones
               </p>
-              <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-medium leading-[1.08] tracking-[-0.04em] sm:text-4xl lg:text-[3.35rem]">
+              <h2 className="landing-page-title mx-auto mt-4 max-w-3xl text-3xl font-semibold leading-[1.08] tracking-[-0.04em] sm:text-4xl lg:text-[3.35rem]">
                 Todo para gestionar tus turnos.
               </h2>
               <p className="mx-auto mt-5 max-w-2xl text-[0.95rem] leading-7 text-[var(--color-muted-strong)]">
@@ -553,10 +557,10 @@ export function LandingPage({ brand }: LandingPageProps) {
             <div className="landing-functions-layout mt-11">
               <motion.article
                 className="landing-feature-card landing-function-block landing-function-block--agenda"
-                initial={revealInitial}
-                whileInView={revealInView}
-                viewport={motionViewport}
-                transition={{ ...smoothTransition, delay: 0.08 }}
+                initial={featureInitial}
+                whileInView={featureInView}
+                viewport={featureViewport}
+                transition={featureTransition}
               >
                 <div className="landing-function-copy">
                   <p className="landing-function-eyebrow">01 · Agenda clara</p>
@@ -622,11 +626,11 @@ export function LandingPage({ brand }: LandingPageProps) {
               <div className="landing-functions-split">
                 <motion.article
                   className="landing-feature-card landing-function-block landing-function-block--booking landing-function-card-dark"
-                  initial={revealInitial}
-                  whileInView={revealInView}
+                  initial={featureInitial}
+                  whileInView={featureInView}
                   whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-                  viewport={motionViewport}
-                  transition={{ ...smoothTransition, delay: 0.12 }}
+                  viewport={featureViewport}
+                  transition={{ ...featureTransition, delay: 0.1 }}
                 >
                   <div className="landing-function-copy">
                     <span className="landing-function-icon" aria-hidden="true">
@@ -687,11 +691,11 @@ export function LandingPage({ brand }: LandingPageProps) {
 
                 <motion.article
                   className="landing-feature-card landing-function-block landing-function-block--clients landing-function-card-dark"
-                  initial={revealInitial}
-                  whileInView={revealInView}
+                  initial={featureInitial}
+                  whileInView={featureInView}
                   whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-                  viewport={motionViewport}
-                  transition={{ ...smoothTransition, delay: 0.18 }}
+                  viewport={featureViewport}
+                  transition={{ ...featureTransition, delay: 0.22 }}
                 >
                   <div className="landing-function-copy">
                     <span className="landing-function-icon" aria-hidden="true">
@@ -775,7 +779,7 @@ export function LandingPage({ brand }: LandingPageProps) {
           <div className="mx-auto max-w-7xl">
             <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-pricing-heading">
                 <p className="landing-section-eyebrow">Precios</p>
-                <h2>
+                <h2 className="landing-page-title">
                   Pagás por el tamaño real de tu operación.
                 </h2>
                 <p>
@@ -849,127 +853,85 @@ export function LandingPage({ brand }: LandingPageProps) {
           </div>
         </section>
 
-        <footer className="bg-[var(--color-page)]">
-          <div className="mx-auto max-w-7xl">
-            <section data-scroll-reveal id="contact" className="landing-scroll-reveal scroll-mt-24 w-full rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.9)] px-6 py-8 shadow-[0_12px_34px_rgba(32,24,54,0.045)] sm:px-8 lg:px-10">
-              <div className="grid gap-8 lg:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.4fr)] lg:items-start">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                    Contacto
-                  </p>
-                  <h2 className="mt-4 text-3xl font-semibold sm:text-4xl">
-                    ¿Necesitás ayuda?
-                  </h2>
-                  <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--color-muted-strong)]">
-                    Si necesitás ayuda para configurar TurnoSi o elegir un plan,
-                    escribinos.
-                  </p>
-                </div>
+        <footer className="landing-footer">
+          <div className="landing-contact-wrap">
+            <section data-scroll-reveal id="contact" className="landing-scroll-reveal landing-contact scroll-mt-24">
+              <div className="landing-contact-copy">
+                <p className="landing-section-eyebrow">Contacto</p>
+                <h2>Estamos para ayudarte a avanzar.</h2>
+                <p>
+                  Elegí el canal adecuado y conversemos sobre tu cuenta, tu equipo o el plan que mejor acompaña tu operación.
+                </p>
+              </div>
 
-                <div className="grid gap-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/58 md:grid-cols-2">
-                  {[
-                    ["Email", "hola@turnosi.com", "mailto:hola@turnosi.com", "Escribir"],
-                    ["Comercial", "Planes y multi-sede", "/register", "Hablar con ventas"]
-                  ].map(([title, label, href, action]) => (
-                    <a
-                      key={title}
-                      href={href}
-                      className="landing-mockup-row border-b border-[var(--color-border)] p-5 transition-colors hover:bg-white/72 md:border-b-0 md:border-r md:last:border-r-0"
-                    >
-                      <p className="text-sm font-semibold">{title}</p>
-                      <p className="mt-2 text-sm text-[var(--color-muted-strong)]">
-                        {label}
-                      </p>
-                      <span className="mt-5 inline-flex text-sm font-semibold text-[var(--color-accent)]">
-                        {action} <span className="ml-1" aria-hidden="true">→</span>
-                      </span>
-                    </a>
-                  ))}
-                </div>
+              <div className="landing-contact-options">
+                <a href="mailto:hola@turnosi.com?subject=Consulta%20sobre%20TurnoSi" className="landing-contact-option">
+                  <span className="landing-contact-number">01</span>
+                  <div>
+                    <p>Soporte y consultas</p>
+                    <span>Configuración, cuenta y uso diario.</span>
+                    <strong>hola@turnosi.com <span aria-hidden="true">↗</span></strong>
+                  </div>
+                </a>
+
+                <a href="mailto:hola@turnosi.com?subject=Consulta%20comercial%20TurnoSi" className="landing-contact-option">
+                  <span className="landing-contact-number">02</span>
+                  <div>
+                    <p>Planes para equipos</p>
+                    <span>Multi-sede, volumen y necesidades comerciales.</span>
+                    <strong>Hablar con nosotros <span aria-hidden="true">↗</span></strong>
+                  </div>
+                </a>
               </div>
             </section>
           </div>
 
-          <div className="mx-auto max-w-7xl">
-            <section data-scroll-reveal className="landing-scroll-reveal mt-8 w-full rounded-t-2xl border border-white/12 bg-[var(--color-ink)] px-6 py-6 text-[var(--color-button-text)] shadow-[0_16px_42px_rgba(32,24,54,0.2)] sm:px-8">
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="landing-footer-surface">
+            <div className="landing-footer-inner">
+              <section data-scroll-reveal className="landing-scroll-reveal landing-footer-cta">
                 <div>
-                  <h3 className="text-2xl font-semibold sm:text-3xl">
-                    Empezá a organizar tus turnos hoy.
-                  </h3>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/70">
-                    <span>7 días gratis</span>
-                    <span>Sin tarjeta</span>
-                    <span>Cancelá cuando quieras</span>
-                  </div>
+                  <p className="landing-footer-kicker">Empezá hoy</p>
+                  <h3>Tu agenda puede trabajar mejor desde ahora.</h3>
+                  <p>Probá TurnoSi durante 7 días. Sin tarjeta y sin permanencia.</p>
+                </div>
+                <Link to="/register" className="landing-cta landing-footer-cta-button">
+                  Crear cuenta gratis <span aria-hidden="true">→</span>
+                </Link>
+              </section>
+
+              <div className="landing-footer-main">
+                <div className="landing-footer-brand">
+                  <div>{brand}</div>
+                  <p>Turnos, clientes y equipo conectados para trabajar con más orden.</p>
                 </div>
 
-                <div className="lg:text-right">
-                  <a
-                    href="/register"
-                    className="landing-cta inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                  >
-                    Comenzar gratis <span className="ml-2" aria-hidden="true">→</span>
-                  </a>
-                </div>
+                <nav className="landing-footer-nav" aria-label="Navegación del pie de página">
+                  <div>
+                    <p>Producto</p>
+                    <a href="#funciones">Funciones</a>
+                    <a href="#pricing">Precios</a>
+                    <a href="#inicio">Inicio</a>
+                  </div>
+                  <div>
+                    <p>Cuenta</p>
+                    <Link to="/login">Ingresar</Link>
+                    <Link to="/register">Crear cuenta</Link>
+                    <a href="#contact">Contacto</a>
+                  </div>
+                  <div>
+                    <p>Escribinos</p>
+                    <a href="mailto:hola@turnosi.com">hola@turnosi.com</a>
+                    <span>Argentina</span>
+                  </div>
+                </nav>
               </div>
-            </section>
+
+              <div className="landing-footer-bottom">
+                <p>© 2026 TurnoSi. Todos los derechos reservados.</p>
+                <a href="#inicio">Volver arriba <span aria-hidden="true">↑</span></a>
+              </div>
+            </div>
           </div>
-
-          <section data-scroll-reveal className="landing-scroll-reveal soft-section-divider soft-section-divider-dark relative w-full overflow-hidden rounded-b-[28px] bg-[var(--color-ink)] px-6 pb-6 pt-8 text-[var(--color-button-text)] sm:px-8">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 right-0 h-56 w-72 opacity-14 sm:h-72 sm:w-[30rem]"
-              style={{
-                backgroundImage:
-                  "radial-gradient(rgba(255,250,244,0.22) 1px, transparent 1px)",
-                backgroundSize: "14px 14px",
-                maskImage:
-                  "linear-gradient(215deg, black 0%, black 34%, rgba(0,0,0,0.52) 48%, transparent 70%)",
-                WebkitMaskImage:
-                  "linear-gradient(215deg, black 0%, black 34%, rgba(0,0,0,0.52) 48%, transparent 70%)"
-              }}
-            />
-              <div className="grid gap-10 lg:grid-cols-[minmax(260px,1.35fr)_repeat(3,minmax(0,1fr))] lg:gap-14">
-                <div className="space-y-5">
-                  <div className="inline-flex items-center gap-2">
-                    {brand}
-                  </div>
-                  <p className="max-w-xs text-sm leading-7 text-white/70">
-                    La plataforma más simple para gestionar turnos, horarios y clientes en tu negocio.
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-white">Producto</p>
-                  <ul className="mt-5 space-y-3 text-sm text-white/70">
-                    <li><a href="#funciones">Funciones</a></li>
-                    <li><a href="#pricing">Precios</a></li>
-                    <li><a href="/login">Ingresar</a></li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-white">Soporte</p>
-                  <ul className="mt-5 space-y-3 text-sm text-white/70">
-                    <li><a href="#contact">Contacto</a></li>
-                    <li><a href="#faq">Preguntas frecuentes</a></li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-white">Legal</p>
-                  <ul className="mt-5 space-y-3 text-sm text-white/70">
-                    <li>Términos y condiciones</li>
-                    <li>Política de privacidad</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="mt-6 border-t border-white/10 pt-4 text-sm text-white/60">
-                <p>© 2026 TurnoSi</p>
-              </div>
-          </section>
         </footer>
       </main>
     </div>
