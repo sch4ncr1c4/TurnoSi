@@ -67,6 +67,7 @@ export function LandingPage({ brand }: LandingPageProps) {
   const [bookingPreviewPhase, setBookingPreviewPhase] = useState(0);
   const shouldReduceMotion = useReducedMotion();
   const bookingPreview = bookingPreviewSteps[bookingPreviewIndex];
+  const visibleBookingPreviewPhase = shouldReduceMotion ? 2 : bookingPreviewPhase;
   const revealInitial = shouldReduceMotion ? false : { opacity: 0, y: 30 };
   const revealInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0 };
   const previewInitial = shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 };
@@ -111,16 +112,13 @@ export function LandingPage({ brand }: LandingPageProps) {
   }, []);
 
   useEffect(() => {
-    if (shouldReduceMotion) {
-      setBookingPreviewPhase(2);
-      return;
-    }
+    if (shouldReduceMotion) return;
 
-    setBookingPreviewPhase(0);
     const selectService = window.setTimeout(() => setBookingPreviewPhase(1), 650);
     const selectHour = window.setTimeout(() => setBookingPreviewPhase(2), 1600);
     const hideSelection = window.setTimeout(() => setBookingPreviewPhase(3), 3900);
     const nextService = window.setTimeout(() => {
+      setBookingPreviewPhase(0);
       setBookingPreviewIndex((current) => (current + 1) % bookingPreviewSteps.length);
     }, 4400);
 
@@ -711,11 +709,11 @@ export function LandingPage({ brand }: LandingPageProps) {
                             key={bookingPreview.service}
                             className="landing-booking-services"
                             initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
-                            animate={bookingPreviewPhase === 3 ? { opacity: 0, y: -5 } : { opacity: 1, y: 0 }}
+                            animate={visibleBookingPreviewPhase === 3 ? { opacity: 0, y: -5 } : { opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                           >
                             <small>Servicio</small>
-                            <span className={bookingPreviewPhase >= 1 && bookingPreviewPhase < 3 ? "is-selected" : undefined}>
+                            <span className={visibleBookingPreviewPhase >= 1 && visibleBookingPreviewPhase < 3 ? "is-selected" : undefined}>
                               <strong>{bookingPreview.service}</strong>
                               <small>{bookingPreview.duration}</small>
                             </span>
@@ -725,21 +723,21 @@ export function LandingPage({ brand }: LandingPageProps) {
                             key={`${bookingPreview.service}-hours`}
                             className="landing-booking-hours"
                             initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
-                            animate={bookingPreviewPhase === 3 ? { opacity: 0, y: -5 } : { opacity: 1, y: 0 }}
+                            animate={visibleBookingPreviewPhase === 3 ? { opacity: 0, y: -5 } : { opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                           >
                             <small>Horario</small>
                             {bookingPreview.hours.map((hour) => (
                               <span
                                 key={hour}
-                                className={bookingPreviewPhase === 2 && hour === bookingPreview.selectedHour ? "is-selected" : undefined}
+                                className={visibleBookingPreviewPhase === 2 && hour === bookingPreview.selectedHour ? "is-selected" : undefined}
                               >
                                 {hour}
                               </span>
                             ))}
                           </motion.div>
 
-                        <div className={`landing-booking-confirm${bookingPreviewPhase === 2 ? " is-visible" : ""}`}>
+                        <div className={`landing-booking-confirm${visibleBookingPreviewPhase === 2 ? " is-visible" : ""}`}>
                             <span>
                               <img src={statusCheckIcon} alt="" aria-hidden="true" className="h-6 w-6 brightness-0 invert" />
                             </span>
