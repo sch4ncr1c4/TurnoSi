@@ -50,5 +50,10 @@
     animation: none;
   }
 
+  .auth-cursor-trail span {
+    animation: none;
+    transition: none;
+  }
+
 }
 

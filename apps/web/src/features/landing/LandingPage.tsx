@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { billingPlans } from "../billing/billing.plans";
 import turnosiLogo from "@/components/assets/logos/turnosi-horizontal.svg";
+import statusCheckIcon from "@/components/assets/icons/status/status-check.svg";
 
 type LandingPageProps = {
   brand: ReactNode;
@@ -23,14 +24,20 @@ const navigationLinks = [
     label: "Precios"
   },
   {
-    href: "#resources",
-    label: "Recursos"
-  },
-  {
     href: "#contact",
     label: "Contacto"
   }
 ];
+
+function LandingCardDots({ count = 7 }: { count?: number }) {
+  return (
+    <div className="landing-agenda-sparkles" aria-hidden="true">
+      {Array.from({ length: count }, (_, index) => (
+        <span key={index} />
+      ))}
+    </div>
+  );
+}
 
 export function LandingPage({ brand }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -115,7 +122,7 @@ export function LandingPage({ brand }: LandingPageProps) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[var(--color-page)]">
+    <div className="landing-page min-h-screen w-full bg-[var(--color-page)]">
       <main>
         <section
           id="inicio"
@@ -532,7 +539,7 @@ export function LandingPage({ brand }: LandingPageProps) {
               viewport={motionViewport}
               transition={smoothTransition}
             >
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              <p className="landing-section-eyebrow">
                 Funciones
               </p>
               <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-medium leading-[1.08] tracking-[-0.04em] sm:text-4xl lg:text-[3.35rem]">
@@ -609,11 +616,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                 </motion.div>
 
-                <div className="landing-agenda-sparkles" aria-hidden="true">
-                  {Array.from({ length: 7 }, (_, index) => (
-                    <span key={index} />
-                  ))}
-                </div>
+                <LandingCardDots />
               </motion.article>
 
               <div className="landing-functions-split">
@@ -633,9 +636,9 @@ export function LandingPage({ brand }: LandingPageProps) {
                       </svg>
                     </span>
                     <p className="landing-function-eyebrow">02 · Reserva pública</p>
-                    <h3>El cliente reserva sin escribirte para cada horario.</h3>
+                    <h3>Reservas online, sin mensajes de por medio.</h3>
                     <p>
-                      Tu página pública muestra servicios, horarios disponibles y confirmación conectada a tu agenda.
+                      El cliente elige servicio y horario. Tu agenda se actualiza sola.
                     </p>
                     <div className="landing-function-points">
                       <span>Reservas 24/7 desde cualquier dispositivo.</span>
@@ -652,44 +655,18 @@ export function LandingPage({ brand }: LandingPageProps) {
                     viewport={motionViewport}
                     transition={{ ...smoothTransition, delay: 0.2 }}
                   >
-                    <div className="landing-booking-steps">
-                      {["Servicio", "Fecha", "Hora", "Confirmación"].map((step, index) => (
-                        <span key={step} className={index === 0 ? "is-active" : undefined}>
-                          {index + 1}
-                          <small>{step}</small>
-                        </span>
-                      ))}
-                    </div>
-
                     <div className="landing-booking-grid">
                       <div className="landing-booking-services">
-                        {[
-                          ["Corte de pelo", "30 min"],
-                          ["Barba completa", "30 min"],
-                          ["Corte + barba", "60 min"],
-                          ["Color y corte", "90 min"]
-                        ].map(([service, duration], index) => (
-                          <span key={service} className={index === 0 ? "is-selected" : undefined}>
-                            <strong>{service}</strong>
-                            <small>{duration}</small>
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="landing-booking-calendar">
-                        <div>
-                          <strong>Mayo 2026</strong>
-                          <span>‹ ›</span>
-                        </div>
-                        {Array.from({ length: 28 }, (_, index) => (
-                          <span key={index} className={index === 18 ? "is-selected" : index > 20 ? "is-muted" : undefined}>
-                            {index + 1}
-                          </span>
-                        ))}
+                        <small>Servicio</small>
+                        <span className="is-selected">
+                          <strong>Corte de pelo</strong>
+                          <small>30 min</small>
+                        </span>
                       </div>
 
                       <div className="landing-booking-hours">
-                        {["09:00", "10:30", "12:00", "14:30", "16:00", "19:00"].map((hour) => (
+                        <small>Horario</small>
+                        {["09:00", "10:30", "12:00"].map((hour) => (
                           <span key={hour} className={hour === "10:30" ? "is-selected" : undefined}>
                             {hour}
                           </span>
@@ -697,14 +674,15 @@ export function LandingPage({ brand }: LandingPageProps) {
                       </div>
 
                       <div className="landing-booking-confirm">
-                        <span>✓</span>
-                        <strong>¡Listo, tu turno está confirmado!</strong>
-                        <small>Corte de pelo · Viernes 24/05 a las 10:30</small>
-                        <button type="button">Ver mi turno</button>
+                        <span>
+                          <img src={statusCheckIcon} alt="" aria-hidden="true" className="h-6 w-6 brightness-0 invert" />
+                        </span>
+                        <strong>Turno confirmado</strong>
+                        <small>Viernes 24/05 · 10:30</small>
                       </div>
                     </div>
+                    <LandingCardDots count={11} />
                   </motion.div>
-
                 </motion.article>
 
                 <motion.article
@@ -722,9 +700,9 @@ export function LandingPage({ brand }: LandingPageProps) {
                       </svg>
                     </span>
                     <p className="landing-function-eyebrow">03 · Clientes y equipo</p>
-                    <h3>Historial, contacto y permisos sin mezclar responsabilidades.</h3>
+                    <h3>Clientes y equipo, cada uno en su lugar.</h3>
                     <p>
-                      Cada cliente queda unificado por contacto, y cada persona del equipo accede solo a lo que necesita.
+                      Historial, responsables y permisos claros desde un mismo panel.
                     </p>
                     <div className="landing-function-points">
                       <span>Clientes duplicados reducidos por teléfono o email.</span>
@@ -741,47 +719,50 @@ export function LandingPage({ brand }: LandingPageProps) {
                     viewport={motionViewport}
                     transition={{ ...smoothTransition, delay: 0.26 }}
                   >
-                    <div>
-                      <div className="landing-client-header">
+                    <div className="landing-system-mini-panel">
+                      <div className="landing-system-mini-header">
                         <div>
-                          <strong>Historial del cliente</strong>
-                          <span>Cliente desde abril</span>
+                          <strong>Clientes</strong>
+                          <span>Todo en un perfil</span>
                         </div>
-                        <span>JP</span>
+                        <small>Activo</small>
                       </div>
-                      {[
-                        ["15/05/2026", "Corte de pelo", "Confirmado"],
-                        ["30/04/2026", "Barba completa", "Pagado"],
-                        ["10/04/2026", "Corte + barba", "Señado"]
-                      ].map(([date, service, status]) => (
-                        <div key={`${date}-${service}`} className="landing-client-row">
-                          <span>{date}</span>
-                          <strong>{service}</strong>
-                          <small>{status}</small>
+                      <div className="landing-system-mini-card">
+                        <div className="landing-system-mini-person">
+                          <span>JP</span>
+                          <div>
+                            <strong>Juan Pérez</strong>
+                            <small>11 2345-6789</small>
+                          </div>
                         </div>
-                      ))}
+                        <div className="landing-system-mini-labels">
+                          <span>Sin ausencias</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div>
-                      <div className="landing-client-header">
+                    <div className="landing-system-mini-panel">
+                      <div className="landing-system-mini-header">
                         <div>
-                          <strong>Equipo y permisos</strong>
-                          <span>Acceso por rol y sede</span>
+                          <strong>Tu equipo</strong>
+                          <span>Roles claros</span>
                         </div>
-                        <button type="button">+ Invitar</button>
+                        <small>Disponible</small>
                       </div>
-                      {[
-                        ["Sofía Díaz", "Propietaria", "Activo"],
-                        ["Martina Ramos", "Agenda y clientes", "Activo"],
-                        ["Nicolás Silva", "Agenda", "Activo"]
-                      ].map(([name, role, status]) => (
-                        <div key={name} className="landing-client-row">
-                          <strong>{name}</strong>
-                          <span>{role}</span>
-                          <small>{status}</small>
+                      <div className="landing-system-mini-card">
+                        <div className="landing-system-mini-person">
+                          <span>SD</span>
+                          <div>
+                            <strong>Sofía Díaz <small>Propietaria</small></strong>
+                            <small>Sede principal</small>
+                          </div>
                         </div>
-                      ))}
+                        <div className="landing-system-mini-labels">
+                          <span>Toma turnos</span>
+                        </div>
+                      </div>
                     </div>
+                    <LandingCardDots count={11} />
                   </motion.div>
                 </motion.article>
               </div>
@@ -790,164 +771,66 @@ export function LandingPage({ brand }: LandingPageProps) {
           </div>
         </section>
 
-        <section
-          id="resources"
-          className="soft-section-divider scroll-mt-24 bg-[rgba(255,251,244,0.76)] px-5 py-10 sm:px-7"
-        >
+        <section id="pricing" className="landing-pricing-section scroll-mt-24 px-5 py-12 sm:px-7">
           <div className="mx-auto max-w-7xl">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-center">
-              <div data-scroll-reveal className="landing-scroll-reveal landing-rise">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                  Operación real
-                </p>
-                <h2 className="mt-4 text-3xl font-semibold sm:text-4xl lg:text-5xl">
-                  Configurás una vez. Después, solo gestionás.
-                </h2>
-                <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
-                  TurnoSi separa configuración y operación para que el equipo no
-                  tenga que tocar datos sensibles mientras atiende.
-                </p>
-                <div className="mt-7 grid gap-3">
-                  {[
-                    "Sedes, servicios y horarios quedan definidos desde configuración.",
-                    "El cliente reserva desde una página pública conectada a esa agenda.",
-                    "El equipo gestiona turnos, estados y clientes desde el dashboard."
-                  ].map((item) => (
-                    <p key={item} className="flex gap-3 text-sm leading-6 text-[var(--color-ink)]">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
-                      {item}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-delay-1 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.94)] shadow-[0_10px_28px_rgba(32,24,54,0.035)]">
-                <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-white/54 px-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold">Configuración inicial</p>
-                      <p className="text-xs text-[var(--color-muted)]">
-                        La cuenta queda lista para recibir turnos.
-                      </p>
-                    </div>
-                    <span className="rounded-md bg-[rgba(64,145,91,0.12)] px-2 py-1 text-xs font-semibold text-[#347548]">
-                      3/3 listo
-                    </span>
-                </div>
-                <div className="relative grid gap-0 md:grid-cols-3">
-                    <span className="pointer-events-none absolute left-[16%] right-[16%] top-8 hidden h-px bg-gradient-to-r from-transparent via-[rgba(253,134,6,0.32)] to-transparent md:block" />
-                    {[
-                      ["Local", "Nombre, rubro, logo y fotos"],
-                      ["Página", "WhatsApp, dirección y URL pública"],
-                      ["Agenda", "Horarios, sedes, equipo y servicios"]
-                    ].map(([title, copy], index) => (
-                      <div
-                        key={title}
-                        className="relative border-b border-[var(--color-border)] p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
-                      >
-                        <span className="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(253,134,6,0.24)] bg-[rgba(253,134,6,0.1)] font-mono text-xs font-semibold text-[var(--color-accent)]">
-                          {index + 1}
-                        </span>
-                        <p className="mt-4 text-base font-semibold">{title}</p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--color-muted-strong)]">
-                          {copy}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="pricing" className="scroll-mt-24 px-5 py-12 sm:px-7">
-          <div className="mx-auto max-w-7xl">
-            <div data-scroll-reveal className="landing-scroll-reveal landing-rise mx-auto max-w-3xl text-center">
-                <p className="inline-flex items-center gap-2 rounded-full border border-[rgba(253,134,6,0.28)] bg-[rgba(253,134,6,0.12)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-ink)]">
-                  <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-                  Precios
-                </p>
-                <h2 className="mt-5 text-3xl font-semibold sm:text-4xl lg:text-5xl">
+            <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-pricing-heading">
+                <p className="landing-section-eyebrow">Precios</p>
+                <h2>
                   Pagás por el tamaño real de tu operación.
                 </h2>
-                <p className="mt-4 text-sm leading-7 text-[var(--color-muted-strong)]">
+                <p>
                   Cada plan tiene límites concretos para evitar abusos y que el
                   sistema siga siendo estable. La prueba gratis usa el plan Inicial
                   durante 7 días.
                 </p>
             </div>
 
-            <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            <div className="landing-pricing-grid">
                 {billingPlans.map((plan) => (
                   <article
                     key={plan.name}
                     data-scroll-reveal
-                    className={`landing-scroll-reveal landing-feature-card relative flex min-h-[430px] flex-col overflow-hidden rounded-2xl border p-5 ${
-                      plan.recommended
-                        ? "border-[var(--color-ink)] bg-[linear-gradient(180deg,rgba(32,24,54,0.96),rgba(32,24,54,0.91))] text-white shadow-[0_16px_42px_rgba(32,24,54,0.16)]"
-                        : "border-[var(--color-border)] bg-[rgba(255,251,244,0.86)] shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
-                    }`}
+                    className={`landing-scroll-reveal landing-pricing-card${plan.recommended ? " is-recommended" : ""}`}
                   >
                     {plan.recommended && (
-                      <span className="absolute right-4 top-4 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-white">
+                      <span className="landing-pricing-badge">
                         Más elegido
                       </span>
                     )}
-                    <h3 className="text-2xl font-semibold">{plan.name}</h3>
-                    <p
-                      className={`mt-3 min-h-14 text-sm leading-7 ${
-                        plan.recommended ? "text-white/68" : "text-[var(--color-muted-strong)]"
-                      }`}
-                    >
+                    <h3>{plan.name}</h3>
+                    <p className="landing-pricing-description">
                       {plan.description}
                     </p>
 
-                    <div className="mt-5 flex items-end gap-1">
-                      <p className="text-4xl font-semibold">
+                    <div className="landing-pricing-price">
+                      <p>
                         {plan.id === "initial" ? "$15.000" : plan.price}
                       </p>
-                      <p
-                        className={`pb-1 text-sm ${
-                          plan.recommended ? "text-white/58" : "text-[var(--color-muted)]"
-                        }`}
-                      >
+                      <span>
                         {plan.period}
-                      </p>
+                      </span>
                     </div>
 
-                    <div
-                      className={`mt-5 space-y-2 border-t pt-5 ${
-                        plan.recommended ? "border-white/12" : "border-[var(--color-border)]"
-                      }`}
-                    >
+                    <div className="landing-pricing-features">
                       {plan.features.map((feature) => (
-                        <p
-                          key={feature}
-                          className={`flex gap-2 text-sm leading-6 ${
-                            plan.recommended ? "text-white/76" : "text-[var(--color-muted-strong)]"
-                          }`}
-                        >
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+                        <p key={feature}>
+                          <span />
                           {feature}
                         </p>
                       ))}
                     </div>
 
-                    <Link
-                      to={`/register?plan=${plan.id}`}
-                      className={`landing-cta mt-auto inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
-                        plan.recommended
-                          ? "bg-[var(--color-accent)] text-white shadow-[0_16px_36px_rgba(253,134,6,0.22)]"
-                          : "border border-[var(--color-border-strong)] bg-white/60 text-[var(--color-ink)] hover:bg-white"
-                      }`}
-                    >
-                      {plan.recommended ? "Empezar con Profesional" : `Elegir ${plan.name}`}
-                    </Link>
+                    <div className="landing-pricing-action">
+                      <Link to={`/register?plan=${plan.id}`} className="landing-cta">
+                        <span>{plan.recommended ? "Empezar con Profesional" : `Elegir ${plan.name}`}</span>
+                      </Link>
+                    </div>
                   </article>
                 ))}
             </div>
 
-            <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-delay-3 mt-8 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)]">
-              <div className="grid gap-0 text-sm md:grid-cols-4">
+            <div data-scroll-reveal className="landing-scroll-reveal landing-rise landing-delay-3 landing-pricing-notes">
+              <div>
                 {[
                   ["Prueba gratis", "7 días del plan Inicial"],
                   ["Pagos", "Suscripción mensual con Mercado Pago"],
@@ -956,10 +839,9 @@ export function LandingPage({ brand }: LandingPageProps) {
                 ].map(([title, copy]) => (
                   <div
                     key={title}
-                    className="border-b border-[var(--color-border)] p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
                   >
-                    <p className="font-semibold">{title}</p>
-                    <p className="mt-1 text-[var(--color-muted-strong)]">{copy}</p>
+                    <p>{title}</p>
+                    <span>{copy}</span>
                   </div>
                 ))}
               </div>
@@ -984,10 +866,9 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </p>
                 </div>
 
-                <div className="grid gap-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/58 md:grid-cols-3">
+                <div className="grid gap-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/58 md:grid-cols-2">
                   {[
                     ["Email", "hola@turnosi.com", "mailto:hola@turnosi.com", "Escribir"],
-                    ["Soporte", "Preguntas frecuentes", "#resources", "Ver ayuda"],
                     ["Comercial", "Planes y multi-sede", "/register", "Hablar con ventas"]
                   ].map(([title, label, href, action]) => (
                     <a

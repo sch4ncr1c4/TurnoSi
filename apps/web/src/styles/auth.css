@@ -20,33 +20,74 @@
   overflow: hidden;
 }
 
-.auth-brand-panel::before,
-.auth-brand-panel::after {
-  content: "";
+.auth-cursor-trail {
   position: absolute;
-  z-index: 0;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  overflow: hidden;
   pointer-events: none;
 }
 
-.auth-brand-panel::before {
-  inset: 0;
-  background:
-    linear-gradient(115deg, transparent 0%, transparent 61%, rgba(255, 255, 255, 0.055) 61.08%, rgba(255, 255, 255, 0.055) 72%, transparent 72.08%, transparent 100%),
-    radial-gradient(circle at 76% 74%, rgba(255, 255, 255, 0.06), transparent 24%),
-    radial-gradient(circle at 52% 46%, rgba(255, 255, 255, 0.055), transparent 34%);
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.72) 30%, #000 100%);
+.auth-cursor-trail span {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--color-accent);
+  opacity: 0.1;
+  transform: translate(-50%, -50%);
+  animation: auth-particle-drift 9s ease-in-out infinite alternate;
+  transition: translate 220ms cubic-bezier(0.22, 1, 0.36, 1), scale 180ms ease, opacity 180ms ease;
 }
 
-.auth-brand-panel::after {
-  right: -38%;
-  bottom: -24%;
-  width: min(620px, 72vw);
-  aspect-ratio: 1;
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: 50%;
-  opacity: 0.78;
-  transform: rotate(-18deg);
-  mask-image: linear-gradient(128deg, transparent 0%, #000 26%, #000 54%, transparent 76%);
+.auth-cursor-trail span[data-tone="dim"] {
+  box-shadow: 0 0 3px rgba(253, 134, 6, 0.16);
+}
+
+.auth-cursor-trail span[data-tone="medium"] {
+  box-shadow: 0 0 6px rgba(253, 134, 6, 0.32);
+}
+
+.auth-cursor-trail span[data-tone="bright"] {
+  box-shadow: 0 0 5px rgba(255, 174, 68, 0.9), 0 0 13px rgba(253, 134, 6, 0.58);
+}
+
+.auth-cursor-trail span:nth-child(3n + 1) {
+  --auth-drift-x: 24px;
+  --auth-drift-y: -18px;
+  animation-duration: 8s;
+}
+
+.auth-cursor-trail span:nth-child(3n + 2) {
+  --auth-drift-x: -21px;
+  --auth-drift-y: 26px;
+  animation-duration: 11s;
+  animation-delay: -4s;
+}
+
+.auth-cursor-trail span:nth-child(3n) {
+  --auth-drift-x: 17px;
+  --auth-drift-y: 29px;
+  animation-duration: 9.5s;
+  animation-delay: -7s;
+}
+
+@keyframes auth-particle-drift {
+  from {
+    transform: translate(-50%, -50%);
+  }
+
+  to {
+    transform: translate(
+      calc(-50% + var(--auth-drift-x, 8px)),
+      calc(-50% + var(--auth-drift-y, 8px))
+    );
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .auth-cursor-trail {
+    display: block;
+  }
 }
 
 .auth-surface-pattern {

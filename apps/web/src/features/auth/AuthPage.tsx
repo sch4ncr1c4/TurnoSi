@@ -1,4 +1,11 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
@@ -21,6 +28,23 @@ type AuthPageProps = {
 };
 
 const maxVerificationSendAttempts = 5;
+function authPointNoise(index: number, salt: number) {
+  const value = Math.sin(index * 91.73 + salt * 47.21) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+const authCursorPoints = Array.from({ length: 84 }, (_, index) => {
+  const intensity = authPointNoise(index, 3);
+  const tone = intensity > 0.9 ? "bright" : intensity > 0.58 ? "medium" : "dim";
+
+  return {
+    x: 2 + authPointNoise(index, 1) * 96,
+    y: 2 + authPointNoise(index, 2) * 96,
+    size: tone === "bright" ? 3 + Math.round(authPointNoise(index, 4) * 2) : 2 + Math.round(authPointNoise(index, 4)),
+    opacity: tone === "bright" ? 0.42 + intensity * 0.24 : tone === "medium" ? 0.14 + intensity * 0.16 : 0.04 + intensity * 0.1,
+    tone
+  };
+});
 
 function AuthFieldIcon({ fieldId }: { fieldId: string }) {
   const icon = fieldId === "password" ? loginPasswordIcon : loginUserIcon;
@@ -76,6 +100,53 @@ export function AuthPage({ brand, route }: AuthPageProps) {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [verificationSendAttempts, setVerificationSendAttempts] = useState(0);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const authTrailRef = useRef<HTMLDivElement>(null);
+
+  function handleAuthTrailMove(event: ReactPointerEvent<HTMLElement>) {
+    if (
+      event.pointerType !== "mouse" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const trail = authTrailRef.current;
+    if (!trail) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    Array.from(trail.children).forEach((child, index) => {
+      const particle = child as HTMLElement;
+      const point = authCursorPoints[index];
+      if (!point) return;
+
+      const pointX = rect.width * point.x / 100;
+      const pointY = rect.height * point.y / 100;
+      const deltaX = pointX - x;
+      const deltaY = pointY - y;
+      const distance = Math.max(Math.hypot(deltaX, deltaY), 1);
+      const influence = Math.max(0, 1 - distance / 145);
+      const travel = influence * 34;
+      const offsetX = deltaX / distance * travel;
+      const offsetY = deltaY / distance * travel;
+      const baseOpacity = point.opacity;
+
+      particle.style.translate = `${offsetX}px ${offsetY}px`;
+      particle.style.scale = `${1 + influence * 0.32}`;
+      particle.style.opacity = `${Math.min(0.92, baseOpacity + influence * 0.18)}`;
+    });
+  }
+
+  function resetAuthTrail() {
+    Array.from(authTrailRef.current?.children ?? []).forEach((child, index) => {
+      const particle = child as HTMLElement;
+      particle.style.translate = "0 0";
+      particle.style.scale = "1";
+      particle.style.opacity = `${authCursorPoints[index]?.opacity ?? 0.08}`;
+    });
+  }
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -173,16 +244,32 @@ export function AuthPage({ brand, route }: AuthPageProps) {
   return (
     <PageLayout>
       <div className="grid min-h-screen lg:grid-cols-2">
-        <aside className="auth-brand-panel hidden flex-col bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:flex lg:px-8 lg:py-8">
+        <aside
+          className="auth-brand-panel hidden flex-col bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] sm:px-7 lg:flex lg:px-8 lg:py-8"
+          onPointerLeave={resetAuthTrail}
+          onPointerMove={handleAuthTrailMove}
+        >
+          <div ref={authTrailRef} className="auth-cursor-trail" aria-hidden="true">
+            {authCursorPoints.map((point, index) => (
+              <span
+                key={index}
+                data-tone={point.tone}
+                style={{
+                  left: `${point.x}%`,
+                  top: `${point.y}%`,
+                  width: point.size,
+                  height: point.size,
+                  opacity: point.opacity
+                }}
+              />
+            ))}
+          </div>
           <div className="relative z-10 mx-auto flex w-full max-w-[34rem] flex-1 flex-col justify-center py-10 lg:py-8">
             <div className="text-center">
               <div className="mb-10 flex justify-center [&_*]:text-[var(--color-button-text)]">
                 {brand}
               </div>
-              <p className="text-xs font-semibold uppercase text-white/52">
-                {config.eyebrow}
-              </p>
-              <h1 className="mx-auto mt-3 max-w-xl text-3xl font-semibold leading-tight sm:text-4xl">
+              <h1 className="mx-auto max-w-xl text-3xl font-semibold leading-tight sm:text-4xl">
                 {config.sideTitle.split(". ").map((line, index, lines) => (
                   <span key={line} className="block">
                     {line}
@@ -195,19 +282,6 @@ export function AuthPage({ brand, route }: AuthPageProps) {
               </p>
             </div>
 
-            <div className="mx-auto mt-8 w-full max-w-[34rem] border-t border-white/12 pt-5">
-              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
-                {config.sideItems.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3 text-center text-xs leading-5 text-white/68"
-                  >
-                    <span className="mx-auto mb-2 block h-2 w-2 rounded-full bg-[var(--color-accent)]" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </aside>
 

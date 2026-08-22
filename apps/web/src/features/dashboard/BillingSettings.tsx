@@ -173,77 +173,57 @@ export function BillingSettings({ compact = false }: { compact?: boolean }) {
               return (
                 <article
                   key={plan.id}
-                  className={`${compact ? "min-h-[390px] p-5" : "min-h-[430px] p-5"} relative flex w-full max-w-[330px] flex-col overflow-hidden rounded-2xl border transition hover:-translate-y-0.5 ${
-                    plan.recommended
-                      ? "border-[var(--color-ink)] bg-[linear-gradient(180deg,rgba(32,24,54,0.96),rgba(32,24,54,0.91))] text-white shadow-[0_16px_42px_rgba(32,24,54,0.16)]"
-                      : "border-[var(--color-border)] bg-[#ffffff] shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
-                  }`}
+                  className={`dashboard-billing-plan-card${compact ? " is-compact" : ""}${plan.recommended ? " is-recommended" : ""}${current ? " is-current" : ""}`}
                 >
                   {plan.recommended && (
-                    <span className="absolute right-4 top-4 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-white">
+                    <span className="dashboard-billing-plan-badge is-recommended">
                       Más elegido
                     </span>
                   )}
                   {current && (
-                    <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold ${
-                      plan.recommended
-                        ? "bg-white/12 text-white"
-                        : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)]"
-                    }`}>
+                    <span className="dashboard-billing-plan-badge is-current">
                       Plan actual
                     </span>
                   )}
-                  <h3 className={`${current ? "mt-10" : "mt-0"} text-2xl font-semibold`}>{plan.name}</h3>
-                  <p
-                    className={`mt-3 min-h-14 text-sm leading-7 ${
-                      plan.recommended ? "text-white/68" : "text-[var(--color-muted-strong)]"
-                    }`}
-                  >
+                  <h3>{plan.name}</h3>
+                  <p className="dashboard-billing-plan-description">
                     {plan.description}
                   </p>
 
-                  <p className="mt-5 text-4xl font-semibold">
-                    {plan.id === "initial" ? "$15.000" : plan.price}
-                    <span
-                      className={`text-sm font-normal ${
-                        plan.recommended ? "text-white/58" : "text-[var(--color-muted)]"
-                      }`}
-                    >
-                      {" "}{plan.period}
-                    </span>
-                  </p>
+                  <div className="dashboard-billing-plan-price">
+                    <p>{plan.id === "initial" ? "$15.000" : plan.price}</p>
+                    <span>{plan.period}</span>
+                  </div>
 
-                  <ul
-                    className={`mt-5 space-y-2 border-t pt-5 text-sm ${
-                      plan.recommended
-                        ? "border-white/12 text-white/76"
-                        : "border-[var(--color-border)] text-[var(--color-muted-strong)]"
-                    }`}
-                  >
+                  <ul className="dashboard-billing-plan-features">
                     {plan.features.slice(0, compact ? 3 : 5).map((feature) => (
-                      <li key={feature} className="flex gap-2">
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]" />
+                      <li key={feature}>
+                        <span />
                         <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    type="button"
-                    variant={current ? "secondary" : plan.recommended ? "accent" : "secondary"}
-                    disabled={
-                      current ||
-                      selectedPlan !== null ||
-                      !effectivePayerEmail.trim()
-                    }
-                    onClick={() => void subscribe(plan.id)}
-                    className={`mt-auto w-full ${plan.recommended && !current ? "shadow-[0_16px_36px_rgba(253,134,6,0.22)]" : ""}`}
-                  >
-                    {current
-                      ? "Plan actual"
-                      : selectedPlan === plan.id
-                        ? "Abriendo Mercado Pago..."
-                        : "Elegir plan"}
-                  </Button>
+                  <div className="dashboard-billing-plan-action">
+                    <Button
+                      type="button"
+                      variant={current ? "secondary" : plan.recommended ? "accent" : "secondary"}
+                      disabled={
+                        current ||
+                        selectedPlan !== null ||
+                        !effectivePayerEmail.trim()
+                      }
+                      onClick={() => void subscribe(plan.id)}
+                      className="dashboard-billing-plan-button w-full"
+                    >
+                      <span>
+                        {current
+                          ? "Plan actual"
+                          : selectedPlan === plan.id
+                            ? "Abriendo Mercado Pago..."
+                            : "Elegir plan"}
+                      </span>
+                    </Button>
+                  </div>
                 </article>
               );
             })}
