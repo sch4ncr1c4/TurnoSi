@@ -2,7 +2,7 @@
   "name": "sistema-turnos",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
