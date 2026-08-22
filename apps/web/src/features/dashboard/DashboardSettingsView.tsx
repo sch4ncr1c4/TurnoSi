@@ -25,8 +25,6 @@ import type {
   OrganizationSettingsSection
 } from "./settings.types";
 import { argentinaProvinces } from "./dashboard.options";
-import businessIcon from "../../components/assets/icons/navigation/home.svg";
-import contactIcon from "../../components/assets/icons/navigation/team.svg";
 import pageIcon from "../../components/assets/icons/navigation/calendar.svg";
 import accountProfileIcon from "../../components/assets/icons/settings/account-profile.svg";
 import businessIdentityIcon from "../../components/assets/icons/settings/business-identity.svg";
@@ -715,6 +713,10 @@ function moneyToCents(value: string) {
     }
   }
 
+  const resolvedSettingsCompletion =
+    settingsCompletion ?? settingsQuery.data?.completion ?? null;
+  const isProfileCompletionReady =
+    resolvedSettingsCompletion !== null && !sessionQuery.isPending;
   const onboardingTasks: {
     label: string;
     done: boolean;
@@ -731,7 +733,7 @@ function moneyToCents(value: string) {
     {
       label: "Datos del local",
       done:
-        settingsCompletion?.business ??
+        resolvedSettingsCompletion?.business ??
         Boolean(
           savedSettings.businessName &&
             savedSettings.category &&
@@ -742,7 +744,7 @@ function moneyToCents(value: string) {
     {
       label: "Contacto",
       done:
-        settingsCompletion?.contact ??
+        resolvedSettingsCompletion?.contact ??
         Boolean(
           savedSettings.phone &&
             savedSettings.whatsapp &&
@@ -753,7 +755,7 @@ function moneyToCents(value: string) {
     {
       label: "Página pública",
       done:
-        settingsCompletion?.page ??
+        resolvedSettingsCompletion?.page ??
         Boolean(
           savedSettings.address &&
           savedSettings.city &&
@@ -771,39 +773,39 @@ function moneyToCents(value: string) {
     tab: SettingsTab;
   }[] = [
     {
-      icon: businessIcon,
+      icon: settingsNavBusinessIcon,
       label: "Información del negocio",
       done:
-        settingsCompletion?.business ??
+        resolvedSettingsCompletion?.business ??
         Boolean(savedSettings.businessName && savedSettings.category && savedSettings.description),
       tab: "business"
     },
     {
-      icon: contactIcon,
+      icon: contactPhoneIcon,
       label: "Contacto",
       done:
-        settingsCompletion?.contact ??
+        resolvedSettingsCompletion?.contact ??
         Boolean(savedSettings.phone && savedSettings.whatsapp && savedSettings.email),
       tab: "contact"
     },
     {
-      icon: pageIcon,
+      icon: settingsNavPageIcon,
       label: "Página pública",
       done:
-        settingsCompletion?.page ??
+        resolvedSettingsCompletion?.page ??
         Boolean(savedSettings.address && savedSettings.city && savedSettings.province && publicSlug),
       tab: "page"
     },
     {
-      icon: paymentsWalletIcon,
+      icon: paymentsHeaderIcon,
       label: "Cobros",
       done:
-        settingsCompletion?.payments ??
+        resolvedSettingsCompletion?.payments ??
         Boolean(settings.mercadoPagoConnected || !settings.depositEnabled),
       tab: "payments"
     },
     {
-      icon: accountProfileIcon,
+      icon: settingsNavAccountIcon,
       label: "Cuenta",
       done: Boolean(
         sessionQuery.data?.data.user.firstName &&
@@ -1838,24 +1840,48 @@ function moneyToCents(value: string) {
       </div>
 
       <aside className="min-w-0 space-y-3 xl:sticky xl:top-4 xl:self-start">
-        <Card className="bg-[#ffffff]">
+        <Card className="overflow-hidden border-[rgba(32,24,54,0.11)] bg-[#ffffff] shadow-[0_16px_42px_rgba(32,24,54,0.055)]">
           <CardBody className="p-4">
-            <div className="flex items-center gap-3">
+            {!isProfileCompletionReady ? (
+              <div aria-label="Cargando progreso del perfil" className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-16 w-16 shrink-0 rounded-full bg-[rgba(32,24,54,0.07)]" />
+                  <div className="w-full space-y-2">
+                    <div className="h-4 w-32 rounded bg-[rgba(32,24,54,0.08)]" />
+                    <div className="h-3 w-48 max-w-full rounded bg-[rgba(32,24,54,0.05)]" />
+                  </div>
+                </div>
+                <div className="h-1.5 rounded-full bg-[rgba(32,24,54,0.07)]" />
+                <div className="divide-y divide-[var(--color-border)] overflow-hidden rounded-xl border border-[var(--color-border)]">
+                  {[0, 1, 2, 3, 4].map((item) => (
+                    <div key={item} className="flex items-center gap-3 px-3 py-3">
+                      <div className="h-8 w-8 rounded-full bg-[rgba(32,24,54,0.06)]" />
+                      <div className="space-y-1.5">
+                        <div className="h-3 w-32 rounded bg-[rgba(32,24,54,0.07)]" />
+                        <div className="h-2.5 w-20 rounded bg-[rgba(32,24,54,0.045)]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+            <div className="flex items-center gap-3.5 rounded-xl border border-[#dcecdf] bg-[#f6fbf7] p-3.5">
               <div
-                className="grid h-16 w-16 shrink-0 place-items-center rounded-full"
+                className="grid h-[4.5rem] w-[4.5rem] shrink-0 place-items-center rounded-full shadow-[0_6px_18px_rgba(47,125,69,0.12)]"
                 style={{
                   background: `conic-gradient(${profileCompletionColor} ${profileCompletionPercent}%, rgba(32,24,54,0.08) 0)`
                 }}
               >
                 <div
-                  className="grid h-11 w-11 place-items-center rounded-full bg-[#ffffff] text-sm font-extrabold"
+                  className="grid h-12 w-12 place-items-center rounded-full bg-[#ffffff] text-sm font-extrabold shadow-[inset_0_0_0_1px_rgba(47,125,69,0.06)]"
                   style={{ color: profileCompletionColor }}
                 >
                   {profileCompletionPercent}%
                 </div>
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-semibold">
+                <h2 className="text-base font-bold text-[var(--color-ink)]">
                   {profileCompletionPercent === 100 ? "Perfil completo" : "Perfil en progreso"}
                 </h2>
                 <p className="mt-1 text-xs leading-5 text-[var(--color-muted-strong)]">
@@ -1866,7 +1892,7 @@ function moneyToCents(value: string) {
               </div>
             </div>
 
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[rgba(32,24,54,0.08)]">
+            <div className="mt-3.5 h-2 overflow-hidden rounded-full bg-[rgba(32,24,54,0.07)] p-px">
               <div
                 className="h-full rounded-full bg-[#2f7d45]"
                 style={{
@@ -1876,7 +1902,7 @@ function moneyToCents(value: string) {
               />
             </div>
 
-            <div className="mt-4 divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-[#ffffff]">
+            <div className="mt-4 divide-y divide-[var(--color-border)] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#ffffff] shadow-[0_8px_24px_rgba(32,24,54,0.035)]">
               {profileCompletionItems.map((item) => (
                 <button
                   key={item.label}
@@ -1889,21 +1915,26 @@ function moneyToCents(value: string) {
                     }
                     setActiveTab(item.tab);
                   }}
-                  className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors first:rounded-t-xl last:rounded-b-xl hover:bg-white/60"
+                  aria-current={activeTab === item.tab ? "page" : undefined}
+                  className={`flex w-full items-center justify-between gap-3 border-l-[3px] px-3.5 py-[0.8rem] text-left transition-colors ${
+                    activeTab === item.tab
+                      ? "border-l-[var(--color-accent)] bg-[rgba(253,134,6,0.045)]"
+                      : "border-l-transparent hover:bg-[rgba(32,24,54,0.025)]"
+                  }`}
                 >
                   <span className="flex min-w-0 items-center gap-3">
                     <span
-                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border ${
                         item.done
-                          ? "bg-[#e3f3e5]"
-                          : "bg-[rgba(32,24,54,0.07)]"
+                          ? "border-[#d7eadb] bg-[#e8f5ea]"
+                          : "border-[rgba(32,24,54,0.07)] bg-[rgba(32,24,54,0.055)]"
                       }`}
                     >
                       <img
                         src={item.icon}
                         alt=""
                         aria-hidden="true"
-                        className={`h-3.5 w-3.5 ${item.done ? "opacity-80" : "opacity-45"}`}
+                        className={`h-5 w-5 ${item.done ? "opacity-80" : "opacity-50"}`}
                       />
                     </span>
                     <span className="min-w-0">
@@ -1915,12 +1946,12 @@ function moneyToCents(value: string) {
                       </span>
                     </span>
                   </span>
-                  <span className="grid h-6 w-6 shrink-0 place-items-center">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#ffffff]">
                     <img
                       src={item.done ? statusCheckIcon : statusXIcon}
                       alt=""
                       aria-hidden="true"
-                      className={`h-5 w-5 ${
+                      className={`h-[1.15rem] w-[1.15rem] ${
                         item.done
                           ? "opacity-90 [filter:brightness(0)_saturate(100%)_invert(40%)_sepia(34%)_saturate(707%)_hue-rotate(84deg)_brightness(90%)_contrast(87%)]"
                           : "opacity-80 [filter:brightness(0)_saturate(100%)_invert(20%)_sepia(95%)_saturate(2342%)_hue-rotate(350deg)_brightness(91%)_contrast(94%)]"
@@ -1931,7 +1962,7 @@ function moneyToCents(value: string) {
               ))}
             </div>
 
-            <div className="mt-3 rounded-xl border border-[rgba(253,134,6,0.24)] bg-[#ffffff] p-3">
+            <div className="mt-3 rounded-xl border border-[rgba(253,134,6,0.24)] bg-[rgba(253,134,6,0.035)] p-3.5">
               <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--color-accent)]">
                 {profileCompletionPercent === 100 ? "Todo listo" : "Siguiente paso"}
               </p>
@@ -1941,6 +1972,8 @@ function moneyToCents(value: string) {
                   : "Revisá los bloques pendientes antes de compartir tu página."}
               </p>
             </div>
+              </>
+            )}
           </CardBody>
         </Card>
       </aside>
