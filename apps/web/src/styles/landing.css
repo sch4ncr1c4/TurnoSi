@@ -266,7 +266,7 @@ body:has(.landing-hero-shell) {
   transform-origin: center;
 }
 
-@media (min-width: 860px) and (max-width: 1279px) {
+@media (min-width: 853px) and (max-width: 1279px) {
   .landing-hero-orbits {
     width: 138%;
     height: 124%;
@@ -457,7 +457,7 @@ body:has(.landing-hero-shell) {
   box-shadow: none;
 }
 
-@media (min-width: 860px) and (max-width: 1279px) {
+@media (min-width: 853px) and (max-width: 1279px) {
   .landing-hero-orbits::before {
     content: none;
   }
@@ -673,11 +673,13 @@ body:has(.landing-hero-shell) {
   }
 }
 
-@media (max-width: 948px) {
+@media (max-width: 852px) {
   .landing-hero-orbits {
     display: none;
   }
+}
 
+@media (max-width: 948px) {
   .landing-hero-shell {
     padding-top: calc(112px + env(safe-area-inset-top)) !important;
   }
@@ -723,6 +725,12 @@ body:has(.landing-hero-shell) {
   margin: 12px auto 0;
   transform: rotateY(-10deg) translate3d(0, 0, -42px);
   transform-origin: 0% 0% 5px;
+}
+
+@media (min-width: 853px) and (max-width: 1079px) {
+  .landing-product-mobile-board {
+    margin-top: clamp(9.5rem, 16vw, 10.5rem);
+  }
 }
 
 .landing-product-mobile-panel {
