@@ -266,6 +266,19 @@ body:has(.landing-hero-shell) {
   transform-origin: center;
 }
 
+@media (min-width: 860px) and (max-width: 1279px) {
+  .landing-hero-orbits {
+    width: 138%;
+    height: 124%;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 85%, transparent 92%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 85%, transparent 92%);
+  }
+
+  .landing-hero-orbit-particles--outer {
+    display: none;
+  }
+}
+
 .landing-hero-orbits::before,
 .landing-hero-orbits::after,
 .landing-hero-orbits > span {
@@ -318,9 +331,136 @@ body:has(.landing-hero-shell) {
   box-shadow: 0 0 6px rgba(253, 134, 6, 0.03);
 }
 
+.landing-hero-orbits > span > i,
+.landing-hero-orbit-particles > i {
+  position: absolute;
+  z-index: 1;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 5px rgba(255, 174, 68, 0.9), 0 0 12px rgba(253, 134, 6, 0.5);
+  offset-path: ellipse(50% 50% at 50% 50%) border-box;
+  offset-anchor: center;
+  offset-rotate: 0deg;
+  animation: landing-orbit-point 14s linear infinite;
+}
+
+.landing-hero-orbits > span > i:nth-of-type(2),
+.landing-hero-orbit-particles > i:nth-of-type(2) {
+  width: 2px;
+  height: 2px;
+  opacity: 0.48;
+  box-shadow: 0 0 4px rgba(253, 134, 6, 0.48);
+}
+
+.landing-hero-orbits > span > i:nth-of-type(3),
+.landing-hero-orbit-particles > i:nth-of-type(3) {
+  width: 3px;
+  height: 3px;
+  opacity: 0.68;
+  animation-delay: -3.2s !important;
+  box-shadow: 0 0 4px rgba(255, 174, 68, 0.72), 0 0 9px rgba(253, 134, 6, 0.38);
+}
+
+.landing-hero-orbits > span > i:nth-of-type(4),
+.landing-hero-orbit-particles > i:nth-of-type(4) {
+  width: 2px;
+  height: 2px;
+  opacity: 0.4;
+  animation-delay: -8.6s !important;
+  box-shadow: 0 0 4px rgba(253, 134, 6, 0.42);
+}
+
+.landing-hero-orbit-particles {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.landing-hero-orbit-particles--outer {
+  inset: 5.5%;
+}
+
+.landing-hero-orbit-particles--outer > i {
+  animation-duration: 24s;
+}
+
+.landing-hero-orbit-particles--inner {
+  inset: 11%;
+}
+
+.landing-hero-orbit-particles--inner > i {
+  animation-duration: 19s;
+  animation-direction: reverse;
+}
+
+.landing-hero-orbit-particles > i:nth-of-type(2) { animation-delay: -6s; }
+.landing-hero-orbit-particles > i:nth-of-type(3) { animation-delay: -12s !important; }
+.landing-hero-orbit-particles > i:nth-of-type(4) { animation-delay: -18s !important; }
+
+.landing-hero-orbits > span:nth-child(2) > i {
+  width: 3px;
+  height: 3px;
+  opacity: 0.72;
+  animation-duration: 18s;
+  animation-delay: -9s;
+  animation-direction: reverse;
+}
+
+.landing-hero-orbits > span:nth-child(3) > i {
+  width: 2px;
+  height: 2px;
+  opacity: 0.52;
+  animation-duration: 12s;
+  animation-delay: -4s;
+}
+
+.landing-hero-orbits > span:nth-child(4) > i {
+  opacity: 0.8;
+  animation-duration: 21s;
+  animation-delay: -15s;
+  animation-direction: reverse;
+}
+
+.landing-hero-orbits > span:nth-child(5) > i {
+  width: 2px;
+  height: 2px;
+  opacity: 0.44;
+  animation-duration: 16s;
+  animation-delay: -11s;
+}
+
+.landing-hero-orbits > span:nth-child(6) > i {
+  width: 3px;
+  height: 3px;
+  opacity: 0.65;
+  animation-duration: 10s;
+  animation-delay: -7s;
+  animation-direction: reverse;
+}
+
+.landing-hero-orbits > span:nth-child(1) > i:nth-of-type(2) { animation-delay: -7s; }
+.landing-hero-orbits > span:nth-child(2) > i:nth-of-type(2) { animation-delay: -18s; }
+.landing-hero-orbits > span:nth-child(3) > i:nth-of-type(2) { animation-delay: -10s; }
+.landing-hero-orbits > span:nth-child(4) > i:nth-of-type(2) { animation-delay: -25.5s; }
+.landing-hero-orbits > span:nth-child(5) > i:nth-of-type(2) { animation-delay: -19s; }
+.landing-hero-orbits > span:nth-child(6) > i:nth-of-type(2) { animation-delay: -12s; }
+
+@keyframes landing-orbit-point {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
 .landing-hero-orbits::before,
 .landing-hero-orbits > span:nth-child(odd) {
   box-shadow: none;
+}
+
+@media (min-width: 860px) and (max-width: 1279px) {
+  .landing-hero-orbits::before {
+    content: none;
+  }
 }
 
 .landing-hero-wave {

@@ -25,11 +25,7 @@ samp,
   border: 0;
   border-radius: 0;
   box-shadow: none;
-  background:
-    linear-gradient(90deg, rgba(255, 132, 0, 0.12), transparent 2px),
-    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.055), transparent 24%),
-    radial-gradient(circle at 94% 70%, rgba(255, 255, 255, 0.052), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 22%, transparent 74%, rgba(0, 0, 0, 0.16));
+  background: linear-gradient(90deg, rgba(255, 132, 0, 0.12), transparent 2px);
   transform: none;
   mask-image: none;
 }

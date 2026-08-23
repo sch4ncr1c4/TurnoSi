@@ -353,12 +353,14 @@ export function LandingPage({ brand }: LandingPageProps) {
             >
               <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white xl:min-h-[470px]">
                 <div className="landing-hero-orbits" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
+                  <span><i /><i /><i /><i /></span>
+                  <span><i /><i /><i /><i /></span>
+                  <span><i /><i /><i /><i /></span>
+                  <span><i /><i /><i /><i /></span>
+                  <span><i /><i /><i /><i /></span>
+                  <span><i /><i /><i /><i /></span>
+                  <b className="landing-hero-orbit-particles landing-hero-orbit-particles--outer"><i /><i /><i /><i /></b>
+                  <b className="landing-hero-orbit-particles landing-hero-orbit-particles--inner"><i /><i /><i /><i /></b>
                 </div>
                 <div className="landing-product-board absolute -right-2 left-6 top-12 hidden min-[1080px]:block">
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)]">

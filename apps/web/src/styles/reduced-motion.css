@@ -69,5 +69,10 @@
     transition: none;
   }
 
+  .landing-hero-orbits > span > i,
+  .landing-hero-orbit-particles > i {
+    animation: none;
+  }
+
 }
 
