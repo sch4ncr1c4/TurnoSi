@@ -6,6 +6,7 @@ import {
   useRef,
   useState
 } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
@@ -101,6 +102,12 @@ export function AuthPage({ brand, route }: AuthPageProps) {
   const [verificationSendAttempts, setVerificationSendAttempts] = useState(0);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const authTrailRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
+
+  const enterTransition = {
+    duration: 0.72,
+    ease: [0.22, 1, 0.36, 1] as const
+  };
 
   function handleAuthTrailMove(event: ReactPointerEvent<HTMLElement>) {
     if (
@@ -264,7 +271,13 @@ export function AuthPage({ brand, route }: AuthPageProps) {
               />
             ))}
           </div>
-          <div className="relative z-10 mx-auto flex w-full max-w-[34rem] flex-1 flex-col justify-center py-10 lg:py-8">
+          <motion.div
+            key={`brand-${route}`}
+            className="relative z-10 mx-auto flex w-full max-w-[34rem] flex-1 flex-col justify-center py-10 lg:py-8"
+            initial={shouldReduceMotion ? false : { opacity: 0, x: -28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={enterTransition}
+          >
             <div className="text-center">
               <div className="mb-10 flex justify-center [&_*]:text-[var(--color-button-text)]">
                 {brand}
@@ -281,12 +294,16 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                 {config.sideCopy}
               </p>
             </div>
-
-          </div>
+          </motion.div>
         </aside>
 
         <section className="auth-surface-pattern relative flex min-w-0 flex-col overflow-hidden bg-[#ffffff]">
-          <header className="relative z-10 flex justify-start px-5 py-5 sm:px-8 lg:justify-end">
+          <motion.header
+            className="relative z-10 flex justify-start px-5 py-5 sm:px-8 lg:justify-end"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...enterTransition, delay: 0.12 }}
+          >
             <Link
               to="/"
               className="group inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-muted-strong)] transition hover:text-[var(--color-ink)]"
@@ -299,11 +316,21 @@ export function AuthPage({ brand, route }: AuthPageProps) {
               />
               Volver al inicio
             </Link>
-          </header>
+          </motion.header>
 
           <div className="relative z-10 flex flex-1 items-center justify-center px-5 pb-8 pt-4 sm:px-7 lg:pb-12">
-            <div className="w-full max-w-[500px] rounded-2xl border border-[rgba(32,24,54,0.11)] bg-white/90 px-7 py-7 shadow-[0_24px_70px_rgba(32,24,54,0.12)] backdrop-blur sm:px-9 sm:py-8 lg:px-10 lg:py-9 lg:-translate-y-2">
-              <div>
+            <motion.div
+              key={`form-${route}`}
+              className="w-full max-w-[500px] rounded-2xl border border-[rgba(32,24,54,0.11)] bg-white/90 px-7 py-7 shadow-[0_24px_70px_rgba(32,24,54,0.12)] backdrop-blur sm:px-9 sm:py-8 lg:px-10 lg:py-9 lg:-translate-y-2"
+              initial={shouldReduceMotion ? false : { opacity: 0, x: 32, scale: 0.985 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ ...enterTransition, delay: 0.08 }}
+            >
+              <motion.div
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...enterTransition, delay: 0.2 }}
+              >
                 <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--color-ink)]">
                   {config.eyebrow}
                 </p>
@@ -313,9 +340,15 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                 <p className="mt-3 max-w-md text-sm leading-6 text-[var(--color-muted-strong)]">
                   {config.description}
                 </p>
-              </div>
+              </motion.div>
 
-                <form onSubmit={handleSubmit} className="mt-6 space-y-3.5">
+                <motion.form
+                  onSubmit={handleSubmit}
+                  className="mt-6 space-y-3.5"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ ...enterTransition, delay: 0.28 }}
+                >
                   {formError && (
                     <div role="alert" className="rounded-md border border-[#f0c9c5] bg-[#fff3f1] p-3 text-sm text-[#9f261d]">
                       {formError}
@@ -497,7 +530,7 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="mt-2 inline-flex h-11 w-full items-center justify-center gap-3 rounded-lg bg-[var(--color-ink)] px-5 text-sm font-bold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(32,24,54,0.2)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent)] hover:text-[var(--color-button-text)]"
+                    className="auth-submit-button mt-2 inline-flex h-11 w-full items-center justify-center gap-3 rounded-lg bg-[var(--color-ink)] px-5 text-sm font-bold text-[var(--color-button-text)] shadow-[0_14px_30px_rgba(32,24,54,0.2)] transition hover:-translate-y-0.5 hover:text-[var(--color-button-text)]"
                   >
                     <span>
                       {isSubmitting
@@ -508,9 +541,14 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                     </span>
                     {!isSubmitting && <span aria-hidden="true">→</span>}
                   </button>
-                </form>
+                </motion.form>
 
-              <div className="mt-5 border-t border-[var(--color-border)] pt-4 text-center text-sm text-[var(--color-muted)]">
+              <motion.div
+                className="mt-5 border-t border-[var(--color-border)] pt-4 text-center text-sm text-[var(--color-muted)]"
+                initial={shouldReduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: shouldReduceMotion ? 0 : 0.38 }}
+              >
                 {config.alternateLabel}{" "}
                 <Link
                   to={config.alternateHref}
@@ -518,8 +556,8 @@ export function AuthPage({ brand, route }: AuthPageProps) {
                 >
                   {config.alternateCta}
                 </Link>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
       </div>

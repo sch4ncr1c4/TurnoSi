@@ -9,7 +9,13 @@ const logoHorizontalUrl = new URL("../assets/logos/logo-turnosi.svg", import.met
 
 export function Brand({ asLink = false, boxed = false }: BrandProps) {
   const content = (
-    <img src={logoHorizontalUrl} alt="Sistema Turnos" className="h-18 w-auto shrink-0" />
+    <img
+      src={logoHorizontalUrl}
+      alt="Sistema Turnos"
+      width="1510"
+      height="398"
+      className="h-18 w-auto shrink-0"
+    />
   );
 
   if (asLink) {

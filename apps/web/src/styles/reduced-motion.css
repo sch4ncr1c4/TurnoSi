@@ -43,7 +43,8 @@
 
   .dashboard-sidebar-plan-button::before,
   .dashboard-sidebar-plan-arrow,
-  .dashboard-sidebar-logout::before {
+  .dashboard-sidebar-logout::before,
+  .auth-submit-button::before {
     transition: none;
   }
 

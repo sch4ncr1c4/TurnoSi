@@ -221,23 +221,23 @@ export function LandingPage({ brand }: LandingPageProps) {
                 isScrolled ? "landing-hero-nav__actions--compact gap-1.5" : "gap-2"
               }`}
             >
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className={`landing-hero-nav__login group relative font-semibold text-white/82 transition-colors duration-200 hover:text-[var(--color-accent)] ${
                   isScrolled ? "landing-hero-nav__login--compact px-2 py-1.5 text-[0.92rem]" : "px-2 py-2 text-sm"
                 }`}
               >
                 Ingresar
                 <span className="absolute bottom-0 left-2 h-0.5 w-[calc(100%-1rem)] origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
-              </a>
-              <a
-                href="/register"
+              </Link>
+              <Link
+                to="/register"
                 className={`landing-cta landing-hero-nav__cta rounded-md bg-[var(--color-accent)] font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${
                   isScrolled ? "landing-hero-nav__cta--compact px-3.5 py-1.5 text-[0.92rem]" : "px-4 py-2 text-sm"
                 }`}
               >
                 Crear cuenta
-              </a>
+              </Link>
             </div>
 
             <button
@@ -291,23 +291,23 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </nav>
 
                 <div className="mt-4 grid gap-2 border-t border-white/10 pt-3">
-                  <a
-                    href="/login"
+                  <Link
+                    to="/login"
                     onClick={closeMenu}
                     style={{ transitionDelay: isMenuOpen ? "170ms" : "0ms" }}
                     className="landing-mobile-menu-item group relative rounded-md border border-white/18 px-3 py-2.5 text-center text-sm font-medium text-white transition-colors duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                   >
                     Ingresar
                     <span className="absolute bottom-1.5 left-1/2 h-0.5 w-10 -translate-x-1/2 origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
-                  </a>
-                  <a
-                    href="/register"
+                  </Link>
+                  <Link
+                    to="/register"
                     onClick={closeMenu}
                     style={{ transitionDelay: isMenuOpen ? "195ms" : "0ms" }}
                     className="landing-mobile-menu-item rounded-md bg-[var(--color-accent)] px-3 py-2.5 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
                   >
                     Crear cuenta
-                  </a>
+                  </Link>
                 </div>
             </div>
           </div>
@@ -338,12 +338,12 @@ export function LandingPage({ brand }: LandingPageProps) {
                 >
                   Ver cómo funciona
                 </a>
-                <a
-                  href="/register"
+                <Link
+                  to="/register"
                   className="landing-link inline-flex w-full min-w-0 items-center justify-center rounded-md border border-white/22 px-5 py-3 text-center text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-lg active:translate-y-0 sm:w-auto"
                 >
                   Crear cuenta
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -364,7 +364,13 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
                       <div className="mb-8 flex items-center gap-2">
-                        <img src={turnosiLogo} alt="TurnoSi" className="h-6 w-auto opacity-95" />
+                        <img
+                          src={turnosiLogo}
+                          alt="TurnoSi"
+                          width="1510"
+                          height="398"
+                          className="h-6 w-auto opacity-95"
+                        />
                       </div>
                       {["Resumen", "Agenda", "Clientes", "Equipo", "Configuración"].map((item, index) => (
                         <div
@@ -479,7 +485,13 @@ export function LandingPage({ brand }: LandingPageProps) {
                 <div className="landing-product-mobile-board min-[1080px]:hidden">
                   <div className="landing-product-mobile-panel grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
-                      <img src={turnosiLogo} alt="TurnoSi" className="h-5 w-auto min-w-[58px] opacity-95" />
+                      <img
+                        src={turnosiLogo}
+                        alt="TurnoSi"
+                        width="1510"
+                        height="398"
+                        className="h-5 w-auto min-w-[58px] opacity-95"
+                      />
                       <div className="mt-8 space-y-3">
                         {["Resumen", "Agenda", "Clientes", "Equipo"].map((item, index) => (
                           <span
@@ -739,7 +751,14 @@ export function LandingPage({ brand }: LandingPageProps) {
 
                         <div className={`landing-booking-confirm${visibleBookingPreviewPhase === 2 ? " is-visible" : ""}`}>
                             <span>
-                              <img src={statusCheckIcon} alt="" aria-hidden="true" className="h-6 w-6 brightness-0 invert" />
+                              <img
+                                src={statusCheckIcon}
+                                alt=""
+                                aria-hidden="true"
+                                width="24"
+                                height="24"
+                                className="h-6 w-6 brightness-0 invert"
+                              />
                             </span>
                           <strong>Turno confirmado</strong>
                           <small>{bookingPreview.service} · {bookingPreview.selectedHour}</small>
