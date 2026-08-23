@@ -36,6 +36,7 @@ import { useSessionQuery } from "../auth/auth.queries";
 import type { AuthResult } from "../auth/auth.types";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
+import { DashboardSummaryView } from "./DashboardSummaryView";
 import { ManualAppointmentModal } from "./ManualAppointmentModal";
 import { RescheduleAppointmentModal } from "./RescheduleAppointmentModal";
 import { StatusChangeModal } from "./StatusChangeModal";
@@ -88,12 +89,6 @@ const DashboardSettingsView = lazy(() =>
     default: module.DashboardSettingsView
   }))
 );
-const DashboardSummaryView = lazy(() =>
-  import("./DashboardSummaryView").then((module) => ({
-    default: module.DashboardSummaryView
-  }))
-);
-
 type DashboardPageProps = {
   brand: ReactNode;
 };
@@ -973,7 +968,12 @@ export function DashboardPage({ brand }: DashboardPageProps) {
 
   return (
     <PageLayout className="dashboard-page">
-      <div className="dashboard-shell min-h-screen overflow-x-clip">
+      <motion.div
+        className="dashboard-shell min-h-screen overflow-x-clip"
+        initial={shouldReduceMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+      >
         <DashboardSidebar
           activeView={effectiveActiveView}
           brand={brand}
@@ -986,7 +986,12 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           onChangeView={changeDashboardView}
         />
 
-        <section className="min-w-0 max-w-full overflow-x-clip">
+        <motion.section
+          className="min-w-0 max-w-full overflow-x-clip"
+          initial={shouldReduceMotion ? false : { opacity: 0, x: 18, y: 8 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          transition={{ duration: 0.58, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+        >
           <DashboardHeader
             activeView={effectiveActiveView}
           />
@@ -1122,8 +1127,8 @@ export function DashboardPage({ brand }: DashboardPageProps) {
               </AnimatePresence>
             </Suspense>
           </div>
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
 
       {pendingStatusChange && (
         <StatusChangeModal
