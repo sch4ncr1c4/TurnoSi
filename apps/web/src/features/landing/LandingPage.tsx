@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 
+import { preloadAuthPage } from "@/app/route-loaders";
 import { billingPlans } from "../billing/billing.plans";
 import turnosiLogo from "@/components/assets/logos/turnosi-horizontal.svg";
 import statusCheckIcon from "@/components/assets/icons/status/status-check.svg";
@@ -50,10 +51,70 @@ const bookingPreviewSteps = [
   }
 ] as const;
 
+const heroParticleIndexes = Array.from({ length: 22 }, (_, index) => index);
+const defaultCardDotIndexes = Array.from({ length: 7 }, (_, index) => index);
+const denseCardDotIndexes = Array.from({ length: 11 }, (_, index) => index);
+const revealInitialMotion = { opacity: 0, y: 30 };
+const revealInViewMotion = { opacity: 1, y: 0 };
+const previewInitialMotion = { opacity: 0, y: 18, scale: 0.985 };
+const previewInViewMotion = { opacity: 1, y: 0, scale: 1 };
+const featureInitialMotion = { opacity: 0, y: 46, scale: 0.975 };
+const featureInViewMotion = { opacity: 1, y: 0, scale: 1 };
+const motionViewport = { once: true, amount: 0.22 };
+const featureViewport = { once: true, amount: 0.16, margin: "0px 0px -6% 0px" };
+const smoothTransition = { duration: 0.72, ease: [0.22, 1, 0.36, 1] as const };
+const featureTransition = { duration: 0.82, ease: [0.16, 1, 0.3, 1] as const };
+const authPreloadHandlers = {
+  onPointerEnter: preloadAuthPage,
+  onFocus: preloadAuthPage,
+  onTouchStart: preloadAuthPage
+};
+
+type LandingBookingAnimationProps = {
+  shouldReduceMotion: boolean | null;
+  children: (state: {
+    bookingPreview: (typeof bookingPreviewSteps)[number];
+    visibleBookingPreviewPhase: number;
+  }) => ReactNode;
+};
+
+function LandingBookingAnimation({
+  shouldReduceMotion,
+  children
+}: LandingBookingAnimationProps) {
+  const [bookingPreviewIndex, setBookingPreviewIndex] = useState(0);
+  const [bookingPreviewPhase, setBookingPreviewPhase] = useState(0);
+  const bookingPreview = bookingPreviewSteps[bookingPreviewIndex];
+  const visibleBookingPreviewPhase = shouldReduceMotion ? 2 : bookingPreviewPhase;
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+
+    const selectService = window.setTimeout(() => setBookingPreviewPhase(1), 650);
+    const selectHour = window.setTimeout(() => setBookingPreviewPhase(2), 1600);
+    const hideSelection = window.setTimeout(() => setBookingPreviewPhase(3), 3900);
+    const nextService = window.setTimeout(() => {
+      setBookingPreviewPhase(0);
+      setBookingPreviewIndex((current) => (current + 1) % bookingPreviewSteps.length);
+    }, 4400);
+
+    return () => {
+      window.clearTimeout(selectService);
+      window.clearTimeout(selectHour);
+      window.clearTimeout(hideSelection);
+      window.clearTimeout(nextService);
+    };
+  }, [bookingPreviewIndex, shouldReduceMotion]);
+
+  return children({ bookingPreview, visibleBookingPreviewPhase });
+}
+
 function LandingCardDots({ count = 7 }: { count?: number }) {
+  const indexes = count === 11 ? denseCardDotIndexes : defaultCardDotIndexes;
+
   return (
     <div className="landing-agenda-sparkles" aria-hidden="true">
-      {Array.from({ length: count }, (_, index) => (
+      {indexes.map((index) => (
         <span key={index} />
       ))}
     </div>
@@ -63,7 +124,7 @@ function LandingCardDots({ count = 7 }: { count?: number }) {
 function LandingHeroParticles({ className = "" }: { className?: string }) {
   return (
     <div className={`landing-hero-particles ${className}`} aria-hidden="true">
-      {Array.from({ length: 22 }, (_, index) => (
+      {heroParticleIndexes.map((index) => (
         <span key={index} className="landing-hero-particle">
           <span />
         </span>
@@ -74,22 +135,14 @@ function LandingHeroParticles({ className = "" }: { className?: string }) {
 
 export function LandingPage({ brand }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [bookingPreviewIndex, setBookingPreviewIndex] = useState(0);
-  const [bookingPreviewPhase, setBookingPreviewPhase] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(() => window.scrollY > 12);
   const shouldReduceMotion = useReducedMotion();
-  const bookingPreview = bookingPreviewSteps[bookingPreviewIndex];
-  const visibleBookingPreviewPhase = shouldReduceMotion ? 2 : bookingPreviewPhase;
-  const revealInitial = shouldReduceMotion ? false : { opacity: 0, y: 30 };
-  const revealInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0 };
-  const previewInitial = shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 };
-  const previewInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 };
-  const featureInitial = shouldReduceMotion ? false : { opacity: 0, y: 46, scale: 0.975 };
-  const featureInView = shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 };
-  const motionViewport = { once: true, amount: 0.22 };
-  const featureViewport = { once: true, amount: 0.16, margin: "0px 0px -6% 0px" };
-  const smoothTransition = { duration: 0.72, ease: [0.22, 1, 0.36, 1] as const };
-  const featureTransition = { duration: 0.82, ease: [0.16, 1, 0.3, 1] as const };
+  const revealInitial = shouldReduceMotion ? false : revealInitialMotion;
+  const revealInView = shouldReduceMotion ? undefined : revealInViewMotion;
+  const previewInitial = shouldReduceMotion ? false : previewInitialMotion;
+  const previewInView = shouldReduceMotion ? undefined : previewInViewMotion;
+  const featureInitial = shouldReduceMotion ? false : featureInitialMotion;
+  const featureInView = shouldReduceMotion ? undefined : featureInViewMotion;
 
   useLayoutEffect(() => {
     const previousHtmlBackground = document.documentElement.style.backgroundColor;
@@ -113,34 +166,20 @@ export function LandingPage({ brand }: LandingPageProps) {
   }, []);
 
   useEffect(() => {
+    let wasScrolled = window.scrollY > 12;
+
     function handleScroll() {
-      setIsScrolled(window.scrollY > 12);
+      const nextScrolled = window.scrollY > 12;
+      if (nextScrolled === wasScrolled) return;
+
+      wasScrolled = nextScrolled;
+      setIsScrolled(nextScrolled);
     }
 
-    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    if (shouldReduceMotion) return;
-
-    const selectService = window.setTimeout(() => setBookingPreviewPhase(1), 650);
-    const selectHour = window.setTimeout(() => setBookingPreviewPhase(2), 1600);
-    const hideSelection = window.setTimeout(() => setBookingPreviewPhase(3), 3900);
-    const nextService = window.setTimeout(() => {
-      setBookingPreviewPhase(0);
-      setBookingPreviewIndex((current) => (current + 1) % bookingPreviewSteps.length);
-    }, 4400);
-
-    return () => {
-      window.clearTimeout(selectService);
-      window.clearTimeout(selectHour);
-      window.clearTimeout(hideSelection);
-      window.clearTimeout(nextService);
-    };
-  }, [bookingPreviewIndex, shouldReduceMotion]);
 
   useEffect(() => {
     const elements = Array.from(
@@ -160,6 +199,23 @@ export function LandingPage({ brand }: LandingPageProps) {
 
     elements.forEach((element) => observer.observe(element));
 
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const regions = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-pause-when-offscreen]")
+    );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          entry.target.classList.toggle("landing-animation-paused", !entry.isIntersecting);
+        });
+      },
+      { rootMargin: "140px 0px", threshold: 0 }
+    );
+
+    regions.forEach((region) => observer.observe(region));
     return () => observer.disconnect();
   }, []);
 
@@ -239,6 +295,7 @@ export function LandingPage({ brand }: LandingPageProps) {
             >
               <Link
                 to="/login"
+                {...authPreloadHandlers}
                 className={`landing-hero-nav__login group relative font-semibold text-white/82 transition-colors duration-200 hover:text-[var(--color-accent)] ${
                   isScrolled ? "landing-hero-nav__login--compact px-2 py-1.5 text-[0.92rem]" : "px-2 py-2 text-sm"
                 }`}
@@ -248,6 +305,7 @@ export function LandingPage({ brand }: LandingPageProps) {
               </Link>
               <Link
                 to="/register"
+                {...authPreloadHandlers}
                 className={`landing-cta landing-hero-nav__cta rounded-md bg-[var(--color-accent)] font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${
                   isScrolled ? "landing-hero-nav__cta--compact px-3.5 py-1.5 text-[0.92rem]" : "px-4 py-2 text-sm"
                 }`}
@@ -313,6 +371,7 @@ export function LandingPage({ brand }: LandingPageProps) {
               <div className="mt-auto grid gap-2 border-t border-white/10 pt-5">
                 <Link
                   to="/login"
+                  {...authPreloadHandlers}
                   onClick={closeMenu}
                   style={{ transitionDelay: isMenuOpen ? "230ms" : "0ms" }}
                   className="landing-mobile-menu-item group relative rounded-md border border-white/18 px-3 py-3 text-center text-sm font-medium text-white transition-colors duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
@@ -321,6 +380,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </Link>
                 <Link
                   to="/register"
+                  {...authPreloadHandlers}
                   onClick={closeMenu}
                   style={{ transitionDelay: isMenuOpen ? "265ms" : "0ms" }}
                   className="landing-mobile-menu-item rounded-md bg-[var(--color-accent)] px-3 py-3 text-center text-sm font-semibold text-[var(--color-button-text)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
@@ -357,6 +417,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                 </a>
                 <Link
                   to="/register"
+                  {...authPreloadHandlers}
                   className="landing-link inline-flex w-full min-w-0 items-center justify-center rounded-md border border-white/22 px-5 py-3 text-center text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-lg active:translate-y-0 min-[360px]:w-auto"
                 >
                   Crear cuenta
@@ -718,6 +779,7 @@ export function LandingPage({ brand }: LandingPageProps) {
             <div className="landing-functions-layout mt-11">
               <motion.article
                 className="landing-feature-card landing-function-block landing-function-block--agenda"
+                data-pause-when-offscreen
                 initial={featureInitial}
                 whileInView={featureInView}
                 viewport={featureViewport}
@@ -787,6 +849,7 @@ export function LandingPage({ brand }: LandingPageProps) {
               <div className="landing-functions-split">
                 <motion.article
                   className="landing-feature-card landing-function-block landing-function-block--booking landing-function-card-dark"
+                  data-pause-when-offscreen
                   initial={featureInitial}
                   whileInView={featureInView}
                   whileHover={shouldReduceMotion ? undefined : { y: -4 }}
@@ -812,15 +875,17 @@ export function LandingPage({ brand }: LandingPageProps) {
                     </div>
                   </div>
 
-                  <motion.div
-                    className="landing-booking-preview"
-                    aria-label="Vista previa de reserva online"
-                    initial={previewInitial}
-                    whileInView={previewInView}
-                    viewport={motionViewport}
-                    transition={{ ...smoothTransition, delay: 0.2 }}
-                  >
-                    <div className="landing-booking-stage">
+                  <LandingBookingAnimation shouldReduceMotion={shouldReduceMotion}>
+                    {({ bookingPreview, visibleBookingPreviewPhase }) => (
+                      <motion.div
+                        className="landing-booking-preview"
+                        aria-label="Vista previa de reserva online"
+                        initial={previewInitial}
+                        whileInView={previewInView}
+                        viewport={motionViewport}
+                        transition={{ ...smoothTransition, delay: 0.2 }}
+                      >
+                        <div className="landing-booking-stage">
                         <div className="landing-booking-grid">
                           <motion.div
                             key={bookingPreview.service}
@@ -868,14 +933,17 @@ export function LandingPage({ brand }: LandingPageProps) {
                           <strong>Turno confirmado</strong>
                           <small>{bookingPreview.service} · {bookingPreview.selectedHour}</small>
                         </div>
-                      </div>
-                    </div>
-                    <LandingCardDots count={11} />
-                  </motion.div>
+                          </div>
+                        </div>
+                        <LandingCardDots count={11} />
+                      </motion.div>
+                    )}
+                  </LandingBookingAnimation>
                 </motion.article>
 
                 <motion.article
                   className="landing-feature-card landing-function-block landing-function-block--clients landing-function-card-dark"
+                  data-pause-when-offscreen
                   initial={featureInitial}
                   whileInView={featureInView}
                   whileHover={shouldReduceMotion ? undefined : { y: -4 }}
@@ -1008,7 +1076,11 @@ export function LandingPage({ brand }: LandingPageProps) {
                     </div>
 
                     <div className="landing-pricing-action">
-                      <Link to={`/register?plan=${plan.id}`} className="landing-cta">
+                      <Link
+                        to={`/register?plan=${plan.id}`}
+                        {...authPreloadHandlers}
+                        className="landing-cta"
+                      >
                         <span>{plan.recommended ? "Empezar con Profesional" : `Elegir ${plan.name}`}</span>
                       </Link>
                     </div>
@@ -1077,7 +1149,11 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <h3>Tu agenda puede trabajar mejor desde ahora.</h3>
                   <p>Probá TurnoSi durante 7 días. Sin tarjeta y sin permanencia.</p>
                 </div>
-                <Link to="/register" className="landing-cta landing-footer-cta-button">
+                <Link
+                  to="/register"
+                  {...authPreloadHandlers}
+                  className="landing-cta landing-footer-cta-button"
+                >
                   Crear cuenta gratis <span aria-hidden="true">→</span>
                 </Link>
               </section>
@@ -1097,8 +1173,8 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                   <div>
                     <p>Cuenta</p>
-                    <Link to="/login">Ingresar</Link>
-                    <Link to="/register">Crear cuenta</Link>
+                    <Link to="/login" {...authPreloadHandlers}>Ingresar</Link>
+                    <Link to="/register" {...authPreloadHandlers}>Crear cuenta</Link>
                     <a href="#contact">Contacto</a>
                   </div>
                   <div>

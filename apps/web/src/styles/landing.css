@@ -296,9 +296,7 @@ body:has(.landing-hero-shell) {
   height: var(--particle-size);
   opacity: 0;
   transform: scale(0.35);
-  filter: blur(3px);
   animation: landing-particle-reveal 720ms cubic-bezier(0.16, 1, 0.3, 1) var(--particle-reveal-delay) both;
-  will-change: transform, opacity, filter;
 }
 
 .landing-hero-particle > span {
@@ -310,7 +308,6 @@ body:has(.landing-hero-shell) {
   opacity: var(--particle-opacity);
   box-shadow: var(--particle-shadow);
   animation: landing-particle-float var(--particle-duration) ease-in-out var(--particle-delay) infinite alternate;
-  will-change: transform, opacity;
 }
 
 .landing-hero-particle:nth-child(5n + 2) { --particle-reveal-delay: 960ms; }
@@ -579,11 +576,6 @@ body:has(.landing-hero-shell) {
   --particle-opacity: 0.7;
   --particle-opacity-low: 0.34;
   --particle-shadow: 0 0 6px rgba(253, 134, 6, 0.68), 0 0 13px rgba(253, 134, 6, 0.38);
-  --particle-filter: drop-shadow(0 0 4px rgba(253, 134, 6, 0.58));
-}
-
-.landing-hero-particles--attached .landing-hero-particle > span {
-  filter: var(--particle-filter);
 }
 
 .landing-hero-particles--attached .landing-hero-particle:nth-child(odd) {
@@ -607,7 +599,6 @@ body:has(.landing-hero-shell) {
   --particle-opacity: 0.94;
   --particle-opacity-low: 0.52;
   --particle-shadow: 0 0 9px rgba(253, 134, 6, 0.94), 0 0 20px rgba(253, 134, 6, 0.58);
-  --particle-filter: drop-shadow(0 0 6px rgba(253, 134, 6, 0.82));
 }
 
 .landing-hero-particles--attached .landing-hero-particle:is(
@@ -623,7 +614,6 @@ body:has(.landing-hero-shell) {
   --particle-opacity: 0.36;
   --particle-opacity-low: 0.18;
   --particle-shadow: 0 0 4px rgba(253, 134, 6, 0.34);
-  --particle-filter: drop-shadow(0 0 2px rgba(253, 134, 6, 0.3));
 }
 
 .landing-hero-particles--attached .landing-hero-particle:nth-child(1) { top: 12%; left: 2%; }
@@ -653,19 +643,16 @@ body:has(.landing-hero-shell) {
   0% {
     opacity: 0;
     transform: scale(0.35);
-    filter: blur(3px);
   }
 
   72% {
     opacity: 1;
     transform: scale(1.12);
-    filter: blur(0);
   }
 
   100% {
     opacity: 1;
     transform: scale(1);
-    filter: blur(0);
   }
 }
 
@@ -963,11 +950,15 @@ body:has(.landing-hero-shell) {
 }
 
 .landing-feature-card {
-  will-change: opacity, transform;
   transition:
     border-color 220ms ease,
     box-shadow 220ms ease,
     transform 220ms ease;
+}
+
+.landing-animation-paused,
+.landing-animation-paused * {
+  animation-play-state: paused !important;
 }
 
 .landing-product-card {
@@ -1044,7 +1035,7 @@ body:has(.landing-hero-shell) {
   border-radius: 16px;
   background: rgba(24, 21, 31, 0.94);
   box-shadow: 0 18px 52px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(12px);
+  backdrop-filter: none;
   transform: translateX(-50%) translateY(-6px);
   transform-origin: 50% 50%;
   animation:
@@ -1092,7 +1083,6 @@ body:has(.landing-hero-shell) {
     border-radius: 18px;
     box-shadow: 0 18px 48px rgba(7, 4, 18, 0.22);
     backdrop-filter: none;
-    will-change: top, width, left;
   }
 
   .landing-hero-nav--floating {
@@ -1195,7 +1185,7 @@ body:has(.landing-hero-shell) {
   border-radius: 15px;
   background: rgba(24, 21, 31, 0.94);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(12px);
+  backdrop-filter: none;
   transform: rotateY(-10deg) translate3d(0, 0, -42px);
   transform-origin: 0% 0% 5px;
   animation:
@@ -2883,16 +2873,6 @@ body:has(.landing-hero-shell) {
   opacity: 1;
 }
 
-@keyframes landing-system-drift {
-  from {
-    transform: perspective(980px) rotateX(7deg) rotateY(-19deg) rotateZ(-4deg) translate3d(76px, 34px, 0);
-  }
-
-  to {
-    transform: perspective(980px) rotateX(5deg) rotateY(-15deg) rotateZ(-3deg) translate3d(54px, -10px, 0);
-  }
-}
-
 .landing-appointment-stream {
   position: absolute;
   inset: 0 0 0 44%;
@@ -3845,18 +3825,6 @@ body:has(.landing-hero-shell) {
   }
 }
 
-@keyframes landing-pattern-in {
-  from {
-    opacity: 0;
-    transform: translate3d(-18px, 18px, 0);
-  }
-
-  to {
-    opacity: 0.24;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
 @keyframes landing-hero-wave-in {
   from {
     opacity: 0.98;
@@ -3866,18 +3834,6 @@ body:has(.landing-hero-shell) {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scaleY(1);
-  }
-}
-
-@keyframes landing-functions-divider-in {
-  from {
-    opacity: 0;
-    transform: translate3d(-50%, -8px, 0) rotate(-1.4deg) scaleX(0.9);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate3d(-50%, 0, 0) rotate(-1.4deg) scaleX(1);
   }
 }
 

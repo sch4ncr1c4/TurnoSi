@@ -11,7 +11,7 @@ export default defineConfig({
     }
   },
   server: {
-    allowedHosts: ["shiny-postbox-unlovely.ngrok-free.dev"],
+    allowedHosts: [".ngrok-free.app", ".ngrok-free.dev"],
     proxy: {
       "/api": {
         target: "http://localhost:3001",

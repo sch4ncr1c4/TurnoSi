@@ -9,6 +9,7 @@ import {
 import { motion, useReducedMotion } from "framer-motion";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
+import { preloadDashboardPage } from "@/app/route-loaders";
 import { PageLayout } from "../../components/layout/PageLayout";
 import backChevronIcon from "../../components/assets/icons/actions/back-chevron.svg";
 import loginPasswordIcon from "../../components/assets/icons/auth/login-password.svg";
@@ -103,6 +104,10 @@ export function AuthPage({ brand, route }: AuthPageProps) {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const authTrailRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    preloadDashboardPage();
+  }, []);
 
   const enterTransition = {
     duration: 0.72,
