@@ -244,34 +244,25 @@ export function LandingPage({ brand }: LandingPageProps) {
               </Link>
             </div>
 
-            <button
-              type="button"
-              aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
-              aria-expanded={isMenuOpen}
-              onClick={() => setIsMenuOpen((current) => !current)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-white/18 bg-white/8 min-[949px]:hidden"
-            >
-              <span className="relative h-4 w-5">
-                <span
-                  className={`absolute left-0 top-0 h-0.5 w-5 rounded-full bg-white transition-transform duration-200 ${
-                    isMenuOpen ? "translate-y-[7px] rotate-45" : ""
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-[7px] h-0.5 w-5 rounded-full bg-white transition-opacity duration-200 ${
-                    isMenuOpen ? "opacity-0" : "opacity-100"
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-[14px] h-0.5 w-5 rounded-full bg-white transition-transform duration-200 ${
-                    isMenuOpen ? "-translate-y-[7px] -rotate-45" : ""
-                  }`}
-                />
-              </span>
-            </button>
           </div>
         </div>
           </header>
+
+          <button
+            type="button"
+            aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((current) => !current)}
+            className={`landing-burger min-[949px]:hidden ${
+              isScrolled ? "landing-burger--floating" : ""
+            } ${
+              isMenuOpen ? "landing-burger--open" : ""
+            }`}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
 
           <div
             className={`landing-mobile-menu min-[949px]:hidden ${
@@ -286,22 +277,9 @@ export function LandingPage({ brand }: LandingPageProps) {
               onClick={closeMenu}
             />
             <aside className="landing-mobile-menu-panel" aria-label="Navegación principal">
-              <div className="flex items-center justify-between border-b border-white/10 pb-5">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/52">
-                  Menú
-                </span>
-                <button
-                  type="button"
-                  aria-label="Cerrar menú"
-                  onClick={closeMenu}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/14 bg-white/6 text-white transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                >
-                  <span className="relative h-5 w-5">
-                    <span className="absolute left-0 top-[9px] h-0.5 w-5 rotate-45 rounded-full bg-current" />
-                    <span className="absolute left-0 top-[9px] h-0.5 w-5 -rotate-45 rounded-full bg-current" />
-                  </span>
-                </button>
-              </div>
+              <p className="landing-mobile-menu-heading text-xs font-semibold uppercase tracking-[0.18em] text-white/52">
+                Menú
+              </p>
 
               <nav className="mt-6 grid gap-1.5 text-sm font-medium text-white/78">
                 {navigationLinks.map((link, index) => (
