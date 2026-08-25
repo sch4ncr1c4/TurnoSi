@@ -489,7 +489,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                 </div>
 
-                <div className="landing-product-mobile-board min-[1280px]:hidden">
+                <div className="landing-product-mobile-board landing-product-dashboard-board min-[1280px]:hidden">
                   <div className="landing-product-mobile-panel grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
                       <img
@@ -585,6 +585,95 @@ export function LandingPage({ brand }: LandingPageProps) {
                       <div className="mt-1 h-2 w-28 rounded bg-white/18" />
                     </div>
                     <span className="h-2 w-2 rounded-full bg-[#72d59b]" />
+                  </div>
+                </div>
+
+                <div
+                  className="landing-product-mobile-board landing-product-booking-board"
+                  aria-hidden="true"
+                >
+                  <div className="relative h-[440px] rounded-[34px] border border-white/20 bg-[#171123] p-[5px] shadow-[0_24px_64px_rgba(4,2,12,0.28)]">
+                    <span className="absolute -left-[3px] top-[86px] h-9 w-[3px] rounded-l-full bg-[#302842]" />
+                    <span className="absolute -left-[3px] top-[132px] h-14 w-[3px] rounded-l-full bg-[#302842]" />
+                    <span className="absolute -right-[3px] top-[108px] h-12 w-[3px] rounded-r-full bg-[#302842]" />
+
+                    <div className="flex h-full flex-col overflow-hidden rounded-[29px] bg-white p-4 text-[var(--color-ink)]">
+                      <div className="relative mb-2 h-2.5">
+                        <span className="absolute left-1/2 top-0.5 h-[3px] w-8 -translate-x-1/2 rounded-full bg-[#292136]" />
+                        <span className="absolute right-1 top-0 h-1.5 w-1.5 rounded-full bg-[#292136]" />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                          Barbería Norte
+                        </p>
+                        <p className="mt-1 text-xl font-semibold tracking-[-0.03em]">
+                          Reservá tu turno
+                        </p>
+                      </div>
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-ink)] text-[10px] font-semibold text-white">
+                        BN
+                      </span>
+                      </div>
+
+                      <div className="mt-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                          Servicio:
+                        </p>
+                        <div className="mt-1.5 flex items-center justify-between rounded-xl border border-[rgba(253,134,6,0.38)] bg-[rgba(253,134,6,0.07)] px-3 py-2">
+                          <div>
+                            <p className="text-xs font-semibold">Corte de pelo</p>
+                            <p className="mt-0.5 text-[10px] text-[var(--color-muted-strong)]">30 min</p>
+                          </div>
+                          <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-accent)]" />
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                          Elegí un día:
+                        </p>
+                        <div className="mt-1.5 grid grid-cols-5 gap-1.5">
+                          {["Lun 20", "Mar 21", "Mié 22", "Jue 23", "Vie 24"].map((day, index) => (
+                            <span
+                              key={day}
+                              className={`rounded-lg border px-1 py-2 text-center text-[9px] font-semibold ${
+                                index === 2
+                                  ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white"
+                                  : "border-[var(--color-border)] bg-[rgba(32,24,54,0.025)] text-[var(--color-muted-strong)]"
+                              }`}
+                            >
+                              {day}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+                          Elegí un horario:
+                        </p>
+                        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+                          {["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"].map((time) => (
+                            <span
+                              key={time}
+                              className={`rounded-lg border px-2 py-2 text-center text-[10px] font-semibold ${
+                                time === "10:30"
+                                  ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white"
+                                  : "border-[var(--color-border)] bg-white text-[var(--color-muted-strong)]"
+                              }`}
+                            >
+                              {time}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-auto w-full rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-center text-xs font-semibold text-white">
+                        Reservar turno
+                      </div>
+                    </div>
                   </div>
                 </div>
 

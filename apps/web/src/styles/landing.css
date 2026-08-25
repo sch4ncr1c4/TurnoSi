@@ -3789,3 +3789,33 @@ body:has(.landing-hero-shell) {
   }
 }
 
+.landing-product-booking-board {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .landing-hero-orbits {
+    display: block;
+    top: 54%;
+    width: 176%;
+    height: 112%;
+    opacity: 0.72;
+    animation: none;
+  }
+
+  .landing-hero-orbits > span > i,
+  .landing-hero-orbit-particles {
+    display: none;
+    animation: none;
+  }
+
+  .landing-product-mobile-board.landing-product-dashboard-board {
+    display: none;
+  }
+
+  .landing-product-mobile-board.landing-product-booking-board {
+    display: block;
+    width: min(252px, calc(100% - 32px));
+  }
+}
+
