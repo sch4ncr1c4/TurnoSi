@@ -552,7 +552,7 @@ body:has(.landing-hero-shell) {
 
 .landing-burger {
   position: fixed;
-  top: calc(46px + env(safe-area-inset-top));
+  top: calc(38px + env(safe-area-inset-top));
   right: 32px;
   z-index: 80;
   display: block;
@@ -618,18 +618,18 @@ body:has(.landing-hero-shell) {
 }
 
 .landing-burger--floating {
-  top: calc(46px + env(safe-area-inset-top));
+  top: calc(38px + env(safe-area-inset-top));
   right: 32px;
 }
 
 @media (min-width: 640px) and (max-width: 948px) {
   .landing-burger {
-    top: calc(50px + env(safe-area-inset-top));
+    top: calc(42px + env(safe-area-inset-top));
     right: 40px;
   }
 
   .landing-burger--floating {
-    top: calc(50px + env(safe-area-inset-top));
+    top: calc(42px + env(safe-area-inset-top));
     right: 40px;
   }
 }
@@ -825,7 +825,7 @@ body:has(.landing-hero-shell) {
 
 @media (max-width: 948px) {
   .landing-hero-shell {
-    padding-top: calc(112px + env(safe-area-inset-top)) !important;
+    padding-top: calc(100px + env(safe-area-inset-top)) !important;
   }
 
   .landing-hero-nav {
@@ -859,12 +859,20 @@ body:has(.landing-hero-shell) {
 
   .landing-hero-nav__inner,
   .landing-hero-nav__inner--compact {
-    padding: 0.75rem 1.25rem;
+    padding: 0.625rem 1.25rem;
+  }
+
+  .landing-hero-nav__brand > * {
+    padding-block: 0.375rem !important;
   }
 
   .landing-hero-nav__brand img,
   .landing-hero-nav__brand--compact img {
     height: 2.8rem;
+  }
+
+  .landing-mobile-menu-panel {
+    padding-top: calc(10px + env(safe-area-inset-top));
   }
 }
 

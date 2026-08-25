@@ -330,22 +330,22 @@ export function LandingPage({ brand }: LandingPageProps) {
                   Organizá reservas, horarios, equipo y clientes desde un panel
                   claro.
                 </p>
-                <p>
+                <p className="hidden sm:block">
                   Tu página pública queda conectada para recibir turnos sin
                   complicaciones.
                 </p>
               </div>
 
-              <div className="landing-hero-copy__actions mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-row">
+              <div className="landing-hero-copy__actions mt-6 grid gap-3 min-[360px]:flex min-[360px]:flex-row sm:mt-8">
                 <a
                   href="#funciones"
-                  className="landing-cta inline-flex w-full min-w-0 items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 sm:w-auto"
+                  className="landing-cta inline-flex w-full min-w-0 items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 min-[360px]:w-auto"
                 >
                   Ver cómo funciona
                 </a>
                 <Link
                   to="/register"
-                  className="landing-link inline-flex w-full min-w-0 items-center justify-center rounded-md border border-white/22 px-5 py-3 text-center text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-lg active:translate-y-0 sm:w-auto"
+                  className="landing-link inline-flex w-full min-w-0 items-center justify-center rounded-md border border-white/22 px-5 py-3 text-center text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:shadow-lg active:translate-y-0 min-[360px]:w-auto"
                 >
                   Crear cuenta
                 </Link>
