@@ -60,6 +60,18 @@ function LandingCardDots({ count = 7 }: { count?: number }) {
   );
 }
 
+function LandingHeroParticles({ className = "" }: { className?: string }) {
+  return (
+    <div className={`landing-hero-particles ${className}`} aria-hidden="true">
+      {Array.from({ length: 22 }, (_, index) => (
+        <span key={index} className="landing-hero-particle">
+          <span />
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function LandingPage({ brand }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -319,8 +331,8 @@ export function LandingPage({ brand }: LandingPageProps) {
             </aside>
           </div>
 
-          <div className="landing-hero-content relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1460px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-12 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] xl:items-center xl:gap-12 xl:px-8 xl:py-12 2xl:gap-16">
-            <div className="landing-hero-copy landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left xl:order-none xl:mx-0 xl:translate-x-12 xl:justify-self-center 2xl:translate-x-16">
+          <div className="landing-hero-content relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1680px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-12 xl:px-8 xl:py-12 min-[1484px]:min-h-[560px] min-[1484px]:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] min-[1484px]:items-center min-[1484px]:gap-12 2xl:gap-16">
+            <div className="landing-hero-copy landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left min-[1484px]:order-none min-[1484px]:mx-0 min-[1484px]:justify-self-center">
               <h1 className="landing-page-title max-w-full text-3xl font-semibold leading-tight [overflow-wrap:anywhere] [text-wrap:balance] sm:text-5xl xl:max-w-[660px] xl:text-6xl">
                 Gestioná tus turnos de forma{" "}
                 <span className="text-white">simple</span>.
@@ -354,20 +366,11 @@ export function LandingPage({ brand }: LandingPageProps) {
 
             <div
               id="product"
-              className="landing-rise landing-delay-1 order-2 mx-auto w-full min-w-0 max-w-4xl xl:order-none xl:mt-24 xl:max-w-[900px] xl:-translate-x-2 xl:justify-self-start 2xl:max-w-[960px] 2xl:translate-x-0"
+              className="landing-rise landing-delay-1 order-2 mx-auto w-full min-w-0 max-w-4xl min-[1484px]:order-none min-[1484px]:mt-24 min-[1484px]:max-w-[900px] min-[1484px]:-translate-x-2 min-[1484px]:justify-self-start 2xl:max-w-[960px] 2xl:translate-x-0"
             >
-              <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white xl:min-h-[470px]">
-                <div className="landing-hero-orbits" aria-hidden="true">
-                  <span><i /><i /><i /><i /></span>
-                  <span><i /><i /><i /><i /></span>
-                  <span><i /><i /><i /><i /></span>
-                  <span><i /><i /><i /><i /></span>
-                  <span><i /><i /><i /><i /></span>
-                  <span><i /><i /><i /><i /></span>
-                  <b className="landing-hero-orbit-particles landing-hero-orbit-particles--outer"><i /><i /><i /><i /></b>
-                  <b className="landing-hero-orbit-particles landing-hero-orbit-particles--inner"><i /><i /><i /><i /></b>
-                </div>
-                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden min-[1280px]:block">
+              <div className="landing-product-scene landing-product-card relative min-h-[430px] overflow-hidden text-white min-[1484px]:min-h-[470px]">
+                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden min-[1484px]:block">
+                  <LandingHeroParticles className="landing-hero-particles--attached landing-hero-particles--desktop" />
                   <div className="landing-dashboard-tablet-frame landing-dashboard-tablet-frame--desktop">
                     <div className="landing-dashboard-tablet-screen grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
@@ -491,7 +494,8 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                 </div>
 
-                <div className="landing-product-mobile-board landing-product-dashboard-board min-[1280px]:hidden">
+                <div className="landing-product-mobile-board landing-product-dashboard-board min-[1484px]:hidden">
+                  <LandingHeroParticles className="landing-hero-particles--attached landing-hero-particles--tablet" />
                   <div className="landing-dashboard-tablet-frame landing-dashboard-tablet-frame--compact">
                     <div className="landing-product-mobile-panel landing-dashboard-tablet-screen grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
@@ -596,6 +600,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   className="landing-product-mobile-board landing-product-booking-board"
                   aria-hidden="true"
                 >
+                  <LandingHeroParticles className="landing-hero-particles--attached landing-hero-particles--mobile" />
                   <div className="relative h-[440px] rounded-[34px] border border-white/20 bg-[#171123] p-[5px] shadow-[0_24px_64px_rgba(4,2,12,0.28)]">
                     <span className="absolute -left-[3px] top-[86px] h-9 w-[3px] rounded-l-full bg-[#302842]" />
                     <span className="absolute -left-[3px] top-[132px] h-14 w-[3px] rounded-l-full bg-[#302842]" />
