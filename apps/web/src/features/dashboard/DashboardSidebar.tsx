@@ -109,22 +109,24 @@ export function DashboardSidebar({
 
   return (
     <>
-      <header className="dot-pattern-corner dot-pattern-bottom-left sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-[var(--color-ink)] px-4 py-3 text-[var(--color-button-text)] md:hidden">
+      <header className="dashboard-mobile-header dot-pattern-corner dot-pattern-bottom-left z-50 flex items-center justify-between border-b border-white/10 bg-[var(--color-ink)] px-4 py-3 text-[var(--color-button-text)] md:hidden">
         <div className="[&_*]:text-[var(--color-button-text)] [&_img]:h-12">{brand}</div>
+      </header>
+      <div className="dashboard-mobile-header-spacer md:hidden" aria-hidden="true" />
+
+      {!isMobileMenuOpen && (
         <button
           type="button"
           aria-label="Abrir menú"
-          aria-expanded={isMobileMenuOpen}
+          aria-expanded={false}
           onClick={() => setIsMobileMenuOpen(true)}
-          className="group grid h-11 w-11 place-items-center rounded-xl border border-white/14 bg-white/8 transition hover:bg-white/14"
+          className="dashboard-mobile-burger md:hidden"
         >
-          <span className="relative h-5 w-6">
-            <span className="absolute left-0 top-0 h-0.5 w-6 rounded-full bg-white" />
-            <span className="absolute left-0 top-2 h-0.5 w-6 rounded-full bg-white" />
-            <span className="absolute left-0 top-4 h-0.5 w-6 rounded-full bg-white" />
-          </span>
+          <span />
+          <span />
+          <span />
         </button>
-      </header>
+      )}
 
       {isMobileMenuOpen && (
         <button
@@ -135,22 +137,30 @@ export function DashboardSidebar({
         />
       )}
 
-    <aside className={`dashboard-sidebar dot-pattern-corner dot-pattern-bottom-left z-[70] flex flex-col border-b border-[var(--color-border)] bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] transition-transform duration-300 ease-out max-md:border-r max-md:border-white/10 max-md:shadow-[24px_0_70px_rgba(18,13,31,0.28)] max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:z-40 md:border-r md:border-b-0 md:px-4 md:py-4 ${
-      isMobileMenuOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
+    <aside className={`dashboard-sidebar dot-pattern-corner dot-pattern-bottom-left z-[70] flex flex-col border-b border-[var(--color-border)] bg-[var(--color-ink)] px-5 py-5 text-[var(--color-button-text)] transition-transform duration-300 ease-out max-md:border-0 max-md:shadow-[-24px_0_70px_rgba(18,13,31,0.28)] max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:z-40 md:border-r md:border-b-0 md:px-4 md:py-4 ${
+      isMobileMenuOpen ? "max-md:translate-x-0" : "max-md:translate-x-full"
     }`}>
       <div className="dashboard-sidebar-brand flex items-center justify-center [&_*]:text-[var(--color-button-text)] max-md:justify-between">
-        <div>{brand}</div>
+        <div className="max-md:hidden">{brand}</div>
+        <p className="dashboard-sidebar-section-label dashboard-sidebar-section-label--mobile hidden max-md:block">
+          Espacio de trabajo
+        </p>
         <button
           type="button"
           aria-label="Cerrar menú"
+          aria-expanded={isMobileMenuOpen}
           onClick={() => setIsMobileMenuOpen(false)}
-          className="hidden h-10 w-10 place-items-center rounded-xl border border-white/14 bg-white/8 text-2xl leading-none text-white/82 transition hover:bg-white/14 hover:text-white max-md:grid"
+          className={`dashboard-mobile-burger dashboard-mobile-burger--drawer hidden max-md:block ${
+            isMobileMenuOpen ? "dashboard-mobile-burger--open" : ""
+          }`}
         >
-          ×
+          <span />
+          <span />
+          <span />
         </button>
       </div>
 
-      <p className="dashboard-sidebar-section-label">Espacio de trabajo</p>
+      <p className="dashboard-sidebar-section-label max-md:hidden">Espacio de trabajo</p>
       <nav className="dashboard-sidebar-nav space-y-1 md:shrink-0">
         {dashboardSections.map((section, index) => {
           const view =

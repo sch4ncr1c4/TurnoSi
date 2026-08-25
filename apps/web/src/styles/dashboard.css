@@ -48,6 +48,107 @@ samp,
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.dashboard-mobile-header {
+  position: fixed;
+  inset: 0 0 auto;
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+}
+
+.dashboard-mobile-header-spacer {
+  height: calc(96px + env(safe-area-inset-top));
+}
+
+.dashboard-mobile-burger {
+  position: fixed;
+  top: 36px;
+  right: 20px;
+  z-index: 80;
+  display: block;
+  width: 32px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: right 300ms ease-out;
+}
+
+.dashboard-mobile-burger > span {
+  position: absolute;
+  left: 2px;
+  display: block;
+  width: 28px;
+  height: 3px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 1;
+  transform: rotate(0deg);
+  transition:
+    top 250ms ease-in-out,
+    width 250ms ease-in-out,
+    opacity 180ms ease-in-out,
+    transform 250ms ease-in-out;
+}
+
+.dashboard-mobile-burger > span:nth-child(1) {
+  top: 0;
+  transform-origin: center;
+}
+
+.dashboard-mobile-burger > span:nth-child(2) {
+  top: 50%;
+  transform: translateY(-50%);
+  transform-origin: center;
+}
+
+.dashboard-mobile-burger > span:nth-child(3) {
+  top: 100%;
+  transform: translateY(-100%);
+  transform-origin: center;
+}
+
+.dashboard-mobile-burger--open {
+  right: auto;
+}
+
+.dashboard-mobile-burger--drawer {
+  position: relative;
+  top: auto;
+  right: auto;
+  flex: 0 0 auto;
+}
+
+.dashboard-mobile-burger--drawer > span {
+  left: 4px;
+  width: 24px;
+  transition:
+    top 320ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
+    width 220ms ease-in-out 80ms,
+    opacity 180ms ease-in-out 80ms,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1) 80ms;
+}
+
+.dashboard-mobile-burger--open > span:nth-child(1) {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.dashboard-mobile-burger--open > span:nth-child(2) {
+  width: 0;
+  opacity: 0;
+}
+
+.dashboard-mobile-burger--open > span:nth-child(3) {
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+@media (min-width: 768px) {
+  .dashboard-mobile-burger {
+    display: none;
+  }
+}
+
 .dashboard-sidebar-section-label {
   margin: 1.35rem 0.65rem 0.55rem;
   color: rgba(255, 255, 255, 0.38);
@@ -55,6 +156,10 @@ samp,
   font-weight: 750;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+.dashboard-sidebar-section-label--mobile {
+  margin: 0;
 }
 
 .dashboard-sidebar-nav-item {
@@ -431,16 +536,25 @@ samp,
 
   .dashboard-sidebar.dot-pattern-corner {
     position: fixed;
-    inset: 0 auto 0 0;
+    inset: 0 0 0 auto;
     width: min(88vw, 320px);
     height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: clamp(0.75rem, 2.4svh, 1.05rem) clamp(0.9rem, 4vw, 1.2rem) clamp(0.8rem, 2.2svh, 1.1rem);
+    padding: 0.75rem clamp(0.9rem, 4vw, 1.2rem) clamp(0.8rem, 2.2svh, 1.1rem);
+  }
+
+  .dashboard-sidebar.dot-pattern-corner::after {
+    display: none;
+  }
+
+  .dashboard-sidebar-brand {
+    padding: 1.5rem 0.25rem 1rem;
+    border-bottom: 0;
   }
 
   .dashboard-sidebar-brand img {
-    height: clamp(2.85rem, 7.8svh, 3.35rem) !important;
+    height: 3rem !important;
   }
 
   .dashboard-sidebar-nav {
