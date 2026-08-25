@@ -780,6 +780,8 @@ body:has(.landing-hero-shell) {
 @media (min-width: 769px) {
   .landing-dashboard-tablet-frame {
     position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
     padding: 5px;
     border: 1px solid rgba(255, 255, 255, 0.28);
     border-radius: 28px;
@@ -808,6 +810,11 @@ body:has(.landing-hero-shell) {
 
   .landing-dashboard-tablet-frame--compact {
     border-radius: 27px;
+  }
+
+  .landing-dashboard-tablet-screen {
+    width: 100%;
+    height: 100%;
   }
 }
 
@@ -3820,6 +3827,31 @@ body:has(.landing-hero-shell) {
     width: min(280px, 76%);
     margin-top: -36px;
     transform: rotateY(-8deg) translate3d(0, 0, -34px);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1279px) {
+  .landing-product-mobile-board.landing-product-dashboard-board {
+    width: clamp(560px, 61vw, 660px);
+    margin: 16px auto 0;
+    transform: rotateY(-8deg) translate3d(0, 0, -34px);
+    transform-origin: 50% 0;
+  }
+
+  .landing-product-dashboard-board .landing-mobile-reservation-toast {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    margin: 0;
+    translate: -50% 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  .landing-product-board {
+    right: -8px;
+    left: auto;
+    width: clamp(600px, 43vw, 730px);
   }
 }
 
