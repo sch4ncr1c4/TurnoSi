@@ -154,13 +154,17 @@ export function LandingPage({ brand }: LandingPageProps) {
   useEffect(() => {
     if (!isMenuOpen) return;
 
+    const previousOverflow = document.body.style.overflow;
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setIsMenuOpen(false);
     }
 
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
@@ -266,53 +270,76 @@ export function LandingPage({ brand }: LandingPageProps) {
               </span>
             </button>
           </div>
+        </div>
+          </header>
+
           <div
             className={`landing-mobile-menu min-[949px]:hidden ${
               isMenuOpen ? "landing-mobile-menu--open" : ""
             }`}
             aria-hidden={!isMenuOpen}
           >
-            <div className="landing-mobile-menu-panel">
-              <nav className="grid gap-1.5 text-sm font-medium text-white/78">
-                  {navigationLinks.map((link, index) => (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMenu}
-                      style={{ transitionDelay: isMenuOpen ? `${35 + index * 25}ms` : "0ms" }}
-                      className="landing-mobile-menu-item group relative rounded-md px-3 py-3 transition-colors duration-200 hover:bg-white/8 hover:text-[var(--color-accent)]"
-                    >
-                      <span className="relative inline-block">
-                        {link.label}
-                        <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
-                      </span>
-                    </a>
-                  ))}
-                </nav>
+            <button
+              type="button"
+              className="landing-mobile-menu-backdrop"
+              aria-label="Cerrar menú"
+              onClick={closeMenu}
+            />
+            <aside className="landing-mobile-menu-panel" aria-label="Navegación principal">
+              <div className="flex items-center justify-between border-b border-white/10 pb-5">
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/52">
+                  Menú
+                </span>
+                <button
+                  type="button"
+                  aria-label="Cerrar menú"
+                  onClick={closeMenu}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/14 bg-white/6 text-white transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                >
+                  <span className="relative h-5 w-5">
+                    <span className="absolute left-0 top-[9px] h-0.5 w-5 rotate-45 rounded-full bg-current" />
+                    <span className="absolute left-0 top-[9px] h-0.5 w-5 -rotate-45 rounded-full bg-current" />
+                  </span>
+                </button>
+              </div>
 
-                <div className="mt-4 grid gap-2 border-t border-white/10 pt-3">
-                  <Link
-                    to="/login"
+              <nav className="mt-6 grid gap-1.5 text-sm font-medium text-white/78">
+                {navigationLinks.map((link, index) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
                     onClick={closeMenu}
-                    style={{ transitionDelay: isMenuOpen ? "170ms" : "0ms" }}
-                    className="landing-mobile-menu-item group relative rounded-md border border-white/18 px-3 py-2.5 text-center text-sm font-medium text-white transition-colors duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    style={{ transitionDelay: isMenuOpen ? `${80 + index * 35}ms` : "0ms" }}
+                    className="landing-mobile-menu-item group relative rounded-md px-3 py-3 transition-colors duration-200 hover:bg-white/8 hover:text-[var(--color-accent)]"
                   >
-                    Ingresar
-                    <span className="absolute bottom-1.5 left-1/2 h-0.5 w-10 -translate-x-1/2 origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={closeMenu}
-                    style={{ transitionDelay: isMenuOpen ? "195ms" : "0ms" }}
-                    className="landing-mobile-menu-item rounded-md bg-[var(--color-accent)] px-3 py-2.5 text-center text-sm font-semibold text-[var(--color-button-text)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
-                  >
-                    Crear cuenta
-                  </Link>
-                </div>
-            </div>
+                    <span className="relative inline-block">
+                      {link.label}
+                      <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-x-100" />
+                    </span>
+                  </a>
+                ))}
+              </nav>
+
+              <div className="mt-auto grid gap-2 border-t border-white/10 pt-5">
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  style={{ transitionDelay: isMenuOpen ? "230ms" : "0ms" }}
+                  className="landing-mobile-menu-item group relative rounded-md border border-white/18 px-3 py-3 text-center text-sm font-medium text-white transition-colors duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                >
+                  Ingresar
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={closeMenu}
+                  style={{ transitionDelay: isMenuOpen ? "265ms" : "0ms" }}
+                  className="landing-mobile-menu-item rounded-md bg-[var(--color-accent)] px-3 py-3 text-center text-sm font-semibold text-[var(--color-button-text)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  Crear cuenta
+                </Link>
+              </div>
+            </aside>
           </div>
-        </div>
-          </header>
 
           <div className="landing-hero-content relative z-10 mx-auto grid min-h-[unset] w-full max-w-[1460px] min-w-0 gap-8 px-5 py-6 sm:px-7 sm:py-10 lg:px-8 lg:py-12 xl:min-h-[560px] xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] xl:items-center xl:gap-12 xl:px-8 xl:py-12 2xl:gap-16">
             <div className="landing-hero-copy landing-rise order-1 mx-auto min-w-0 max-w-2xl text-center sm:text-left xl:order-none xl:mx-0 xl:translate-x-12 xl:justify-self-center 2xl:translate-x-16">
