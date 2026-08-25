@@ -367,7 +367,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   <b className="landing-hero-orbit-particles landing-hero-orbit-particles--outer"><i /><i /><i /><i /></b>
                   <b className="landing-hero-orbit-particles landing-hero-orbit-particles--inner"><i /><i /><i /><i /></b>
                 </div>
-                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden min-[1080px]:block">
+                <div className="landing-product-board absolute -right-2 left-6 top-12 hidden min-[1280px]:block">
                   <div className="grid min-h-[330px] grid-cols-[126px_minmax(0,1fr)_160px] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
                       <div className="mb-8 flex items-center gap-2">
@@ -489,7 +489,7 @@ export function LandingPage({ brand }: LandingPageProps) {
                   </div>
                 </div>
 
-                <div className="landing-product-mobile-board min-[1080px]:hidden">
+                <div className="landing-product-mobile-board min-[1280px]:hidden">
                   <div className="landing-product-mobile-panel grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
                       <img

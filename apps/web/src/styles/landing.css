@@ -552,12 +552,12 @@ body:has(.landing-hero-shell) {
 
 .landing-burger {
   position: fixed;
-  top: calc(48px + env(safe-area-inset-top));
+  top: calc(46px + env(safe-area-inset-top));
   right: 32px;
   z-index: 80;
   display: block;
-  width: 32px;
-  height: 24px;
+  width: 26px;
+  height: 20px;
   flex: 0 0 auto;
   border: 0;
   padding: 0;
@@ -573,7 +573,7 @@ body:has(.landing-hero-shell) {
   left: 0;
   display: block;
   width: 100%;
-  height: 3px;
+  height: 2.5px;
   border-radius: 999px;
   background: #fff;
   opacity: 1;
@@ -618,18 +618,18 @@ body:has(.landing-hero-shell) {
 }
 
 .landing-burger--floating {
-  top: calc(48px + env(safe-area-inset-top));
+  top: calc(46px + env(safe-area-inset-top));
   right: 32px;
 }
 
 @media (min-width: 640px) and (max-width: 948px) {
   .landing-burger {
-    top: calc(51px + env(safe-area-inset-top));
+    top: calc(50px + env(safe-area-inset-top));
     right: 40px;
   }
 
   .landing-burger--floating {
-    top: calc(51px + env(safe-area-inset-top));
+    top: calc(50px + env(safe-area-inset-top));
     right: 40px;
   }
 }
@@ -798,13 +798,8 @@ body:has(.landing-hero-shell) {
 
 @media (min-width: 1080px) and (max-width: 1279px) {
   .landing-product-card {
-    min-height: clamp(450px, 48vw, 540px);
-    margin-top: clamp(18px, 3vw, 36px);
-  }
-
-  .landing-product-board {
-    scale: 1;
-    transform: rotateY(-10deg) translate3d(-92px, -34px, -100px);
+    min-height: clamp(360px, 32vw, 400px);
+    margin-top: clamp(8px, 1.5vw, 18px);
   }
 
 }
@@ -869,7 +864,7 @@ body:has(.landing-hero-shell) {
 
   .landing-hero-nav__brand img,
   .landing-hero-nav__brand--compact img {
-    height: 3.15rem;
+    height: 2.8rem;
   }
 }
 
@@ -881,7 +876,7 @@ body:has(.landing-hero-shell) {
 
   .landing-hero-nav__brand img,
   .landing-hero-nav__brand--compact img {
-    height: 3.6rem;
+    height: 3.2rem;
   }
 }
 
@@ -894,9 +889,32 @@ body:has(.landing-hero-shell) {
   transform-origin: 0% 0% 5px;
 }
 
-@media (min-width: 853px) and (max-width: 1079px) {
+@media (min-width: 640px) and (max-width: 839px) {
   .landing-product-mobile-board {
-    margin-top: clamp(9.5rem, 16vw, 10.5rem);
+    width: min(560px, calc(100% - 64px));
+  }
+}
+
+@media (min-width: 840px) and (max-width: 1079px) {
+  .landing-product-card {
+    min-height: clamp(350px, 40vw, 410px);
+  }
+
+  .landing-product-mobile-board {
+    width: min(640px, calc(100% - 64px));
+    margin-top: clamp(1rem, 2vw, 1.5rem);
+    scale: 1;
+    transform-origin: 50% 0;
+  }
+}
+
+@media (min-width: 1080px) and (max-width: 1279px) {
+  .landing-product-mobile-board {
+    width: min(660px, calc(100% - 96px));
+    margin-top: clamp(0.75rem, 1.5vw, 1.25rem);
+    scale: 1;
+    transform: rotateY(-8deg) translate3d(0, 0, -34px);
+    transform-origin: 50% 0;
   }
 }
 
@@ -3752,7 +3770,7 @@ body:has(.landing-hero-shell) {
   }
 
   .landing-product-mobile-board {
-    width: min(560px, calc(100% - 20px));
+    width: min(500px, calc(100% - 52px));
     transform: rotateY(-8deg) translate3d(0, 0, -34px);
   }
 
