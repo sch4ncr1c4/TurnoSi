@@ -8,10 +8,7 @@ const optionalEnv = (schema: z.ZodString) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const envFiles = [
-  resolve(currentDir, "../../.env"),
-  resolve(currentDir, "../../../../.env")
-];
+const envFiles = [resolve(currentDir, "../../../../.env")];
 
 for (const envFile of envFiles) {
   if (!existsSync(envFile)) {

@@ -10,9 +10,9 @@
     "test": "vitest run",
     "db:start": "powershell -ExecutionPolicy Bypass -File scripts/postgres-start.ps1",
     "db:stop": "powershell -ExecutionPolicy Bypass -File scripts/postgres-stop.ps1",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:generate": "node scripts/run-prisma.mjs generate",
+    "prisma:migrate:dev": "node scripts/run-prisma.mjs migrate dev",
+    "prisma:migrate:deploy": "node scripts/run-prisma.mjs migrate deploy",
     "prisma:seed": "tsx src/scripts/seed.ts",
     "jobs:cleanup": "tsx src/jobs/cleanup-expired.ts"
   },
