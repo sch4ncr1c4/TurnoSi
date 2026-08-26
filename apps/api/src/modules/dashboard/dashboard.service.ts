@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import PDFDocument from "pdfkit";
 
 import { prisma } from "../../database/prisma.js";
+import { AppError } from "../../lib/app-error.js";
 import { zonedTimeToUtc } from "../../lib/timezone.js";
 
 export type DashboardPeriod = "7d" | "30d" | "current_month" | "previous_month";
@@ -367,6 +368,10 @@ export async function getDailyClosingData(
   timezone: string,
   date: string
 ) {
+  if (date > localDate(new Date(), timezone)) {
+    throw new AppError(400, "FUTURE_CLOSING_DATE", "Cannot generate a cash closing for a future date");
+  }
+
   const from = zonedTimeToUtc(date, 0, timezone);
   const to = zonedTimeToUtc(shiftDate(date, 1), 0, timezone);
   const [organization, appointments, expenses] = await Promise.all([

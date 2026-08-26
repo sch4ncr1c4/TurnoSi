@@ -67,7 +67,8 @@ export function DashboardSummaryView({
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const [isOpeningClosingPdf, setIsOpeningClosingPdf] = useState(false);
-  const [closingDate, setClosingDate] = useState(localDateInputValue());
+  const maxClosingDate = localDateInputValue();
+  const [closingDate, setClosingDate] = useState(maxClosingDate);
   const [expense, setExpense] = useState({
     amount: "",
     category: "General",
@@ -323,8 +324,13 @@ export function DashboardSummaryView({
               Fecha del cierre
               <input
                 type="date"
+                max={maxClosingDate}
                 value={closingDate}
-                onChange={(event) => setClosingDate(event.target.value)}
+                onChange={(event) =>
+                  setClosingDate(
+                    event.target.value > maxClosingDate ? maxClosingDate : event.target.value
+                  )
+                }
                 className="mt-1 h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-sm font-normal text-[var(--color-ink)]"
               />
             </label>
