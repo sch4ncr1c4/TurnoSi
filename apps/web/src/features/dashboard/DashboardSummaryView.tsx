@@ -63,6 +63,7 @@ export function DashboardSummaryView({
 }: {
   onViewAgenda: () => void;
 }) {
+  const [activeSection, setActiveSection] = useState<"daily" | "analytics">("daily");
   const [period, setPeriod] = useState<DashboardSummaryPeriod>("current_month");
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
@@ -231,108 +232,107 @@ export function DashboardSummaryView({
 
   return (
     <div className="min-w-0 space-y-4">
-      <DashboardSectionHeader
-        title="Operación diaria"
-        description="Control del día, cierre de caja e impresión del comprobante."
+      <SummarySectionTabs
+        active={activeSection}
+        onChange={setActiveSection}
       />
-      <section className="grid min-w-0 gap-4 xl:grid-cols-2">
-        <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-[0_14px_36px_rgba(32,24,54,0.04)]">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold">Resumen de hoy</h2>
-              <p className="mt-1 text-xs text-[var(--color-muted)]">
-                Actividad operativa actual
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onViewAgenda}
-              className="text-xs font-semibold text-[var(--color-accent)]"
-            >
-              Ver agenda
-            </button>
-          </div>
-          <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,122,0,0.06)] p-3">
-            <p className="text-xs font-medium text-[var(--color-muted)]">Turnos de hoy</p>
-            <div className="mt-1 flex items-end justify-between gap-3">
-              <p className="font-mono text-3xl font-semibold">{data.today.appointments}</p>
-              <p className="text-right text-xs text-[var(--color-muted)]">
-                Ingreso estimado
-                <span className="block font-mono text-base font-semibold text-[var(--color-ink)]">
-                  {formatMoney(data.today.estimatedIncomeCents)}
-                </span>
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-            {todayStatusCards.map((item) => (
-              <TodayMetric
-                key={item.label}
-                label={item.label}
-                tone={item.tone}
-                value={String(item.value)}
-              />
-            ))}
-          </div>
-          <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[rgba(32,24,54,0.02)] p-2.5">
-            <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
-              Fecha del cierre
-              <input
-                type="date"
-                max={maxClosingDate}
-                value={closingDate}
-                onChange={(event) =>
-                  setClosingDate(
-                    event.target.value > maxClosingDate ? maxClosingDate : event.target.value
-                  )
-                }
-                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-sm font-normal text-[var(--color-ink)]"
-              />
-            </label>
-            <button
-              type="button"
-              disabled={isOpeningClosingPdf}
-              onClick={openDailyClosingPdf}
-              className="mt-2 flex h-10 w-full items-center justify-center rounded-lg bg-[var(--color-ink)] text-xs font-semibold text-[var(--color-button-text)] transition hover:opacity-95 disabled:cursor-wait disabled:opacity-60"
-            >
-              {isOpeningClosingPdf ? "Generando PDF..." : "Abrir cierre de caja"}
-            </button>
-          </div>
-        </article>
-        <ExpenseForm
-          expense={expense}
-          isSaving={expenseMutation.isPending}
-          show={showExpenseForm}
-          onChange={setExpense}
-          onSubmit={() => expenseMutation.mutate()}
-          onToggle={() => setShowExpenseForm((value) => !value)}
-        />
-      </section>
 
-      <DashboardSectionHeader
-        title="Analítica mensual"
-        description="Ingresos, gastos, estados de turnos y rendimiento del negocio."
-      />
-      <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        {cards.map((card) => (
-          <article
-            key={card.label}
-            className="rounded-lg border border-[var(--color-border)] bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
-          >
-            <p className="text-xs font-medium text-[var(--color-muted-strong)]">
-              {card.label}
-            </p>
-            <p className="mt-1.5 font-mono text-lg font-semibold tracking-tight text-[var(--color-ink)]">
-              {card.value}
-            </p>
-            <p className="mt-1.5 text-[11px] text-[var(--color-muted)]">
-              {card.change !== undefined ? <Change value={card.change} /> : "Mes actual"}
-            </p>
+      {activeSection === "daily" ? (
+        <section className="grid min-w-0 gap-4 xl:grid-cols-2">
+          <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-[0_14px_36px_rgba(32,24,54,0.04)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold">Resumen de hoy</h2>
+                <p className="mt-1 text-xs text-[var(--color-muted)]">
+                  Actividad operativa actual
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onViewAgenda}
+                className="text-xs font-semibold text-[var(--color-accent)]"
+              >
+                Ver agenda
+              </button>
+            </div>
+            <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,122,0,0.06)] p-3">
+              <p className="text-xs font-medium text-[var(--color-muted)]">Turnos de hoy</p>
+              <div className="mt-1 flex items-end justify-between gap-3">
+                <p className="font-mono text-3xl font-semibold">{data.today.appointments}</p>
+                <p className="text-right text-xs text-[var(--color-muted)]">
+                  Ingreso estimado
+                  <span className="block font-mono text-base font-semibold text-[var(--color-ink)]">
+                    {formatMoney(data.today.estimatedIncomeCents)}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+              {todayStatusCards.map((item) => (
+                <TodayMetric
+                  key={item.label}
+                  label={item.label}
+                  tone={item.tone}
+                  value={String(item.value)}
+                />
+              ))}
+            </div>
+            <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[rgba(32,24,54,0.02)] p-2.5">
+              <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+                Fecha del cierre
+                <input
+                  type="date"
+                  max={maxClosingDate}
+                  value={closingDate}
+                  onChange={(event) =>
+                    setClosingDate(
+                      event.target.value > maxClosingDate ? maxClosingDate : event.target.value
+                    )
+                  }
+                  className="mt-1 h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-sm font-normal text-[var(--color-ink)]"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={isOpeningClosingPdf}
+                onClick={openDailyClosingPdf}
+                className="mt-2 flex h-10 w-full items-center justify-center rounded-lg bg-[var(--color-ink)] text-xs font-semibold text-[var(--color-button-text)] transition hover:opacity-95 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isOpeningClosingPdf ? "Generando PDF..." : "Abrir cierre de caja"}
+              </button>
+            </div>
           </article>
-        ))}
-      </section>
+          <ExpenseForm
+            expense={expense}
+            isSaving={expenseMutation.isPending}
+            show={showExpenseForm}
+            onChange={setExpense}
+            onSubmit={() => expenseMutation.mutate()}
+            onToggle={() => setShowExpenseForm((value) => !value)}
+          />
+        </section>
+      ) : (
+        <>
+          <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            {cards.map((card) => (
+              <article
+                key={card.label}
+                className="rounded-lg border border-[var(--color-border)] bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
+              >
+                <p className="text-xs font-medium text-[var(--color-muted-strong)]">
+                  {card.label}
+                </p>
+                <p className="mt-1.5 font-mono text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+                  {card.value}
+                </p>
+                <p className="mt-1.5 text-[11px] text-[var(--color-muted)]">
+                  {card.change !== undefined ? <Change value={card.change} /> : "Mes actual"}
+                </p>
+              </article>
+            ))}
+          </section>
 
-      <section className="min-w-0 rounded-lg border border-[var(--color-border)] bg-white p-3.5">
+          <section className="min-w-0 rounded-lg border border-[var(--color-border)] bg-white p-3.5">
         <div className="flex flex-col gap-3 border-b border-[var(--color-border)] pb-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-semibold">Ingresos y gastos</h2>
@@ -360,9 +360,9 @@ export function DashboardSummaryView({
         <div className="pt-4">
           <DashboardPerformanceChart data={data.chart} />
         </div>
-      </section>
+          </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.55fr)]">
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.55fr)]">
         <article className="rounded-lg border border-[var(--color-border)] bg-white p-3.5">
           <h2 className="text-base font-semibold">Estado de turnos del mes</h2>
           <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
@@ -387,9 +387,9 @@ export function DashboardSummaryView({
             deleteExpenseMutation.mutate(expenseId);
           }}
         />
-      </section>
+          </section>
 
-      <section className={`grid gap-4 ${data.team.length > 0 ? "xl:grid-cols-2" : ""}`}>
+          <section className={`grid gap-4 ${data.team.length > 0 ? "xl:grid-cols-2" : ""}`}>
         <PerformanceList
           rows={data.services.map((item) => ({
             detail: `${item.appointments} turnos`,
@@ -410,23 +410,43 @@ export function DashboardSummaryView({
             title="Rendimiento del equipo"
           />
         )}
-      </section>
+          </section>
+        </>
+      )}
     </div>
   );
 }
 
-function DashboardSectionHeader({
-  description,
-  title
+function SummarySectionTabs({
+  active,
+  onChange
 }: {
-  description: string;
-  title: string;
+  active: "daily" | "analytics";
+  onChange: (section: "daily" | "analytics") => void;
 }) {
+  const tabs = [
+    { icon: "▦", label: "Diario", value: "daily" as const },
+    { icon: "⌁", label: "Analítica", value: "analytics" as const }
+  ];
+
   return (
-    <div className="pt-1">
-      <h2 className="text-xl font-bold text-[var(--color-ink)]">{title}</h2>
-      <p className="mt-1 text-sm text-[var(--color-muted-strong)]">{description}</p>
-    </div>
+    <nav className="inline-flex rounded-lg border border-[var(--color-border)] bg-white p-1 shadow-[0_10px_28px_rgba(32,24,54,0.035)]">
+      {tabs.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onChange(tab.value)}
+          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
+            active === tab.value
+              ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
+              : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
+          }`}
+        >
+          <span aria-hidden="true">{tab.icon}</span>
+          {tab.label}
+        </button>
+      ))}
+    </nav>
   );
 }
 
