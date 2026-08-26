@@ -4,10 +4,15 @@ import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { ok } from "../../lib/http.js";
 import { requireEditor } from "../../lib/membership.js";
-import { authenticatedRateLimit, authRateLimit } from "../../middlewares/rate-limit.js";
+import { authenticatedRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
-import { createExpenseSchema, dashboardSummaryQuerySchema, expenseParamsSchema } from "./dashboard.schemas.js";
-import { getDashboardSummary } from "./dashboard.service.js";
+import {
+  createExpenseSchema,
+  dashboardExpensesQuerySchema,
+  dashboardSummaryQuerySchema,
+  expenseParamsSchema
+} from "./dashboard.schemas.js";
+import { getDashboardExpenses, getDashboardSummary } from "./dashboard.service.js";
 
 export const dashboardRouter = Router();
 
@@ -18,7 +23,14 @@ dashboardRouter.get("/summary", authenticatedRateLimit, async (request, response
   response.json(ok(await getDashboardSummary(tenant.organizationId, tenant.timezone, period)));
 });
 
-dashboardRouter.post("/expenses", authRateLimit, async (request, response) => {
+dashboardRouter.get("/expenses", authenticatedRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const { period } = dashboardExpensesQuerySchema.parse(request.query);
+  response.json(ok(await getDashboardExpenses(tenant.organizationId, tenant.timezone, period)));
+});
+
+dashboardRouter.post("/expenses", authenticatedRateLimit, async (request, response) => {
   const tenant = request.tenant!;
   requireEditor(tenant.role);
   const input = createExpenseSchema.parse(request.body);
@@ -42,7 +54,7 @@ dashboardRouter.post("/expenses", authRateLimit, async (request, response) => {
   response.status(201).json(ok(expense));
 });
 
-dashboardRouter.delete("/expenses/:expenseId", authRateLimit, async (request, response) => {
+dashboardRouter.delete("/expenses/:expenseId", authenticatedRateLimit, async (request, response) => {
   const tenant = request.tenant!;
   requireEditor(tenant.role);
   const { expenseId } = expenseParamsSchema.parse(request.params);

@@ -10,6 +10,15 @@ export type DashboardSummary = {
   team: Array<{ id: string; name: string; completedAppointments: number; incomeCents: number; occupancyPercent: number }>;
 };
 
+export type DashboardExpense = {
+  id: string;
+  description: string;
+  amountCents: number;
+  category: string;
+  occurredOn: string;
+  createdAt: string;
+};
+
 export async function getDashboardSummary(period: DashboardSummaryPeriod) {
   const response = await apiRequest<{ success: true; data: DashboardSummary }>(`/api/v1/dashboard/summary?period=${period}`);
   return response.data;
@@ -17,4 +26,15 @@ export async function getDashboardSummary(period: DashboardSummaryPeriod) {
 
 export function createDashboardExpense(input: { description: string; amountCents: number; category: string; occurredOn: string }) {
   return apiRequest("/api/v1/dashboard/expenses", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function getDashboardExpenses(period: DashboardSummaryPeriod) {
+  const response = await apiRequest<{ success: true; data: DashboardExpense[] }>(
+    `/api/v1/dashboard/expenses?period=${period}`
+  );
+  return response.data;
+}
+
+export function deleteDashboardExpense(expenseId: string) {
+  return apiRequest(`/api/v1/dashboard/expenses/${expenseId}`, { method: "DELETE" });
 }

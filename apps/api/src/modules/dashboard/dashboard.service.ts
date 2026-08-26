@@ -288,3 +288,35 @@ export async function getDashboardSummary(
     })) : []
   };
 }
+
+export async function getDashboardExpenses(
+  organizationId: string,
+  timezone: string,
+  period: DashboardPeriod
+) {
+  const ranges = dashboardRanges(period, timezone);
+  const expenses = await prisma.expense.findMany({
+    where: {
+      organizationId,
+      occurredOn: {
+        gte: ranges.chart.from,
+        lt: ranges.chart.to
+      }
+    },
+    orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      description: true,
+      amountCents: true,
+      category: true,
+      occurredOn: true,
+      createdAt: true
+    }
+  });
+
+  return expenses.map((expense) => ({
+    ...expense,
+    occurredOn: expense.occurredOn.toISOString(),
+    createdAt: expense.createdAt.toISOString()
+  }));
+}

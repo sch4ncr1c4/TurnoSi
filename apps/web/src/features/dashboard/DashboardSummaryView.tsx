@@ -4,7 +4,10 @@ import { useState } from "react";
 import { DashboardPerformanceChart } from "./DashboardPerformanceChart";
 import {
   createDashboardExpense,
+  deleteDashboardExpense,
+  getDashboardExpenses,
   getDashboardSummary,
+  type DashboardExpense,
   type DashboardSummaryPeriod
 } from "./dashboard-summary.api";
 
@@ -25,6 +28,14 @@ function formatMoney(cents: number) {
   return money.format(cents / 100);
 }
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "America/Argentina/Buenos_Aires"
+  }).format(new Date(value));
+}
+
 function Change({ value }: { value: number | null }) {
   if (value == null) return <span>Sin período comparable</span>;
   return (
@@ -42,6 +53,7 @@ export function DashboardSummaryView({
 }) {
   const [period, setPeriod] = useState<DashboardSummaryPeriod>("current_month");
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const [expense, setExpense] = useState({
     amount: "",
     category: "General",
@@ -52,6 +64,12 @@ export function DashboardSummaryView({
   const summaryQuery = useQuery({
     queryKey: ["dashboard", "summary", period],
     queryFn: () => getDashboardSummary(period),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false
+  });
+  const expensesQuery = useQuery({
+    queryKey: ["dashboard", "expenses", period],
+    queryFn: () => getDashboardExpenses(period),
     staleTime: 60_000,
     refetchOnWindowFocus: false
   });
@@ -71,7 +89,20 @@ export function DashboardSummaryView({
         description: ""
       });
       setShowExpenseForm(false);
-      await queryClient.invalidateQueries({ queryKey: ["dashboard", "summary"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard", "summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard", "expenses"] })
+      ]);
+    }
+  });
+  const deleteExpenseMutation = useMutation({
+    mutationFn: deleteDashboardExpense,
+    onSettled: () => setDeletingExpenseId(null),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard", "summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard", "expenses"] })
+      ]);
     }
   });
   const data = summaryQuery.data;
@@ -125,12 +156,44 @@ export function DashboardSummaryView({
     }
   ];
 
+  const todayStatusCards = [
+    { label: "Confirmados", value: data.today.confirmed, tone: "bg-emerald-500" },
+    { label: "Señados", value: data.today.deposited, tone: "bg-amber-500" },
+    { label: "Pendientes", value: data.today.pending, tone: "bg-sky-500" },
+    { label: "Cancelados", value: data.today.canceled, tone: "bg-rose-500" }
+  ];
+
   const statusCards = [
-    { label: "Turnos confirmados", value: data.metrics.confirmedAppointments },
-    { label: "Señados", value: data.metrics.depositedAppointments },
-    { label: "Pendientes", value: data.metrics.pendingAppointments },
-    { label: "Cancelados", value: data.metrics.canceledAppointments },
-    { label: "No asistencias", value: data.metrics.noShowAppointments }
+    {
+      accent: "bg-emerald-500",
+      className: "border-emerald-200 bg-emerald-50/70",
+      label: "Turnos confirmados",
+      value: data.metrics.confirmedAppointments
+    },
+    {
+      accent: "bg-amber-500",
+      className: "border-amber-200 bg-amber-50/70",
+      label: "Señados",
+      value: data.metrics.depositedAppointments
+    },
+    {
+      accent: "bg-sky-500",
+      className: "border-sky-200 bg-sky-50/70",
+      label: "Pendientes",
+      value: data.metrics.pendingAppointments
+    },
+    {
+      accent: "bg-rose-500",
+      className: "border-rose-200 bg-rose-50/70",
+      label: "Cancelados",
+      value: data.metrics.canceledAppointments
+    },
+    {
+      accent: "bg-zinc-500",
+      className: "border-zinc-200 bg-zinc-50",
+      label: "No asistencias",
+      value: data.metrics.noShowAppointments
+    }
   ];
 
   return (
@@ -180,12 +243,12 @@ export function DashboardSummaryView({
               ))}
             </div>
           </div>
-          <div className="pt-3">
+          <div className="pt-4">
             <DashboardPerformanceChart data={data.chart} />
           </div>
         </article>
 
-        <article className="rounded-lg border border-[var(--color-border)] bg-white p-3.5">
+        <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-[0_14px_36px_rgba(32,24,54,0.04)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold">Resumen de hoy</h2>
@@ -201,19 +264,27 @@ export function DashboardSummaryView({
               Ver agenda
             </button>
           </div>
-          <p className="mt-4 font-mono text-2xl font-semibold">
-            {data.today.appointments}
-          </p>
-          <p className="text-xs text-[var(--color-muted)]">turnos de hoy</p>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            <TodayMetric
-              label="Ingreso estimado"
-              value={formatMoney(data.today.estimatedIncomeCents)}
-            />
-            <TodayMetric label="Confirmados" value={String(data.today.confirmed)} />
-            <TodayMetric label="Señados" value={String(data.today.deposited)} />
-            <TodayMetric label="Pendientes" value={String(data.today.pending)} />
-            <TodayMetric label="Cancelados" value={String(data.today.canceled)} />
+          <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[rgba(255,122,0,0.06)] p-3">
+            <p className="text-xs font-medium text-[var(--color-muted)]">Turnos de hoy</p>
+            <div className="mt-1 flex items-end justify-between gap-3">
+              <p className="font-mono text-3xl font-semibold">{data.today.appointments}</p>
+              <p className="text-right text-xs text-[var(--color-muted)]">
+                Ingreso estimado
+                <span className="block font-mono text-base font-semibold text-[var(--color-ink)]">
+                  {formatMoney(data.today.estimatedIncomeCents)}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+            {todayStatusCards.map((item) => (
+              <TodayMetric
+                key={item.label}
+                label={item.label}
+                tone={item.tone}
+                value={String(item.value)}
+              />
+            ))}
           </div>
           <ExpenseForm
             expense={expense}
@@ -226,23 +297,31 @@ export function DashboardSummaryView({
         </article>
       </section>
 
-      <section>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.55fr)]">
         <article className="rounded-lg border border-[var(--color-border)] bg-white p-3.5">
           <h2 className="text-base font-semibold">Estado de turnos del mes</h2>
           <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
             {statusCards.map((item) => (
               <div
                 key={item.label}
-                className="rounded-md border border-[var(--color-border)] bg-[rgba(32,24,54,0.02)] px-3 py-2.5"
+                className={`rounded-xl border px-3 py-3 ${item.className}`}
               >
-                <p className="font-mono text-xl font-semibold text-[var(--color-ink)]">
-                  {item.value}
-                </p>
+                <div className={`mb-2 h-1.5 w-8 rounded-full ${item.accent}`} />
+                <p className="font-mono text-2xl font-semibold text-[var(--color-ink)]">{item.value}</p>
                 <p className="mt-1 text-xs text-[var(--color-muted)]">{item.label}</p>
               </div>
             ))}
           </div>
         </article>
+        <ExpensesList
+          deletingId={deletingExpenseId}
+          expenses={expensesQuery.data ?? []}
+          isLoading={expensesQuery.isLoading}
+          onDelete={(expenseId) => {
+            setDeletingExpenseId(expenseId);
+            deleteExpenseMutation.mutate(expenseId);
+          }}
+        />
       </section>
 
       <section className={`grid gap-4 ${data.team.length > 0 ? "xl:grid-cols-2" : ""}`}>
@@ -271,12 +350,86 @@ export function DashboardSummaryView({
   );
 }
 
-function TodayMetric({ label, value }: { label: string; value: string }) {
+function TodayMetric({
+  label,
+  tone,
+  value
+}: {
+  label: string;
+  tone: string;
+  value: string;
+}) {
   return (
-    <div className="rounded-md border border-[var(--color-border)] bg-[rgba(32,24,54,0.025)] px-3 py-2.5">
-      <p className="font-mono font-semibold">{value}</p>
-      <p className="mt-1 text-xs text-[var(--color-muted)]">{label}</p>
+    <div className="rounded-lg border border-[var(--color-border)] bg-[rgba(32,24,54,0.02)] px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-[var(--color-muted)]">{label}</p>
+        <span className={`h-2 w-2 rounded-full ${tone}`} />
+      </div>
+      <p className="mt-1 font-mono text-lg font-semibold">{value}</p>
     </div>
+  );
+}
+
+function ExpensesList({
+  deletingId,
+  expenses,
+  isLoading,
+  onDelete
+}: {
+  deletingId: string | null;
+  expenses: DashboardExpense[];
+  isLoading: boolean;
+  onDelete: (expenseId: string) => void;
+}) {
+  const total = expenses.reduce((sum, item) => sum + item.amountCents, 0);
+
+  return (
+    <article className="rounded-lg border border-[var(--color-border)] bg-white p-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold">Gastos registrados</h2>
+          <p className="mt-1 text-xs text-[var(--color-muted)]">Del período seleccionado</p>
+        </div>
+        <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2.5 py-1 font-mono text-xs font-semibold">
+          {formatMoney(total)}
+        </span>
+      </div>
+      <div className="mt-3 max-h-64 overflow-y-auto pr-1">
+        {isLoading ? (
+          <p className="rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-sm text-[var(--color-muted)]">
+            Cargando gastos...
+          </p>
+        ) : expenses.length === 0 ? (
+          <p className="rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-sm text-[var(--color-muted)]">
+            No hay gastos registrados en este período.
+          </p>
+        ) : (
+          <div className="divide-y divide-[var(--color-border)]">
+            {expenses.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{item.description}</p>
+                  <p className="mt-1 text-xs text-[var(--color-muted)]">
+                    {item.category} · {formatDate(item.occurredOn)}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-mono text-sm font-semibold">{formatMoney(item.amountCents)}</p>
+                  <button
+                    type="button"
+                    disabled={deletingId === item.id}
+                    onClick={() => onDelete(item.id)}
+                    className="mt-1 text-xs font-semibold text-[#b04b43] disabled:opacity-50"
+                  >
+                    {deletingId === item.id ? "Eliminando..." : "Eliminar"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
   );
 }
 

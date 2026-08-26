@@ -11,6 +11,10 @@ export const dashboardSummaryQuerySchema = z.object({
   period: dashboardPeriodSchema.default("30d")
 }).strict();
 
+export const dashboardExpensesQuerySchema = z.object({
+  period: dashboardPeriodSchema.default("current_month")
+}).strict();
+
 export const createExpenseSchema = z.object({
   description: z.string().trim().min(2).max(160),
   amountCents: z.number().int().positive().max(1_000_000_000),
