@@ -65,7 +65,6 @@ export function DashboardSummaryView({
 }) {
   const [activeSection, setActiveSection] = useState<"daily" | "analytics">("daily");
   const [period, setPeriod] = useState<DashboardSummaryPeriod>("current_month");
-  const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const [isOpeningClosingPdf, setIsOpeningClosingPdf] = useState(false);
   const maxClosingDate = localDateInputValue();
@@ -104,7 +103,6 @@ export function DashboardSummaryView({
         date: localDateInputValue(),
         description: ""
       });
-      setShowExpenseForm(false);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["dashboard", "summary"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard", "expenses"] })
@@ -238,7 +236,7 @@ export function DashboardSummaryView({
       />
 
       {activeSection === "daily" ? (
-        <section className="grid min-w-0 gap-4 xl:grid-cols-2">
+        <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.72fr)]">
           <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-[0_14px_36px_rgba(32,24,54,0.04)]">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -305,10 +303,8 @@ export function DashboardSummaryView({
           <ExpenseForm
             expense={expense}
             isSaving={expenseMutation.isPending}
-            show={showExpenseForm}
             onChange={setExpense}
             onSubmit={() => expenseMutation.mutate()}
-            onToggle={() => setShowExpenseForm((value) => !value)}
           />
         </section>
       ) : (
@@ -425,24 +421,23 @@ function SummarySectionTabs({
   onChange: (section: "daily" | "analytics") => void;
 }) {
   const tabs = [
-    { icon: "▦", label: "Diario", value: "daily" as const },
-    { icon: "⌁", label: "Analítica", value: "analytics" as const }
+    { label: "Diario", value: "daily" as const },
+    { label: "Analítica", value: "analytics" as const }
   ];
 
   return (
-    <nav className="inline-flex rounded-lg border border-[var(--color-border)] bg-white p-1 shadow-[0_10px_28px_rgba(32,24,54,0.035)]">
+    <nav className="inline-flex rounded-xl border border-[var(--color-border)] bg-white p-1 shadow-[0_10px_28px_rgba(32,24,54,0.035)]">
       {tabs.map((tab) => (
         <button
           key={tab.value}
           type="button"
           onClick={() => onChange(tab.value)}
-          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
+          className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
             active === tab.value
               ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
               : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
           }`}
         >
-          <span aria-hidden="true">{tab.icon}</span>
           {tab.label}
         </button>
       ))}
@@ -537,34 +532,30 @@ function ExpenseForm({
   expense,
   isSaving,
   onChange,
-  onSubmit,
-  onToggle,
-  show
+  onSubmit
 }: {
   expense: { amount: string; category: string; date: string; description: string };
   isSaving: boolean;
   onChange: (expense: { amount: string; category: string; date: string; description: string }) => void;
   onSubmit: () => void;
-  onToggle: () => void;
-  show: boolean;
 }) {
   return (
-    <div className="mt-3 border-t border-[var(--color-border)] pt-3">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="text-xs font-semibold text-[var(--color-accent)]"
+    <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-[0_14px_36px_rgba(32,24,54,0.04)]">
+      <div>
+        <h2 className="text-base font-semibold">Registrar gasto</h2>
+        <p className="mt-1 text-xs text-[var(--color-muted)]">
+          Cargá egresos del día para que el cierre salga completo.
+        </p>
+      </div>
+      <form
+        className="mt-4 grid gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
       >
-        {show ? "Cancelar" : "Registrar gasto"}
-      </button>
-      {show && (
-        <form
-          className="mt-3 grid gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onSubmit();
-          }}
-        >
+        <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+          Descripción
           <input
             required
             maxLength={160}
@@ -572,18 +563,24 @@ function ExpenseForm({
             onChange={(event) =>
               onChange({ ...expense, description: event.target.value })
             }
-            placeholder="Descripción"
-            className="h-9 rounded-md border border-[var(--color-border-strong)] px-3 text-sm"
+            placeholder="Ej: Insumos, limpieza, alquiler"
+            className="mt-1 h-10 w-full rounded-md border border-[var(--color-border-strong)] px-3 text-sm font-normal text-[var(--color-ink)]"
           />
+        </label>
+        <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+          Categoría
           <input
             required
             maxLength={80}
             value={expense.category}
             onChange={(event) => onChange({ ...expense, category: event.target.value })}
             placeholder="Categoría"
-            className="h-9 rounded-md border border-[var(--color-border-strong)] px-3 text-sm"
+            className="mt-1 h-10 w-full rounded-md border border-[var(--color-border-strong)] px-3 text-sm font-normal text-[var(--color-ink)]"
           />
-          <div className="grid grid-cols-2 gap-2">
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+            Monto
             <input
               required
               min="0.01"
@@ -591,26 +588,29 @@ function ExpenseForm({
               type="number"
               value={expense.amount}
               onChange={(event) => onChange({ ...expense, amount: event.target.value })}
-              placeholder="Monto"
-              className="h-9 rounded-md border border-[var(--color-border-strong)] px-3 text-sm"
+              placeholder="$ 0"
+              className="mt-1 h-10 w-full rounded-md border border-[var(--color-border-strong)] px-3 text-sm font-normal text-[var(--color-ink)]"
             />
+          </label>
+          <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+            Fecha
             <input
               required
               type="date"
               value={expense.date}
               onChange={(event) => onChange({ ...expense, date: event.target.value })}
-              className="h-9 rounded-md border border-[var(--color-border-strong)] px-2 text-sm"
+              className="mt-1 h-10 w-full rounded-md border border-[var(--color-border-strong)] px-2 text-sm font-normal text-[var(--color-ink)]"
             />
-          </div>
-          <button
-            disabled={isSaving}
-            className="h-9 rounded-md bg-[var(--color-ink)] text-xs font-semibold text-[var(--color-button-text)]"
-          >
-            {isSaving ? "Guardando..." : "Guardar gasto"}
-          </button>
-        </form>
-      )}
-    </div>
+          </label>
+        </div>
+        <button
+          disabled={isSaving}
+          className="mt-1 h-10 rounded-md bg-[var(--color-accent)] text-xs font-semibold text-white shadow-[0_10px_24px_rgba(255,122,0,0.22)] disabled:cursor-wait disabled:opacity-60"
+        >
+          {isSaving ? "Guardando..." : "Guardar gasto"}
+        </button>
+      </form>
+    </article>
   );
 }
 
