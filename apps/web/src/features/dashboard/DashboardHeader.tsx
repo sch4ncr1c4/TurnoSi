@@ -30,7 +30,7 @@ export function DashboardHeader({
         ? "Configurá los horarios de atención, descansos y días no laborables."
         : activeView === "settings"
           ? "Administrá los datos del local, cuenta y presencia pública."
-      : "Ingresos, gastos y rendimiento operativo del mes.";
+      : "Operación diaria, cierre de caja y analítica del negocio.";
 
   return (
     <header className="bg-[var(--color-dashboard-page)] px-5 py-3 sm:px-7">

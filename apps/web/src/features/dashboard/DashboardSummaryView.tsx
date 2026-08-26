@@ -231,56 +231,12 @@ export function DashboardSummaryView({
 
   return (
     <div className="min-w-0 space-y-4">
-      <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        {cards.map((card) => (
-          <article
-            key={card.label}
-            className="rounded-lg border border-[var(--color-border)] bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
-          >
-            <p className="text-xs font-medium text-[var(--color-muted-strong)]">
-              {card.label}
-            </p>
-            <p className="mt-1.5 font-mono text-lg font-semibold tracking-tight text-[var(--color-ink)]">
-              {card.value}
-            </p>
-            <p className="mt-1.5 text-[11px] text-[var(--color-muted)]">
-              {card.change !== undefined ? <Change value={card.change} /> : "Mes actual"}
-            </p>
-          </article>
-        ))}
-      </section>
-
-      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.75fr)_minmax(280px,0.75fr)]">
-        <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-white p-3.5">
-          <div className="flex flex-col gap-3 border-b border-[var(--color-border)] pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-base font-semibold">Ingresos y gastos</h2>
-              <p className="mt-1 text-xs text-[var(--color-muted)]">
-                Valores reconocidos desde turnos y gastos registrados
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1 rounded-md border border-[var(--color-border)] p-1">
-              {periods.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setPeriod(item.value)}
-                  className={`rounded px-2.5 py-1 text-xs font-medium ${
-                    period === item.value
-                      ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
-                      : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="pt-4">
-            <DashboardPerformanceChart data={data.chart} />
-          </div>
-        </article>
-
+      <DashboardSectionHeader
+        eyebrow="Caja y agenda"
+        title="Operación diaria"
+        description="Control del día, cierre de caja e impresión del comprobante."
+      />
+      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
         <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-[0_14px_36px_rgba(32,24,54,0.04)]">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -352,6 +308,69 @@ export function DashboardSummaryView({
             onToggle={() => setShowExpenseForm((value) => !value)}
           />
         </article>
+        <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.018)] p-4">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">Qué incluye el PDF</p>
+          <div className="mt-3 grid gap-2 text-xs text-[var(--color-muted-strong)] sm:grid-cols-2">
+            <ClosingHint label="Ventas detalladas" value="Turnos cobrados y señas aprobadas" />
+            <ClosingHint label="Gastos detallados" value="Movimientos registrados del día" />
+            <ClosingHint label="Ganancia bruta" value="Total vendido antes de gastos" />
+            <ClosingHint label="Ganancia neta" value="Ventas menos gastos diarios" />
+          </div>
+        </div>
+      </section>
+
+      <DashboardSectionHeader
+        eyebrow="Métricas"
+        title="Analítica mensual"
+        description="Ingresos, gastos, estados de turnos y rendimiento del negocio."
+      />
+      <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {cards.map((card) => (
+          <article
+            key={card.label}
+            className="rounded-lg border border-[var(--color-border)] bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(32,24,54,0.035)]"
+          >
+            <p className="text-xs font-medium text-[var(--color-muted-strong)]">
+              {card.label}
+            </p>
+            <p className="mt-1.5 font-mono text-lg font-semibold tracking-tight text-[var(--color-ink)]">
+              {card.value}
+            </p>
+            <p className="mt-1.5 text-[11px] text-[var(--color-muted)]">
+              {card.change !== undefined ? <Change value={card.change} /> : "Mes actual"}
+            </p>
+          </article>
+        ))}
+      </section>
+
+      <section className="min-w-0 rounded-lg border border-[var(--color-border)] bg-white p-3.5">
+        <div className="flex flex-col gap-3 border-b border-[var(--color-border)] pb-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold">Ingresos y gastos</h2>
+            <p className="mt-1 text-xs text-[var(--color-muted)]">
+              Valores reconocidos desde turnos y gastos registrados
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1 rounded-md border border-[var(--color-border)] p-1">
+            {periods.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setPeriod(item.value)}
+                className={`rounded px-2.5 py-1 text-xs font-medium ${
+                  period === item.value
+                    ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
+                    : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="pt-4">
+          <DashboardPerformanceChart data={data.chart} />
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.55fr)]">
@@ -403,6 +422,35 @@ export function DashboardSummaryView({
           />
         )}
       </section>
+    </div>
+  );
+}
+
+function DashboardSectionHeader({
+  description,
+  eyebrow,
+  title
+}: {
+  description: string;
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <div className="pt-1">
+      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+        {eyebrow}
+      </p>
+      <h2 className="mt-1 text-xl font-bold text-[var(--color-ink)]">{title}</h2>
+      <p className="mt-1 text-sm text-[var(--color-muted-strong)]">{description}</p>
+    </div>
+  );
+}
+
+function ClosingHint({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5">
+      <p className="font-semibold text-[var(--color-ink)]">{label}</p>
+      <p className="mt-1 leading-5">{value}</p>
     </div>
   );
 }
