@@ -446,6 +446,7 @@ superadminRouter.patch("/organizations/:organizationId/subscription", authRateLi
         organizationId,
         plan,
         status: "authorized",
+        source: "manual",
         mercadoPagoPreapprovalId: null,
         payerEmail: null,
         nextPaymentAt: null,
@@ -458,6 +459,7 @@ superadminRouter.patch("/organizations/:organizationId/subscription", authRateLi
       update: {
         plan,
         status: "authorized",
+        source: "manual",
         mercadoPagoPreapprovalId: null,
         payerEmail: null,
         nextPaymentAt: null,
@@ -477,6 +479,10 @@ superadminRouter.patch("/organizations/:organizationId/subscription", authRateLi
       where: { organizationId },
       data: {
         status: "authorized",
+        source: "manual",
+        mercadoPagoPreapprovalId: null,
+        payerEmail: null,
+        nextPaymentAt: null,
         ...(current.plan === "trial"
           ? { trialEndsAt: extensionEndsAt }
           : {

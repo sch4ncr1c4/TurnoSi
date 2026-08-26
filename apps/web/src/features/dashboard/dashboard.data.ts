@@ -23,6 +23,7 @@ export type DashboardAppointment = {
   assigneeId?: string | null;
   startsAt?: string;
   createdAt?: string;
+  confirmedByBusinessAt?: string | null;
   day?: string;
   time: string;
   service: string;

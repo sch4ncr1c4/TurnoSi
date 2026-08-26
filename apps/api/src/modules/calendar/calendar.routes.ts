@@ -6,7 +6,7 @@ import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { ok } from "../../lib/http.js";
 import { requireEditor } from "../../lib/membership.js";
-import { authRateLimit } from "../../middlewares/rate-limit.js";
+import { authenticatedRateLimit, authRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
 import { visibleOperationalAppointmentWhere } from "../appointments/appointment-visibility.js";
 import {
@@ -49,6 +49,7 @@ function calendarAppointmentPayload(appointment: Prisma.AppointmentGetPayload<{
     startsAt: appointment.startsAt,
     endsAt: appointment.endsAt,
     createdAt: appointment.createdAt,
+    confirmedByBusinessAt: appointment.confirmedByBusinessAt,
     service: appointment.service.name,
     client: appointment.customer.fullName,
     customerPhone: appointment.customer.phone,
@@ -241,6 +242,7 @@ calendarRouter.get("/appointments/recent", async (request, response) => {
     startsAt: appointment.startsAt,
     endsAt: appointment.endsAt,
     createdAt: appointment.createdAt,
+    confirmedByBusinessAt: appointment.confirmedByBusinessAt,
     service: appointment.service.name,
     client: appointment.customer.fullName,
     customerPhone: appointment.customer.phone,
@@ -321,6 +323,23 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
   const [firstName, ...lastNameParts] = data.customerName.trim().split(/\s+/);
   const identity = customerIdentityData(data);
   const appointment = await prisma.$transaction(async (transaction) => {
+    const conflict = await transaction.appointment.findFirst({
+      where: {
+        organizationId: tenant.organizationId,
+        deletedAt: null,
+        status: { in: ["pending", "confirmed"] },
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+        OR: [
+          ...(context.resourceId ? [{ resourceId: context.resourceId }] : []),
+          ...(data.assigneeId ? [{ assignedUserId: data.assigneeId }] : [])
+        ]
+      },
+      select: { id: true }
+    });
+    if (conflict) {
+      throw new AppError(409, "APPOINTMENT_CONFLICT", "There is already an appointment in that time range");
+    }
     const existing = await transaction.customer.findFirst({
       where: customerIdentityWhere(tenant.organizationId, data)
     });
@@ -382,7 +401,7 @@ calendarRouter.post("/appointments/manual", authRateLimit, async (request, respo
       },
       include: { depositPayment: true }
     });
-  });
+  }, { isolationLevel: "Serializable" });
 
   await auditLog({
     organizationId: tenant.organizationId,
@@ -445,7 +464,7 @@ calendarRouter.get("/appointments/:appointmentId/reschedule-slots", async (reque
   }));
 });
 
-calendarRouter.patch("/appointments/:appointmentId/status", authRateLimit, async (request, response) => {
+calendarRouter.patch("/appointments/:appointmentId/status", authenticatedRateLimit, async (request, response) => {
   const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
   const data = updateCalendarStatusSchema.parse(request.body);
   const tenant = request.tenant!;
@@ -464,7 +483,10 @@ calendarRouter.patch("/appointments/:appointmentId/status", authRateLimit, async
   await prisma.$transaction(async (transaction) => {
     await transaction.appointment.update({
       where: { id: appointment.id },
-      data: { status: data.status }
+      data: {
+        status: data.status,
+        confirmedByBusinessAt: data.status === "confirmed" ? new Date() : null
+      }
     });
     if (appointment.status !== "no_show" && data.status === "no_show") {
       await transaction.customer.update({
@@ -553,7 +575,7 @@ calendarRouter.patch("/appointments/:appointmentId/reschedule", authRateLimit, a
   response.json(ok({ startsAt, endsAt }));
 });
 
-calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLimit, async (request, response) => {
+calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authenticatedRateLimit, async (request, response) => {
   const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
   const data = markCalendarDepositPaymentSchema.parse(request.body ?? {});
   const tenant = request.tenant!;
@@ -650,7 +672,7 @@ calendarRouter.patch("/appointments/:appointmentId/deposit-payment", authRateLim
   response.json(ok({ status: "confirmed", depositPayment }));
 });
 
-calendarRouter.delete("/appointments/:appointmentId/deposit-payment", authRateLimit, async (request, response) => {
+calendarRouter.delete("/appointments/:appointmentId/deposit-payment", authenticatedRateLimit, async (request, response) => {
   const { appointmentId } = calendarAppointmentParamsSchema.parse(request.params);
   const tenant = request.tenant!;
   requireEditor(tenant.role);

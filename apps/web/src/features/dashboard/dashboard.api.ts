@@ -31,6 +31,7 @@ type DashboardAppointmentResponse = {
   assigneeId: string | null;
   startsAt: string;
   createdAt: string;
+  confirmedByBusinessAt: string | null;
   service: string;
   client: string;
   customerPhone: string | null;
@@ -56,6 +57,7 @@ function mapDashboardAppointment(
     assigneeId: appointment.assigneeId,
     startsAt: appointment.startsAt,
     createdAt: appointment.createdAt,
+    confirmedByBusinessAt: appointment.confirmedByBusinessAt,
     day: format(startsAt, "yyyy-MM-dd"),
     time: format(startsAt, "HH:mm"),
     service: appointment.service,

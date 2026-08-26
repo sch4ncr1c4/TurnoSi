@@ -161,7 +161,7 @@ export function getStatusModalDotClassName(status: AppointmentStatusLabel): stri
 }
 
 export const statusModalLabel: Record<AppointmentStatusLabel, string> = {
-  Confirmado: "Pedido confirmado",
+  Confirmado: "Turno confirmado",
   "En espera": "En espera",
   Señado: "Señado",
   Pagado: "Pagado",

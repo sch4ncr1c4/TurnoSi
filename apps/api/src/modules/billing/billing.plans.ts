@@ -2,7 +2,7 @@ export const paidBillingPlans = {
   initial: {
     id: "initial",
     mercadoPagoName: "Turnosi Inicial",
-    monthlyAmountArs: 15,
+    monthlyAmountArs: 15_000,
     limits: {
       branches: 1,
       members: 3,

@@ -39,7 +39,9 @@ export function StatusChangeModal({
 }: StatusChangeModalProps) {
   const options = draft.isCorrection
     ? statusCorrectionOptions[draft.currentStatus]
-    : statusTransitionOptions[draft.currentStatus];
+    : statusTransitionOptions[draft.currentStatus].filter(
+        (status) => status !== draft.currentStatus
+      );
   const startsAt = draft.appointment.startsAt
     ? new Date(draft.appointment.startsAt)
     : null;

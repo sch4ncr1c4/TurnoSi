@@ -1,6 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { Router } from "express";
-import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
+import {
+  InvalidWebhookSignatureError,
+  MercadoPagoConfig,
+  Payment,
+  Preference,
+  WebhookSignatureValidator
+} from "mercadopago";
 
 import { env } from "../../config/env.js";
 import { serveGalleryImage, serveLogo } from "../../lib/logo.js";
@@ -168,11 +174,31 @@ async function syncAppointmentDepositPayment(organizationId: string, paymentId: 
 }
 
 publicBookingRouter.post("/webhooks/mercadopago", async (request, response) => {
+  if (!env.MERCADOPAGO_WEBHOOK_SECRET) {
+    response.sendStatus(503);
+    return;
+  }
   const organizationId = String(request.query.organizationId ?? "");
   const dataId =
     String(request.query["data.id"] ?? "") ||
     String((request.body as { data?: { id?: string } }).data?.id ?? "");
   const type = String(request.query.type ?? request.body?.type ?? "");
+
+  try {
+    WebhookSignatureValidator.validate({
+      xSignature: request.headers["x-signature"],
+      xRequestId: request.headers["x-request-id"],
+      dataId,
+      secret: env.MERCADOPAGO_WEBHOOK_SECRET,
+      toleranceSeconds: 300
+    });
+  } catch (error) {
+    if (error instanceof InvalidWebhookSignatureError) {
+      response.sendStatus(401);
+      return;
+    }
+    throw error;
+  }
 
   if (!organizationId || !dataId || type !== "payment") {
     response.sendStatus(200);

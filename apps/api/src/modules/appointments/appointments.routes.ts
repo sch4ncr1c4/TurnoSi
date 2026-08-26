@@ -142,7 +142,22 @@ appointmentsRouter.post("/", authRateLimit, async (request, response) => {
     );
   }
 
-  const appointment = await prisma.appointment.create({
+  const appointment = await prisma.$transaction(async (transaction) => {
+    const conflict = await transaction.appointment.findFirst({
+      where: {
+        organizationId,
+        deletedAt: null,
+        OR: conflictScopes,
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+        status: { in: ["pending", "confirmed"] }
+      },
+      select: { id: true }
+    });
+    if (conflict) {
+      throw new AppError(409, "APPOINTMENT_CONFLICT", "There is already an appointment in that time range");
+    }
+    return transaction.appointment.create({
     data: {
       organizationId,
       customerId: data.customerId,
@@ -165,7 +180,8 @@ appointmentsRouter.post("/", authRateLimit, async (request, response) => {
         select: { id: true, firstName: true, lastName: true, email: true }
       }
     }
-  });
+    });
+  }, { isolationLevel: "Serializable" });
 
   await auditLog({ userId: request.auth!.sub, organizationId, action: "appointment.create", entityType: "appointment", entityId: appointment.id });
   response.status(201).json(ok(appointment));

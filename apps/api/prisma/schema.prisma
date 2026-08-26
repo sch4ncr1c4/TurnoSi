@@ -76,43 +76,58 @@ enum AppointmentPaymentMethod {
 }
 
 model User {
-  id                     String                  @id @default(cuid())
-  username               String?                 @unique
-  email                  String                  @unique
-  passwordHash           String
-  firstName              String?
-  lastName               String?
-  phone                  String?
-  emailVerifiedAt        DateTime?
-  onboardingGuideSeenAt  DateTime?
-  memberships            Membership[]
-  availabilityRules      AvailabilityRule[]
-  availabilityExceptions AvailabilityException[]
-  createdAppointments    Appointment[]           @relation("AppointmentCreatedBy")
-  assignedAppointments   Appointment[]           @relation("AppointmentAssignedTo")
-  services               Service[]
-  auditLogs              AuditLog[]
-  authSessions           AuthSession[]
-  passwordResets         PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
+  id                            String                         @id @default(cuid())
+  username                      String?                        @unique
+  email                         String                         @unique
+  passwordHash                  String
+  firstName                     String?
+  lastName                      String?
+  phone                         String?
+  emailVerifiedAt               DateTime?
+  onboardingGuideSeenAt         DateTime?
+  memberships                   Membership[]
+  availabilityRules             AvailabilityRule[]
+  availabilityExceptions        AvailabilityException[]
+  createdAppointments           Appointment[]                  @relation("AppointmentCreatedBy")
+  assignedAppointments          Appointment[]                  @relation("AppointmentAssignedTo")
+  services                      Service[]
+  auditLogs                     AuditLog[]
+  authSessions                  AuthSession[]
+  passwordResets                PasswordResetToken[]
+  emailVerificationTokens       EmailVerificationToken[]
   reservationNotificationStates ReservationNotificationState[]
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  createdAt                     DateTime                       @default(now())
+  updatedAt                     DateTime                       @updatedAt
+}
+
+model Expense {
+  id             String       @id @default(cuid())
+  organizationId String
+  description    String
+  amountCents    Int
+  category       String
+  occurredOn     DateTime
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, occurredOn])
+  @@index([organizationId, category])
 }
 
 model AuthSession {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
   familyId     String
-  tokenHash    String   @unique
+  tokenHash    String    @unique
   expiresAt    DateTime
   revokedAt    DateTime?
   replacedById String?
   userAgent    String?
   ipAddress    String?
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([userId, revokedAt])
   @@index([familyId])
@@ -120,43 +135,44 @@ model AuthSession {
 }
 
 model Organization {
-  id                     String                  @id @default(cuid())
-  name                   String
-  slug                   String                  @unique
-  timezone               String                  @default("America/Argentina/Buenos_Aires")
-  bookingIntervalMinutes Int                     @default(30)
-  category               String?
-  phone                  String?
-  whatsapp               String?
-  publicEmail            String?
-  address                String?
-  city                   String?
-  province               String?
-  countryCode            String                  @default("AR")
-  instagram              String?
-  description            String?
+  id                              String                            @id @default(cuid())
+  name                            String
+  slug                            String                            @unique
+  timezone                        String                            @default("America/Argentina/Buenos_Aires")
+  bookingIntervalMinutes          Int                               @default(30)
+  category                        String?
+  phone                           String?
+  whatsapp                        String?
+  publicEmail                     String?
+  address                         String?
+  city                            String?
+  province                        String?
+  countryCode                     String                            @default("AR")
+  instagram                       String?
+  description                     String?
   mercadoPagoAccessTokenEncrypted String?
-  depositEnabled         Boolean                 @default(false)
-  depositAmountCents     Int?
-  onboardingCompletedAt  DateTime?
-  memberships            Membership[]
-  branches               Branch[]
-  customers              Customer[]
-  services               Service[]
-  serviceCategories      ServiceCategory[]
-  resources              Resource[]
-  appointments           Appointment[]
-  availabilityRules      AvailabilityRule[]
-  availabilityExceptions AvailabilityException[]
-  auditLogs              AuditLog[]
-  logo                   OrganizationLogo?
-  galleryImages          OrganizationGalleryImage[]
-  subscription           OrganizationSubscription?
-  subscriptionPayments   OrganizationSubscriptionPayment[]
-  appointmentDepositPayments AppointmentDepositPayment[]
-  reservationNotificationStates ReservationNotificationState[]
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  depositEnabled                  Boolean                           @default(false)
+  depositAmountCents              Int?
+  onboardingCompletedAt           DateTime?
+  memberships                     Membership[]
+  branches                        Branch[]
+  customers                       Customer[]
+  services                        Service[]
+  serviceCategories               ServiceCategory[]
+  resources                       Resource[]
+  appointments                    Appointment[]
+  availabilityRules               AvailabilityRule[]
+  availabilityExceptions          AvailabilityException[]
+  auditLogs                       AuditLog[]
+  logo                            OrganizationLogo?
+  galleryImages                   OrganizationGalleryImage[]
+  subscription                    OrganizationSubscription?
+  subscriptionPayments            OrganizationSubscriptionPayment[]
+  appointmentDepositPayments      AppointmentDepositPayment[]
+  reservationNotificationStates   ReservationNotificationState[]
+  expenses                        Expense[]
+  createdAt                       DateTime                          @default(now())
+  updatedAt                       DateTime                          @updatedAt
 }
 
 model Branch {
@@ -186,12 +202,12 @@ model Branch {
 }
 
 model OrganizationSubscription {
-  id                       String             @id @default(cuid())
-  organizationId           String             @unique
+  id                       String                            @id @default(cuid())
+  organizationId           String                            @unique
   plan                     SubscriptionPlan
-  status                   SubscriptionStatus @default(pending)
-  source                   SubscriptionSource @default(mercadopago)
-  mercadoPagoPreapprovalId String?            @unique
+  status                   SubscriptionStatus                @default(pending)
+  source                   SubscriptionSource                @default(mercadopago)
+  mercadoPagoPreapprovalId String?                           @unique
   payerEmail               String?
   nextPaymentAt            DateTime?
   trialStartedAt           DateTime?
@@ -199,30 +215,30 @@ model OrganizationSubscription {
   paymentGraceEndsAt       DateTime?
   lastPaymentStatus        SubscriptionPaymentStatus?
   lastWebhookAt            DateTime?
-  organization             Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization             Organization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   payments                 OrganizationSubscriptionPayment[]
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
+  createdAt                DateTime                          @default(now())
+  updatedAt                DateTime                          @updatedAt
 }
 
 model OrganizationSubscriptionPayment {
-  id                         String                     @id @default(cuid())
-  organizationId             String
-  subscriptionId             String?
-  mercadoPagoPaymentId       String                     @unique
-  mercadoPagoInvoiceId       String?                    @unique
-  mercadoPagoPreapprovalId   String?
-  status                     SubscriptionPaymentStatus  @default(pending)
-  statusDetail               String?
-  amountCents                Int?
-  currencyId                 String?
-  paidAt                     DateTime?
-  dueAt                      DateTime?
-  raw                        Json?
-  organization               Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  subscription               OrganizationSubscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  createdAt                  DateTime                   @default(now())
-  updatedAt                  DateTime                   @updatedAt
+  id                       String                    @id @default(cuid())
+  organizationId           String
+  subscriptionId           String?
+  mercadoPagoPaymentId     String                    @unique
+  mercadoPagoInvoiceId     String?                   @unique
+  mercadoPagoPreapprovalId String?
+  status                   SubscriptionPaymentStatus @default(pending)
+  statusDetail             String?
+  amountCents              Int?
+  currencyId               String?
+  paidAt                   DateTime?
+  dueAt                    DateTime?
+  raw                      Json?
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription             OrganizationSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
 
   @@index([organizationId, createdAt])
   @@index([mercadoPagoPreapprovalId])
@@ -255,18 +271,18 @@ model OrganizationGalleryImage {
 }
 
 model Membership {
-  id             String         @id @default(cuid())
-  userId         String
-  organizationId String
-  role           MembershipRole
-  bookingsEnabled       Boolean  @default(true)
-  visibleInPublicBooking Boolean @default(true)
-  hourlyCapacity        Int      @default(2)
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  branches       MembershipBranch[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                     String             @id @default(cuid())
+  userId                 String
+  organizationId         String
+  role                   MembershipRole
+  bookingsEnabled        Boolean            @default(true)
+  visibleInPublicBooking Boolean            @default(true)
+  hourlyCapacity         Int                @default(2)
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization           Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branches               MembershipBranch[]
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
   @@unique([userId, organizationId])
   @@index([organizationId, role])
@@ -321,7 +337,7 @@ model ServiceCategory {
 }
 
 model Service {
-  id                  String        @id @default(cuid())
+  id                  String            @id @default(cuid())
   organizationId      String
   branchId            String?
   createdByUserId     String?
@@ -330,19 +346,19 @@ model Service {
   category            String?
   description         String?
   durationMinutes     Int
-  capacity            Int           @default(1)
-  bufferBeforeMinutes Int           @default(0)
-  bufferAfterMinutes  Int           @default(0)
+  capacity            Int               @default(1)
+  bufferBeforeMinutes Int               @default(0)
+  bufferAfterMinutes  Int               @default(0)
   priceCents          Int?
-  isActive            Boolean       @default(true)
-  isOnlineBookable    Boolean       @default(true)
-  organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  branch              Branch?       @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  createdByUser       User?         @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  isActive            Boolean           @default(true)
+  isOnlineBookable    Boolean           @default(true)
+  organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch              Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  createdByUser       User?             @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   appointments        Appointment[]
   resourceLinks       ServiceResource[]
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
   @@unique([organizationId, slug])
   @@index([organizationId, isActive])
@@ -384,31 +400,32 @@ model ServiceResource {
 }
 
 model Appointment {
-  id             String            @id @default(cuid())
-  organizationId String
-  branchId       String?
-  customerId     String
-  serviceId      String
-  resourceId     String?
-  createdById    String?
-  assignedUserId String?
-  channel        BookingChannel
-  title          String
-  notes          String?
-  startsAt       DateTime
-  endsAt         DateTime
-  status         AppointmentStatus @default(pending)
-  deletedAt      DateTime?
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  branch         Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  customer       Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  service        Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
-  resource       Resource?         @relation(fields: [resourceId], references: [id], onDelete: SetNull)
-  createdBy      User?             @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  assignedUser   User?             @relation("AppointmentAssignedTo", fields: [assignedUserId], references: [id], onDelete: SetNull)
-  depositPayment AppointmentDepositPayment?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id                    String                     @id @default(cuid())
+  organizationId        String
+  branchId              String?
+  customerId            String
+  serviceId             String
+  resourceId            String?
+  createdById           String?
+  assignedUserId        String?
+  channel               BookingChannel
+  title                 String
+  notes                 String?
+  startsAt              DateTime
+  endsAt                DateTime
+  status                AppointmentStatus          @default(pending)
+  confirmedByBusinessAt DateTime?
+  deletedAt             DateTime?
+  organization          Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch                Branch?                    @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  customer              Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  service               Service                    @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  resource              Resource?                  @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  createdBy             User?                      @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignedUser          User?                      @relation("AppointmentAssignedTo", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  depositPayment        AppointmentDepositPayment?
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
 
   @@index([organizationId, startsAt])
   @@index([organizationId, branchId, startsAt])
@@ -419,23 +436,23 @@ model Appointment {
 }
 
 model AppointmentDepositPayment {
-  id                         String                   @id @default(cuid())
-  organizationId             String
-  appointmentId              String                   @unique
-  mercadoPagoPreferenceId    String?                  @unique
-  mercadoPagoPaymentId       String?                  @unique
-  status                     AppointmentPaymentStatus @default(pending)
-  amountCents                Int
-  currencyId                 String                   @default("ARS")
-  method                     AppointmentPaymentMethod?
-  checkoutUrl                String?
-  statusDetail               String?
-  paidAt                     DateTime?
-  raw                        Json?
-  organization               Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  appointment                Appointment              @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  createdAt                  DateTime                 @default(now())
-  updatedAt                  DateTime                 @updatedAt
+  id                      String                    @id @default(cuid())
+  organizationId          String
+  appointmentId           String                    @unique
+  mercadoPagoPreferenceId String?                   @unique
+  mercadoPagoPaymentId    String?                   @unique
+  status                  AppointmentPaymentStatus  @default(pending)
+  amountCents             Int
+  currencyId              String                    @default("ARS")
+  method                  AppointmentPaymentMethod?
+  checkoutUrl             String?
+  statusDetail            String?
+  paidAt                  DateTime?
+  raw                     Json?
+  organization            Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appointment             Appointment               @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
 
   @@index([organizationId, createdAt])
   @@index([status])
@@ -518,44 +535,44 @@ model AuditLog {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  tokenHash String   @unique
+  tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  attempts  Int      @default(0)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  attempts  Int       @default(0)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@index([tokenHash])
 }
 
 model PendingRegistrationToken {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   email            String
   firstName        String
   lastName         String
   organizationName String
   passwordHash     String
-  tokenHash        String   @unique
+  tokenHash        String    @unique
   expiresAt        DateTime
   usedAt           DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([email])
   @@index([expiresAt])
 }
 
 model EmailVerificationToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  tokenHash String   @unique
+  tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@index([expiresAt])
@@ -564,7 +581,7 @@ model EmailVerificationToken {
 model RateLimitBucket {
   key       String   @id
   count     Int
-  resetsAt DateTime
+  resetsAt  DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

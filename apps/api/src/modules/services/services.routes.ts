@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { prisma } from "../../database/prisma.js";
 import { ok } from "../../lib/http.js";
-import { assertMembership } from "../../lib/membership.js";
+import { assertMembership, requireEditor } from "../../lib/membership.js";
 import { paginate, paginatedResponse, paginationSchema } from "../../lib/pagination.js";
 import { organizationParamsSchema } from "../../lib/schemas.js";
 import { authRateLimit } from "../../middlewares/rate-limit.js";
@@ -32,7 +32,8 @@ servicesRouter.get("/", async (request, response) => {
 
 servicesRouter.post("/", authRateLimit, async (request, response) => {
   const { organizationId } = organizationParamsSchema.parse(request.params);
-  await assertMembership(request.auth!.sub, organizationId);
+  const membership = await assertMembership(request.auth!.sub, organizationId);
+  requireEditor(membership.role);
   const data = createServiceSchema.parse(request.body);
 
   const service = await prisma.service.create({

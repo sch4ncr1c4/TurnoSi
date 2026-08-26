@@ -6,7 +6,7 @@ export type DashboardRole = NonNullable<AuthOrganization["role"]>;
 const roleViews: Record<DashboardRole, DashboardView[]> = {
   owner: ["summary", "agenda", "customers", "team", "availability", "settings"],
   admin: ["summary", "agenda", "customers", "team", "availability", "settings"],
-  member: ["summary", "agenda"]
+  member: ["agenda"]
 };
 
 export function getAllowedDashboardViews(role?: DashboardRole): DashboardView[] {

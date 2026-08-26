@@ -18,7 +18,7 @@ export function DashboardHeader({
         ? "Disponibilidad"
         : activeView === "settings"
           ? "Configuración"
-        : "Operación de turnos";
+        : "Resumen del negocio";
   const pageDescription =
     activeView === "agenda"
       ? "Gestioná tus turnos y horarios."
@@ -30,7 +30,7 @@ export function DashboardHeader({
         ? "Configurá los horarios de atención, descansos y días no laborables."
         : activeView === "settings"
           ? "Administrá los datos del local, cuenta y presencia pública."
-      : "Control diario de agenda, disponibilidad, actividad y cuenta.";
+      : "Ingresos, gastos y rendimiento operativo del mes.";
 
   return (
     <header className="bg-[var(--color-dashboard-page)] px-5 py-3 sm:px-7">

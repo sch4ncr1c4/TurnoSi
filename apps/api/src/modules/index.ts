@@ -15,6 +15,7 @@ import { billingPublicRouter, billingRouter } from "./billing/billing.routes.js"
 import { requireAuth } from "../middlewares/require-auth.js";
 import { resolveTenant } from "../middlewares/resolve-tenant.js";
 import { requireActiveSubscription } from "../middlewares/require-subscription.js";
+import { dashboardRouter } from "./dashboard/dashboard.routes.js";
 
 export const apiRouter = Router();
 
@@ -34,3 +35,4 @@ apiRouter.use("/team", teamRouter);
 apiRouter.use("/availability", availabilityRouter);
 apiRouter.use("/calendar", calendarRouter);
 apiRouter.use("/audit", auditRouter);
+apiRouter.use("/dashboard", dashboardRouter);

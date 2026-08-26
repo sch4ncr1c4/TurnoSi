@@ -215,7 +215,7 @@ async function syncSubscriptionPayment(
         lastPaymentStatus: status,
         paymentGraceEndsAt: status === "approved" ? null : graceEndsAt,
         ...(status === "approved"
-          ? { status: "authorized" as const, trialEndsAt: null }
+          ? { source: "mercadopago" as const, status: "authorized" as const, trialEndsAt: null }
           : {})
       }
     })
@@ -285,7 +285,7 @@ billingRouter.get("/subscription", async (request, response) => {
       const keepManualAccess =
         subscription.status === "authorized" &&
         subscription.plan !== "trial" &&
-        !subscription.mercadoPagoPreapprovalId &&
+        subscription.source === "manual" &&
         remoteStatus !== "authorized";
 
       subscription = await prisma.organizationSubscription.update({
@@ -294,6 +294,7 @@ billingRouter.get("/subscription", async (request, response) => {
           ...(keepActiveTrial || keepManualAccess
             ? {}
             : {
+                source: "mercadopago",
                 status: remoteStatus,
                 ...(remotePlan ? { plan: remotePlan } : {}),
                 ...(remoteStatus === "authorized" ? { trialEndsAt: null } : {})
@@ -526,7 +527,7 @@ billingPublicRouter.post("/mercadopago", async (request, response) => {
   if (
     existing?.status === "authorized" &&
     existing.plan !== "trial" &&
-    !existing.mercadoPagoPreapprovalId &&
+    existing.source === "manual" &&
     status !== "authorized"
   ) {
     response.sendStatus(200);
@@ -539,6 +540,7 @@ billingPublicRouter.post("/mercadopago", async (request, response) => {
       organizationId,
       plan: plan as keyof typeof plans,
       status,
+      source: "mercadopago",
       mercadoPagoPreapprovalId: dataId,
       payerEmail: subscription.payer_email,
       nextPaymentAt: subscription.next_payment_date
@@ -547,6 +549,7 @@ billingPublicRouter.post("/mercadopago", async (request, response) => {
       lastWebhookAt: new Date()
     },
     update: {
+      source: "mercadopago",
       plan: plan as keyof typeof plans,
       status,
       ...(status === "authorized" ? { trialEndsAt: null } : {}),

@@ -770,7 +770,18 @@ organizationsRouter.delete("/current", authRateLimit, async (request, response) 
 organizationsRouter.get("/", async (request, response) => {
   const memberships = await prisma.membership.findMany({
     where: { userId: request.auth!.sub },
-    include: { organization: true },
+    include: {
+      organization: {
+        select: {
+          id: true, name: true, slug: true, timezone: true,
+          bookingIntervalMinutes: true, category: true, phone: true,
+          whatsapp: true, publicEmail: true, address: true, city: true,
+          province: true, countryCode: true, instagram: true, description: true,
+          depositEnabled: true, depositAmountCents: true,
+          onboardingCompletedAt: true, createdAt: true, updatedAt: true
+        }
+      }
+    },
     orderBy: { createdAt: "asc" }
   });
 
@@ -782,7 +793,15 @@ organizationsRouter.get("/:organizationId", async (request, response) => {
   await assertMembership(request.auth!.sub, organizationId);
 
   const organization = await prisma.organization.findUnique({
-    where: { id: organizationId }
+    where: { id: organizationId },
+    select: {
+      id: true, name: true, slug: true, timezone: true,
+      bookingIntervalMinutes: true, category: true, phone: true,
+      whatsapp: true, publicEmail: true, address: true, city: true,
+      province: true, countryCode: true, instagram: true, description: true,
+      depositEnabled: true, depositAmountCents: true,
+      onboardingCompletedAt: true, createdAt: true, updatedAt: true
+    }
   });
 
   if (!organization) {
