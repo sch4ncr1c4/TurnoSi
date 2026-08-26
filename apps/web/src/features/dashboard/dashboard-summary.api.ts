@@ -1,4 +1,4 @@
-import { apiRequest } from "../../lib/api";
+import { ApiError, apiRequest, getApiUrl } from "../../lib/api";
 
 export type DashboardSummaryPeriod = "7d" | "30d" | "current_month" | "previous_month";
 export type DashboardSummary = {
@@ -37,4 +37,23 @@ export async function getDashboardExpenses(period: DashboardSummaryPeriod) {
 
 export function deleteDashboardExpense(expenseId: string) {
   return apiRequest(`/api/v1/dashboard/expenses/${expenseId}`, { method: "DELETE" });
+}
+
+export async function getDailyClosingPdf(date: string, retry = true) {
+  const path = `/api/v1/dashboard/daily-closing.pdf?date=${encodeURIComponent(date)}`;
+  let response = await fetch(getApiUrl(path), { credentials: "include" });
+
+  if (response.status === 401 && retry) {
+    const refreshed = await fetch(getApiUrl("/api/v1/auth/refresh"), {
+      credentials: "include",
+      method: "POST"
+    });
+    if (refreshed.ok) response = await fetch(getApiUrl(path), { credentials: "include" });
+  }
+
+  if (!response.ok) {
+    throw new ApiError("No se pudo generar el cierre de caja", "PDF_FAILED", response.status);
+  }
+
+  return response.blob();
 }

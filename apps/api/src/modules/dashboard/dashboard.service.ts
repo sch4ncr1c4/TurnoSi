@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import PDFDocument from "pdfkit";
 
 import { prisma } from "../../database/prisma.js";
 import { zonedTimeToUtc } from "../../lib/timezone.js";
@@ -17,6 +18,21 @@ type MetricsRow = {
   incomeCents: bigint;
 };
 
+type DailyClosingSale = {
+  amountCents: number;
+  client: string;
+  payment: string;
+  service: string;
+  status: string;
+  time: string;
+};
+
+type DailyClosingExpense = {
+  amountCents: number;
+  category: string;
+  description: string;
+};
+
 function localDate(date: Date, timezone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -32,6 +48,31 @@ function shiftDate(date: string, days: number) {
   const value = new Date(`${date}T12:00:00.000Z`);
   value.setUTCDate(value.getUTCDate() + days);
   return value.toISOString().slice(0, 10);
+}
+
+function localTime(date: Date, timezone: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: timezone
+  }).format(date);
+}
+
+function localLongDate(date: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC"
+  }).format(new Date(`${date}T12:00:00.000Z`));
+}
+
+function money(cents: number) {
+  return new Intl.NumberFormat("es-AR", {
+    currency: "ARS",
+    maximumFractionDigits: 0,
+    style: "currency"
+  }).format(cents / 100);
 }
 
 function monthStart(date: string) {
@@ -319,4 +360,203 @@ export async function getDashboardExpenses(
     occurredOn: expense.occurredOn.toISOString(),
     createdAt: expense.createdAt.toISOString()
   }));
+}
+
+export async function getDailyClosingData(
+  organizationId: string,
+  timezone: string,
+  date: string
+) {
+  const from = zonedTimeToUtc(date, 0, timezone);
+  const to = zonedTimeToUtc(shiftDate(date, 1), 0, timezone);
+  const [organization, appointments, expenses] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true, slug: true }
+    }),
+    prisma.appointment.findMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+        startsAt: { gte: from, lt: to },
+        OR: [
+          { status: { in: ["paid", "completed"] } },
+          { depositPayment: { status: "approved" } }
+        ]
+      },
+      orderBy: { startsAt: "asc" },
+      select: {
+        startsAt: true,
+        status: true,
+        customer: { select: { fullName: true } },
+        depositPayment: { select: { amountCents: true, method: true, status: true } },
+        service: { select: { name: true, priceCents: true } }
+      }
+    }),
+    prisma.expense.findMany({
+      where: { organizationId, occurredOn: { gte: from, lt: to } },
+      orderBy: [{ occurredOn: "asc" }, { createdAt: "asc" }],
+      select: { amountCents: true, category: true, description: true }
+    })
+  ]);
+
+  const sales: DailyClosingSale[] = appointments.map((appointment) => {
+    const isFullSale = appointment.status === "paid" || appointment.status === "completed";
+    const deposit = appointment.depositPayment?.status === "approved"
+      ? appointment.depositPayment
+      : null;
+    return {
+      amountCents: isFullSale ? appointment.service.priceCents ?? 0 : deposit?.amountCents ?? 0,
+      client: appointment.customer.fullName,
+      payment: isFullSale ? "Turno cobrado" : `Seña${deposit?.method ? ` · ${deposit.method}` : ""}`,
+      service: appointment.service.name,
+      status: appointment.status,
+      time: localTime(appointment.startsAt, timezone)
+    };
+  }).filter((sale) => sale.amountCents > 0);
+
+  const detailedExpenses: DailyClosingExpense[] = expenses.map((expense) => ({
+    amountCents: expense.amountCents,
+    category: expense.category,
+    description: expense.description
+  }));
+  const grossIncomeCents = sales.reduce((sum, item) => sum + item.amountCents, 0);
+  const expenseCents = detailedExpenses.reduce((sum, item) => sum + item.amountCents, 0);
+
+  return {
+    date,
+    expenses: detailedExpenses,
+    expenseCents,
+    generatedAt: new Date(),
+    grossIncomeCents,
+    netIncomeCents: grossIncomeCents - expenseCents,
+    organizationName: organization?.name ?? organization?.slug ?? "Negocio",
+    sales,
+    timezone
+  };
+}
+
+function writePdfRow(
+  doc: PDFKit.PDFDocument,
+  columns: Array<{ text: string; width: number; align?: "left" | "right" }>,
+  y: number
+) {
+  let x = doc.page.margins.left;
+  for (const column of columns) {
+    doc.text(column.text, x, y, { align: column.align ?? "left", width: column.width });
+    x += column.width;
+  }
+}
+
+function ensurePdfSpace(doc: PDFKit.PDFDocument, y: number, needed = 48) {
+  if (y + needed <= doc.page.height - doc.page.margins.bottom) return y;
+  doc.addPage();
+  return doc.page.margins.top;
+}
+
+export async function renderDailyClosingPdf(
+  organizationId: string,
+  timezone: string,
+  date: string
+) {
+  const closing = await getDailyClosingData(organizationId, timezone, date);
+  const doc = new PDFDocument({
+    bufferPages: true,
+    info: {
+      Author: "TurnoSi",
+      Subject: `Cierre diario ${closing.date}`,
+      Title: `Cierre de caja - ${closing.organizationName}`
+    },
+    margin: 42,
+    size: "A4"
+  });
+  const chunks: Buffer[] = [];
+  const done = new Promise<Buffer>((resolve, reject) => {
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+  });
+
+  doc.font("Helvetica-Bold").fontSize(18).text("Cierre de caja diario");
+  doc.font("Helvetica").fontSize(10).fillColor("#5f596b")
+    .text(closing.organizationName)
+    .text(`Fecha: ${localLongDate(closing.date)}`)
+    .text(`Generado: ${localTime(closing.generatedAt, closing.timezone)} hs`);
+
+  let y = doc.y + 18;
+  const summary = [
+    ["Ventas brutas", money(closing.grossIncomeCents)],
+    ["Gastos", money(closing.expenseCents)],
+    ["Ganancia neta", money(closing.netIncomeCents)]
+  ];
+  for (const [index, [label, value]] of summary.entries()) {
+    const x = 42 + index * 170;
+    doc.roundedRect(x, y, 158, 54, 8).fillAndStroke("#fbfaf8", "#ded9e3");
+    doc.fillColor("#5f596b").font("Helvetica").fontSize(9).text(label, x + 14, y + 10);
+    doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(15).text(value, x + 14, y + 26);
+  }
+  y += 78;
+
+  doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(13).text("Ventas detalladas", 42, y);
+  y += 24;
+  doc.fontSize(9).fillColor("#5f596b");
+  writePdfRow(doc, [
+    { text: "Hora", width: 52 },
+    { text: "Servicio", width: 150 },
+    { text: "Cliente", width: 130 },
+    { text: "Detalle", width: 110 },
+    { text: "Importe", width: 70, align: "right" }
+  ], y);
+  y += 16;
+  doc.moveTo(42, y).lineTo(553, y).strokeColor("#ded9e3").stroke();
+  y += 8;
+
+  if (closing.sales.length === 0) {
+    doc.font("Helvetica").fillColor("#5f596b").text("Sin ventas registradas.", 42, y);
+    y += 24;
+  } else {
+    for (const sale of closing.sales) {
+      y = ensurePdfSpace(doc, y);
+      doc.font("Helvetica").fontSize(9).fillColor("#160f33");
+      writePdfRow(doc, [
+        { text: sale.time, width: 52 },
+        { text: sale.service, width: 150 },
+        { text: sale.client, width: 130 },
+        { text: sale.payment, width: 110 },
+        { text: money(sale.amountCents), width: 70, align: "right" }
+      ], y);
+      y += 22;
+    }
+  }
+
+  y = ensurePdfSpace(doc, y + 12, 80);
+  doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(13).text("Gastos detallados", 42, y);
+  y += 24;
+  doc.fontSize(9).fillColor("#5f596b");
+  writePdfRow(doc, [
+    { text: "Categoria", width: 120 },
+    { text: "Descripcion", width: 320 },
+    { text: "Importe", width: 72, align: "right" }
+  ], y);
+  y += 16;
+  doc.moveTo(42, y).lineTo(553, y).strokeColor("#ded9e3").stroke();
+  y += 8;
+
+  if (closing.expenses.length === 0) {
+    doc.font("Helvetica").fillColor("#5f596b").text("Sin gastos registrados.", 42, y);
+  } else {
+    for (const expense of closing.expenses) {
+      y = ensurePdfSpace(doc, y);
+      doc.font("Helvetica").fontSize(9).fillColor("#160f33");
+      writePdfRow(doc, [
+        { text: expense.category, width: 120 },
+        { text: expense.description, width: 320 },
+        { text: money(expense.amountCents), width: 72, align: "right" }
+      ], y);
+      y += 22;
+    }
+  }
+
+  doc.end();
+  return done;
 }

@@ -10,9 +10,14 @@ import {
   createExpenseSchema,
   dashboardExpensesQuerySchema,
   dashboardSummaryQuerySchema,
+  dailyClosingPdfQuerySchema,
   expenseParamsSchema
 } from "./dashboard.schemas.js";
-import { getDashboardExpenses, getDashboardSummary } from "./dashboard.service.js";
+import {
+  getDashboardExpenses,
+  getDashboardSummary,
+  renderDailyClosingPdf
+} from "./dashboard.service.js";
 
 export const dashboardRouter = Router();
 
@@ -28,6 +33,22 @@ dashboardRouter.get("/expenses", authenticatedRateLimit, async (request, respons
   requireEditor(tenant.role);
   const { period } = dashboardExpensesQuerySchema.parse(request.query);
   response.json(ok(await getDashboardExpenses(tenant.organizationId, tenant.timezone, period)));
+});
+
+dashboardRouter.get("/daily-closing.pdf", authenticatedRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const { date } = dailyClosingPdfQuerySchema.parse(request.query);
+  const pdf = await renderDailyClosingPdf(tenant.organizationId, tenant.timezone, date);
+  response
+    .status(200)
+    .set({
+      "Cache-Control": "no-store",
+      "Content-Disposition": `inline; filename="cierre-caja-${date}.pdf"`,
+      "Content-Length": String(pdf.length),
+      "Content-Type": "application/pdf"
+    })
+    .send(pdf);
 });
 
 dashboardRouter.post("/expenses", authenticatedRateLimit, async (request, response) => {

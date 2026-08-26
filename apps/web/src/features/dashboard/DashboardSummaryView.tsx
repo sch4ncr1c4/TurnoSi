@@ -5,6 +5,7 @@ import { DashboardPerformanceChart } from "./DashboardPerformanceChart";
 import {
   createDashboardExpense,
   deleteDashboardExpense,
+  getDailyClosingPdf,
   getDashboardExpenses,
   getDashboardSummary,
   type DashboardExpense,
@@ -36,6 +37,17 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function localDateInputValue() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function Change({ value }: { value: number | null }) {
   if (value == null) return <span>Sin período comparable</span>;
   return (
@@ -54,10 +66,11 @@ export function DashboardSummaryView({
   const [period, setPeriod] = useState<DashboardSummaryPeriod>("current_month");
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
+  const [isOpeningClosingPdf, setIsOpeningClosingPdf] = useState(false);
   const [expense, setExpense] = useState({
     amount: "",
     category: "General",
-    date: new Date().toISOString().slice(0, 10),
+    date: localDateInputValue(),
     description: ""
   });
   const queryClient = useQueryClient();
@@ -85,7 +98,7 @@ export function DashboardSummaryView({
       setExpense({
         amount: "",
         category: "General",
-        date: new Date().toISOString().slice(0, 10),
+        date: localDateInputValue(),
         description: ""
       });
       setShowExpenseForm(false);
@@ -106,6 +119,25 @@ export function DashboardSummaryView({
     }
   });
   const data = summaryQuery.data;
+  const todayDate = localDateInputValue();
+
+  async function openDailyClosingPdf() {
+    setIsOpeningClosingPdf(true);
+    try {
+      const blob = await getDailyClosingPdf(todayDate);
+      const url = URL.createObjectURL(blob);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `cierre-caja-${todayDate}.pdf`;
+        link.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } finally {
+      setIsOpeningClosingPdf(false);
+    }
+  }
 
   if (summaryQuery.isLoading) {
     return (
@@ -286,6 +318,14 @@ export function DashboardSummaryView({
               />
             ))}
           </div>
+          <button
+            type="button"
+            disabled={isOpeningClosingPdf}
+            onClick={openDailyClosingPdf}
+            className="mt-3 flex h-10 w-full items-center justify-center rounded-lg border border-[var(--color-border-strong)] bg-white text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[rgba(32,24,54,0.035)] disabled:cursor-wait disabled:opacity-60"
+          >
+            {isOpeningClosingPdf ? "Generando PDF..." : "Abrir cierre de caja diario"}
+          </button>
           <ExpenseForm
             expense={expense}
             isSaving={expenseMutation.isPending}
