@@ -232,11 +232,10 @@ export function DashboardSummaryView({
   return (
     <div className="min-w-0 space-y-4">
       <DashboardSectionHeader
-        eyebrow="Caja y agenda"
         title="Operación diaria"
         description="Control del día, cierre de caja e impresión del comprobante."
       />
-      <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
+      <section className="grid min-w-0 gap-4 xl:grid-cols-2">
         <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-[0_14px_36px_rgba(32,24,54,0.04)]">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -299,28 +298,18 @@ export function DashboardSummaryView({
               {isOpeningClosingPdf ? "Generando PDF..." : "Abrir cierre de caja"}
             </button>
           </div>
-          <ExpenseForm
-            expense={expense}
-            isSaving={expenseMutation.isPending}
-            show={showExpenseForm}
-            onChange={setExpense}
-            onSubmit={() => expenseMutation.mutate()}
-            onToggle={() => setShowExpenseForm((value) => !value)}
-          />
         </article>
-        <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[rgba(32,24,54,0.018)] p-4">
-          <p className="text-sm font-semibold text-[var(--color-ink)]">Qué incluye el PDF</p>
-          <div className="mt-3 grid gap-2 text-xs text-[var(--color-muted-strong)] sm:grid-cols-2">
-            <ClosingHint label="Ventas detalladas" value="Turnos cobrados y señas aprobadas" />
-            <ClosingHint label="Gastos detallados" value="Movimientos registrados del día" />
-            <ClosingHint label="Ganancia bruta" value="Total vendido antes de gastos" />
-            <ClosingHint label="Ganancia neta" value="Ventas menos gastos diarios" />
-          </div>
-        </div>
+        <ExpenseForm
+          expense={expense}
+          isSaving={expenseMutation.isPending}
+          show={showExpenseForm}
+          onChange={setExpense}
+          onSubmit={() => expenseMutation.mutate()}
+          onToggle={() => setShowExpenseForm((value) => !value)}
+        />
       </section>
 
       <DashboardSectionHeader
-        eyebrow="Métricas"
         title="Analítica mensual"
         description="Ingresos, gastos, estados de turnos y rendimiento del negocio."
       />
@@ -428,29 +417,15 @@ export function DashboardSummaryView({
 
 function DashboardSectionHeader({
   description,
-  eyebrow,
   title
 }: {
   description: string;
-  eyebrow: string;
   title: string;
 }) {
   return (
     <div className="pt-1">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-accent)]">
-        {eyebrow}
-      </p>
-      <h2 className="mt-1 text-xl font-bold text-[var(--color-ink)]">{title}</h2>
+      <h2 className="text-xl font-bold text-[var(--color-ink)]">{title}</h2>
       <p className="mt-1 text-sm text-[var(--color-muted-strong)]">{description}</p>
-    </div>
-  );
-}
-
-function ClosingHint({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5">
-      <p className="font-semibold text-[var(--color-ink)]">{label}</p>
-      <p className="mt-1 leading-5">{value}</p>
     </div>
   );
 }
