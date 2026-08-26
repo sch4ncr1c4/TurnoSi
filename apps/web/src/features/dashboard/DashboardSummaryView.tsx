@@ -67,6 +67,7 @@ export function DashboardSummaryView({
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const [isOpeningClosingPdf, setIsOpeningClosingPdf] = useState(false);
+  const [closingDate, setClosingDate] = useState(localDateInputValue());
   const [expense, setExpense] = useState({
     amount: "",
     category: "General",
@@ -119,18 +120,17 @@ export function DashboardSummaryView({
     }
   });
   const data = summaryQuery.data;
-  const todayDate = localDateInputValue();
 
   async function openDailyClosingPdf() {
     setIsOpeningClosingPdf(true);
     try {
-      const blob = await getDailyClosingPdf(todayDate);
+      const blob = await getDailyClosingPdf(closingDate);
       const url = URL.createObjectURL(blob);
       const opened = window.open(url, "_blank", "noopener,noreferrer");
       if (!opened) {
         const link = document.createElement("a");
         link.href = url;
-        link.download = `cierre-caja-${todayDate}.pdf`;
+        link.download = `cierre-caja-${closingDate}.pdf`;
         link.click();
       }
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
@@ -318,14 +318,25 @@ export function DashboardSummaryView({
               />
             ))}
           </div>
-          <button
-            type="button"
-            disabled={isOpeningClosingPdf}
-            onClick={openDailyClosingPdf}
-            className="mt-3 flex h-10 w-full items-center justify-center rounded-lg border border-[var(--color-border-strong)] bg-white text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[rgba(32,24,54,0.035)] disabled:cursor-wait disabled:opacity-60"
-          >
-            {isOpeningClosingPdf ? "Generando PDF..." : "Abrir cierre de caja diario"}
-          </button>
+          <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[rgba(32,24,54,0.02)] p-2.5">
+            <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+              Fecha del cierre
+              <input
+                type="date"
+                value={closingDate}
+                onChange={(event) => setClosingDate(event.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-sm font-normal text-[var(--color-ink)]"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={isOpeningClosingPdf}
+              onClick={openDailyClosingPdf}
+              className="mt-2 flex h-10 w-full items-center justify-center rounded-lg bg-[var(--color-ink)] text-xs font-semibold text-[var(--color-button-text)] transition hover:opacity-95 disabled:cursor-wait disabled:opacity-60"
+            >
+              {isOpeningClosingPdf ? "Generando PDF..." : "Abrir cierre de caja"}
+            </button>
+          </div>
           <ExpenseForm
             expense={expense}
             isSaving={expenseMutation.isPending}
