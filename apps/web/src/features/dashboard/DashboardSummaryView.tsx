@@ -426,20 +426,22 @@ function SummarySectionTabs({
   ];
 
   return (
-    <nav className="inline-flex rounded-xl border border-[var(--color-border)] bg-white p-1 shadow-[0_10px_28px_rgba(32,24,54,0.035)]">
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          type="button"
-          onClick={() => onChange(tab.value)}
-          className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
-            active === tab.value
-              ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
-              : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
-          }`}
-        >
-          {tab.label}
-        </button>
+    <nav className="inline-flex h-11 overflow-hidden rounded-lg border border-[var(--color-border)] bg-white p-1 shadow-[0_8px_22px_rgba(32,24,54,0.03)]">
+      {tabs.map((tab, index) => (
+        <div key={tab.value} className="flex items-center">
+          {index > 0 && <span className="mx-1 h-5 w-px bg-[var(--color-border)]" />}
+          <button
+            type="button"
+            onClick={() => onChange(tab.value)}
+            className={`h-9 rounded-md px-4 text-sm font-semibold transition ${
+              active === tab.value
+                ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
+                : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        </div>
       ))}
     </nav>
   );
