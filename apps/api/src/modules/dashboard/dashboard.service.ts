@@ -16,7 +16,25 @@ type MetricsRow = {
   canceledCount: bigint;
   noShowCount: bigint;
   revenueAppointmentCount: bigint;
+  completedIncomeCents: bigint;
+  depositIncomeCents: bigint;
+  pendingCollectionCents: bigint;
   incomeCents: bigint;
+};
+
+type MetricValues = {
+  appointmentCount: number;
+  completedCount: number;
+  confirmedCount: number;
+  depositedCount: number;
+  pendingCount: number;
+  canceledCount: number;
+  noShowCount: number;
+  revenueAppointmentCount: number;
+  completedIncomeCents: number;
+  depositIncomeCents: number;
+  pendingCollectionCents: number;
+  incomeCents: number;
 };
 
 type DailyClosingSale = {
@@ -54,6 +72,7 @@ function shiftDate(date: string, days: number) {
 function localTime(date: Date, timezone: string) {
   return new Intl.DateTimeFormat("es-AR", {
     hour: "2-digit",
+    hour12: false,
     minute: "2-digit",
     timeZone: timezone
   }).format(date);
@@ -91,6 +110,7 @@ export function dashboardRanges(period: DashboardPeriod, timezone: string, now =
   const currentMonthStart = monthStart(today);
   const currentMonthEnd = nextMonth(today);
   const previousMonthStart = shiftDate(currentMonthStart, -1).slice(0, 7) + "-01";
+  const previousPreviousMonthStart = shiftDate(previousMonthStart, -1).slice(0, 7) + "-01";
   const chartStart = period === "7d"
     ? shiftDate(today, -6)
     : period === "30d"
@@ -99,6 +119,14 @@ export function dashboardRanges(period: DashboardPeriod, timezone: string, now =
         ? previousMonthStart
         : currentMonthStart;
   const chartEnd = period === "previous_month" ? currentMonthStart : shiftDate(today, 1);
+  const dayCount = Math.round(
+    (new Date(`${chartEnd}T12:00:00.000Z`).getTime() - new Date(`${chartStart}T12:00:00.000Z`).getTime()) /
+      86_400_000
+  );
+  const previousStart = period === "previous_month"
+    ? previousPreviousMonthStart
+    : shiftDate(chartStart, -dayCount);
+  const previousEnd = chartStart;
   return {
     today: {
       from: zonedTimeToUtc(today, 0, timezone),
@@ -111,6 +139,14 @@ export function dashboardRanges(period: DashboardPeriod, timezone: string, now =
     previousMonth: {
       from: zonedTimeToUtc(previousMonthStart, 0, timezone),
       to: zonedTimeToUtc(currentMonthStart, 0, timezone)
+    },
+    selected: {
+      from: zonedTimeToUtc(chartStart, 0, timezone),
+      to: zonedTimeToUtc(chartEnd, 0, timezone)
+    },
+    selectedPrevious: {
+      from: zonedTimeToUtc(previousStart, 0, timezone),
+      to: zonedTimeToUtc(previousEnd, 0, timezone)
     },
     chart: {
       from: zonedTimeToUtc(chartStart, 0, timezone),
@@ -131,34 +167,32 @@ const recognizedIncomeSql = Prisma.sql`
 
 async function metricsForRanges(
   organizationId: string,
-  ranges: { currentMonth: { from: Date; to: Date }; previousMonth: { from: Date; to: Date }; today: { from: Date; to: Date } }
+  ranges: { selected: { from: Date; to: Date }; selectedPrevious: { from: Date; to: Date }; today: { from: Date; to: Date } }
 ) {
   const rows = await prisma.$queryRaw<Array<MetricsRow & { label: string }>>(Prisma.sql`
     WITH ranges(label, "from", "to") AS (VALUES
-      ('current', ${ranges.currentMonth.from}::timestamp, ${ranges.currentMonth.to}::timestamp),
-      ('previous', ${ranges.previousMonth.from}::timestamp, ${ranges.previousMonth.to}::timestamp),
+      ('current', ${ranges.selected.from}::timestamp, ${ranges.selected.to}::timestamp),
+      ('previous', ${ranges.selectedPrevious.from}::timestamp, ${ranges.selectedPrevious.to}::timestamp),
       ('today', ${ranges.today.from}::timestamp, ${ranges.today.to}::timestamp)
     )
     SELECT
       r.label,
       COUNT(*) FILTER (WHERE a."status" NOT IN ('canceled', 'no_show')) AS "appointmentCount",
       COUNT(*) FILTER (WHERE a."status" IN ('paid', 'completed')) AS "completedCount",
-      COUNT(*) FILTER (
-        WHERE a."status" = 'confirmed'
-          AND (
-            a."confirmedByBusinessAt" IS NOT NULL
-            OR dp."status" IS DISTINCT FROM 'approved'
-          )
-      ) AS "confirmedCount",
-      COUNT(*) FILTER (
-        WHERE a."status" = 'confirmed'
-          AND dp."status" = 'approved'
-          AND a."confirmedByBusinessAt" IS NULL
-      ) AS "depositedCount",
+      COUNT(*) FILTER (WHERE a."status" = 'confirmed') AS "confirmedCount",
+      COUNT(*) FILTER (WHERE dp."status" = 'approved') AS "depositedCount",
       COUNT(*) FILTER (WHERE a."status" = 'pending') AS "pendingCount",
       COUNT(*) FILTER (WHERE a."status" = 'canceled') AS "canceledCount",
       COUNT(*) FILTER (WHERE a."status" = 'no_show') AS "noShowCount",
       COUNT(*) FILTER (WHERE a."status" IN ('paid', 'completed') OR dp."status" = 'approved') AS "revenueAppointmentCount",
+      COALESCE(SUM(CASE WHEN a."status" IN ('paid', 'completed') THEN COALESCE(s."priceCents", 0) ELSE 0 END), 0)::bigint AS "completedIncomeCents",
+      COALESCE(SUM(CASE WHEN dp."status" = 'approved' THEN dp."amountCents" ELSE 0 END), 0)::bigint AS "depositIncomeCents",
+      COALESCE(SUM(
+        CASE
+          WHEN a."status" IN ('pending', 'confirmed') THEN GREATEST(COALESCE(s."priceCents", 0) - CASE WHEN dp."status" = 'approved' THEN dp."amountCents" ELSE 0 END, 0)
+          ELSE 0
+        END
+      ), 0)::bigint AS "pendingCollectionCents",
       COALESCE(SUM(${recognizedIncomeSql}), 0)::bigint AS "incomeCents"
     FROM ranges r
     LEFT JOIN "Appointment" a ON a."organizationId" = ${organizationId}
@@ -176,6 +210,9 @@ async function metricsForRanges(
     canceledCount: Number(row?.canceledCount ?? 0),
     noShowCount: Number(row?.noShowCount ?? 0),
     revenueAppointmentCount: Number(row?.revenueAppointmentCount ?? 0),
+    completedIncomeCents: Number(row?.completedIncomeCents ?? 0),
+    depositIncomeCents: Number(row?.depositIncomeCents ?? 0),
+    pendingCollectionCents: Number(row?.pendingCollectionCents ?? 0),
     incomeCents: Number(row?.incomeCents ?? 0)
   });
   return {
@@ -190,31 +227,82 @@ function percentageChange(current: number, previous: number) {
   return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
+function percent(part: number, total: number) {
+  return total ? Math.round((part / total) * 1000) / 10 : 0;
+}
+
+function appointmentStatusLabel(status: string) {
+  if (status === "pending") return "Pendiente";
+  if (status === "confirmed") return "Confirmado";
+  if (status === "paid") return "Completado";
+  if (status === "completed") return "Completado";
+  if (status === "canceled") return "Cancelado";
+  if (status === "no_show") return "No asistió";
+  return "Pendiente";
+}
+
+function paymentMethodLabel(method?: string | null) {
+  if (method === "cash") return "Efectivo";
+  if (method === "bank_transfer") return "Transferencia";
+  if (method === "mercadopago") return "Mercado Pago";
+  if (method === "other") return "Otro";
+  return "Sin método";
+}
+
+function paymentStatusLabel(
+  status: string,
+  depositPayment?: { amountCents: number; method: string | null; status: string } | null
+) {
+  if (status === "paid" || status === "completed") return "Pagado";
+  if (depositPayment?.status === "approved") return "Seña pagada";
+  if (depositPayment?.status === "pending") return "Seña pendiente";
+  if (depositPayment?.status === "rejected") return "Seña rechazada";
+  if (depositPayment?.status === "cancelled") return "Seña vencida";
+  return "Sin pago";
+}
+
 export function deriveDashboardMetrics(
-  current: { appointmentCount: number; completedCount: number; confirmedCount: number; depositedCount: number; pendingCount: number; canceledCount: number; noShowCount: number; revenueAppointmentCount: number; incomeCents: number },
-  previous: { completedCount: number; incomeCents: number },
+  current: MetricValues,
+  previous: MetricValues,
   expenseCents: number,
   previousExpenseCents: number
 ) {
   const totalScheduled = current.appointmentCount + current.canceledCount + current.noShowCount;
+  const previousScheduled = previous.appointmentCount + previous.canceledCount + previous.noShowCount;
+  const averageTicketCents = current.completedCount ? Math.round(current.completedIncomeCents / current.completedCount) : 0;
+  const previousAverageTicketCents = previous.completedCount ? Math.round(previous.completedIncomeCents / previous.completedCount) : 0;
+  const occupancyPercent = percent(current.completedCount + current.confirmedCount, totalScheduled);
+  const previousOccupancyPercent = percent(previous.completedCount + previous.confirmedCount, previousScheduled);
+  const cancellationRatePercent = percent(current.canceledCount, totalScheduled);
+  const previousCancellationRatePercent = percent(previous.canceledCount, previousScheduled);
+  const noShowRatePercent = percent(current.noShowCount, totalScheduled);
+  const previousNoShowRatePercent = percent(previous.noShowCount, previousScheduled);
   return {
     incomeCents: current.incomeCents,
     expenseCents,
     netIncomeCents: current.incomeCents - expenseCents,
+    totalAppointments: totalScheduled,
     completedAppointments: current.completedCount,
-    averageTicketCents: current.revenueAppointmentCount ? Math.round(current.incomeCents / current.revenueAppointmentCount) : 0,
-    occupancyPercent: totalScheduled
-      ? Math.round(((current.completedCount + current.confirmedCount + current.depositedCount) / totalScheduled) * 1000) / 10
-      : 0,
+    averageTicketCents,
+    occupancyPercent,
+    cancellationRatePercent,
+    noShowRatePercent,
     confirmedAppointments: current.confirmedCount,
     depositedAppointments: current.depositedCount,
+    depositIncomeCents: current.depositIncomeCents,
+    pendingCollectionCents: current.pendingCollectionCents,
     pendingAppointments: current.pendingCount,
     canceledAppointments: current.canceledCount,
     noShowAppointments: current.noShowCount,
     changes: {
       incomePercent: percentageChange(current.incomeCents, previous.incomeCents),
       expensePercent: percentageChange(expenseCents, previousExpenseCents),
-      completedPercent: percentageChange(current.completedCount, previous.completedCount)
+      netIncomePercent: percentageChange(current.incomeCents - expenseCents, previous.incomeCents - previousExpenseCents),
+      completedPercent: percentageChange(current.completedCount, previous.completedCount),
+      averageTicketPercent: percentageChange(averageTicketCents, previousAverageTicketCents),
+      occupancyPercent: percentageChange(occupancyPercent, previousOccupancyPercent),
+      cancellationRatePercent: percentageChange(cancellationRatePercent, previousCancellationRatePercent),
+      noShowRatePercent: percentageChange(noShowRatePercent, previousNoShowRatePercent)
     }
   };
 }
@@ -225,13 +313,13 @@ export async function getDashboardSummary(
   period: DashboardPeriod
 ) {
   const ranges = dashboardRanges(period, timezone);
-  const [periodMetrics, expenseTotals, chart, services, team, memberCount] =
+  const [periodMetrics, expenseTotals, chart, services, team, memberCount, upcomingAppointments, todayRevenueAppointments, todayExpenses] =
     await Promise.all([
       metricsForRanges(organizationId, ranges),
       prisma.$queryRaw<Array<{ currentCents: bigint; previousCents: bigint }>>(Prisma.sql`
         SELECT
-          COALESCE(SUM(e."amountCents") FILTER (WHERE e."occurredOn" >= ${ranges.currentMonth.from} AND e."occurredOn" < ${ranges.currentMonth.to}), 0)::bigint AS "currentCents",
-          COALESCE(SUM(e."amountCents") FILTER (WHERE e."occurredOn" >= ${ranges.previousMonth.from} AND e."occurredOn" < ${ranges.previousMonth.to}), 0)::bigint AS "previousCents"
+          COALESCE(SUM(e."amountCents") FILTER (WHERE e."occurredOn" >= ${ranges.selected.from} AND e."occurredOn" < ${ranges.selected.to}), 0)::bigint AS "currentCents",
+          COALESCE(SUM(e."amountCents") FILTER (WHERE e."occurredOn" >= ${ranges.selectedPrevious.from} AND e."occurredOn" < ${ranges.selectedPrevious.to}), 0)::bigint AS "previousCents"
         FROM "Expense" e WHERE e."organizationId" = ${organizationId}
       `),
       prisma.$queryRaw<Array<{ date: string; incomeCents: bigint; expenseCents: bigint }>>(Prisma.sql`
@@ -270,7 +358,7 @@ export async function getDashboardSummary(
         FROM "Appointment" a JOIN "Service" s ON s."id" = a."serviceId"
         LEFT JOIN "AppointmentDepositPayment" dp ON dp."appointmentId" = a."id"
         WHERE a."organizationId" = ${organizationId} AND a."deletedAt" IS NULL
-          AND a."startsAt" >= ${ranges.currentMonth.from} AND a."startsAt" < ${ranges.currentMonth.to}
+          AND a."startsAt" >= ${ranges.selected.from} AND a."startsAt" < ${ranges.selected.to}
         GROUP BY s."id", s."name" ORDER BY "incomeCents" DESC LIMIT 5
       `),
       prisma.$queryRaw<Array<{ userId: string; name: string; appointmentCount: bigint; incomeCents: bigint }>>(Prisma.sql`
@@ -281,29 +369,129 @@ export async function getDashboardSummary(
         FROM "Membership" m JOIN "User" u ON u."id" = m."userId"
         LEFT JOIN "Appointment" a ON a."assignedUserId" = u."id"
           AND a."organizationId" = m."organizationId" AND a."deletedAt" IS NULL
-          AND a."startsAt" >= ${ranges.currentMonth.from} AND a."startsAt" < ${ranges.currentMonth.to}
+          AND a."startsAt" >= ${ranges.selected.from} AND a."startsAt" < ${ranges.selected.to}
         LEFT JOIN "Service" s ON s."id" = a."serviceId"
         LEFT JOIN "AppointmentDepositPayment" dp ON dp."appointmentId" = a."id"
         WHERE m."organizationId" = ${organizationId}
         GROUP BY u."id", u."firstName", u."lastName", u."email"
         ORDER BY "incomeCents" DESC LIMIT 8
       `),
-      prisma.membership.count({ where: { organizationId } })
+      prisma.membership.count({ where: { organizationId } }),
+      prisma.appointment.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          startsAt: { gte: new Date(), lt: ranges.today.to }
+        },
+        orderBy: { startsAt: "asc" },
+        take: 6,
+        select: {
+          id: true,
+          startsAt: true,
+          status: true,
+          confirmedByBusinessAt: true,
+          customer: { select: { fullName: true } },
+          depositPayment: { select: { amountCents: true, method: true, status: true } },
+          service: { select: { name: true, priceCents: true } },
+          assignedUser: { select: { email: true, firstName: true, lastName: true } }
+        }
+      }),
+      prisma.appointment.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          startsAt: { gte: ranges.today.from, lt: ranges.today.to },
+          OR: [
+            { status: { in: ["paid", "completed"] } },
+            { depositPayment: { status: "approved" } }
+          ]
+        },
+        orderBy: { startsAt: "asc" },
+        select: {
+          startsAt: true,
+          status: true,
+          depositPayment: { select: { amountCents: true, method: true, status: true } },
+          service: { select: { name: true, priceCents: true } }
+        }
+      }),
+      prisma.expense.findMany({
+        where: { organizationId, occurredOn: { gte: ranges.today.from, lt: ranges.today.to } },
+        orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+        take: 5,
+        select: { amountCents: true, category: true, description: true, occurredOn: true, paymentMethod: true }
+      })
     ]);
 
   const { current, previous, today } = periodMetrics;
   const expenseCents = Number(expenseTotals[0]?.currentCents ?? 0);
   const previousExpenseCents = Number(expenseTotals[0]?.previousCents ?? 0);
+  const todayExpenseCents = todayExpenses.reduce((sum, item) => sum + item.amountCents, 0);
+  const todayNetIncomeCents = today.incomeCents - todayExpenseCents;
+  const paymentMethods = new Map<string, number>();
+  const todayIncomeMovements = todayRevenueAppointments
+    .filter((appointment) => appointment.status === "paid" || appointment.status === "completed" || appointment.depositPayment?.status === "approved")
+    .map((appointment) => {
+      const isPaid = appointment.status === "paid" || appointment.status === "completed";
+      const amountCents = isPaid ? appointment.service.priceCents ?? 0 : appointment.depositPayment?.amountCents ?? 0;
+      const method = isPaid ? "Turno cobrado" : paymentMethodLabel(appointment.depositPayment?.method);
+      paymentMethods.set(method, (paymentMethods.get(method) ?? 0) + amountCents);
+      return {
+        amountCents,
+        concept: isPaid ? appointment.service.name : `Seña · ${appointment.service.name}`,
+        description: isPaid ? appointment.service.name : `Seña · ${appointment.service.name}`,
+        kind: "income" as const,
+        label: method,
+        method,
+        sortAt: appointment.startsAt.toISOString(),
+        time: localTime(appointment.startsAt, timezone)
+      };
+    })
+    .filter((movement) => movement.amountCents > 0);
   return {
     period,
     metrics: deriveDashboardMetrics(current, previous, expenseCents, previousExpenseCents),
     today: {
-      appointments: today.appointmentCount,
+      appointments: today.appointmentCount + today.canceledCount + today.noShowCount,
       estimatedIncomeCents: today.incomeCents,
+      expenseCents: todayExpenseCents,
+      netIncomeCents: todayNetIncomeCents,
       confirmed: today.confirmedCount,
+      completed: today.completedCount,
       deposited: today.depositedCount,
       pending: today.pendingCount,
-      canceled: today.canceledCount
+      canceled: today.canceledCount,
+      noShow: today.noShowCount,
+      paymentMethods: Array.from(paymentMethods, ([method, amountCents]) => ({ amountCents, method })),
+      movements: [
+        ...todayIncomeMovements.slice(0, 5),
+        ...todayExpenses.map((expense) => ({
+          amountCents: expense.amountCents,
+          concept: expense.description,
+          description: expense.description,
+          kind: "expense" as const,
+          label: expense.category,
+          method: paymentMethodLabel(expense.paymentMethod),
+          sortAt: expense.occurredOn.toISOString(),
+          time: localTime(expense.occurredOn, timezone)
+        }))
+      ].sort((a, b) => a.sortAt.localeCompare(b.sortAt)).slice(0, 8),
+      upcoming: upcomingAppointments.map((appointment) => {
+        const assigneeName = appointment.assignedUser
+          ? [appointment.assignedUser.firstName, appointment.assignedUser.lastName].filter(Boolean).join(" ").trim() ||
+            appointment.assignedUser.email
+          : "Sin asignar";
+        return {
+          id: appointment.id,
+          time: localTime(appointment.startsAt, timezone),
+          client: appointment.customer.fullName,
+          service: appointment.service.name,
+          professional: assigneeName,
+          status: appointmentStatusLabel(appointment.status),
+          paymentStatus: paymentStatusLabel(appointment.status, appointment.depositPayment),
+          paymentMethod: paymentMethodLabel(appointment.depositPayment?.method),
+          depositAmountCents: appointment.depositPayment?.amountCents ?? null
+        };
+      })
     },
     chart: chart.map((item) => ({
       date: item.date,
@@ -315,6 +503,7 @@ export async function getDashboardSummary(
       name: item.name,
       appointments: Number(item.appointmentCount),
       incomeCents: Number(item.incomeCents),
+      averageTicketCents: Number(item.appointmentCount) ? Math.round(Number(item.incomeCents) / Number(item.appointmentCount)) : 0,
       incomeSharePercent: current.incomeCents
         ? Math.round((Number(item.incomeCents) / current.incomeCents) * 1000) / 10
         : 0
@@ -324,6 +513,7 @@ export async function getDashboardSummary(
       name: item.name,
       completedAppointments: Number(item.appointmentCount),
       incomeCents: Number(item.incomeCents),
+      averageTicketCents: Number(item.appointmentCount) ? Math.round(Number(item.incomeCents) / Number(item.appointmentCount)) : 0,
       occupancyPercent: current.completedCount
         ? Math.round((Number(item.appointmentCount) / current.completedCount) * 1000) / 10
         : 0
@@ -351,6 +541,7 @@ export async function getDashboardExpenses(
       description: true,
       amountCents: true,
       category: true,
+      paymentMethod: true,
       occurredOn: true,
       createdAt: true
     }

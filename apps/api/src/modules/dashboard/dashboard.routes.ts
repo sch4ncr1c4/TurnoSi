@@ -61,9 +61,10 @@ dashboardRouter.post("/expenses", authenticatedRateLimit, async (request, respon
       description: input.description,
       amountCents: input.amountCents,
       category: input.category,
+      paymentMethod: input.paymentMethod,
       occurredOn: new Date(input.occurredOn)
     },
-    select: { id: true, description: true, amountCents: true, category: true, occurredOn: true }
+    select: { id: true, description: true, amountCents: true, category: true, paymentMethod: true, occurredOn: true }
   });
   await auditLog({
     organizationId: tenant.organizationId,

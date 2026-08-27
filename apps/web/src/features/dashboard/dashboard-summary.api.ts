@@ -3,11 +3,62 @@ import { ApiError, apiRequest, getApiUrl } from "../../lib/api";
 export type DashboardSummaryPeriod = "7d" | "30d" | "current_month" | "previous_month";
 export type DashboardSummary = {
   period: DashboardSummaryPeriod;
-  metrics: { incomeCents: number; expenseCents: number; netIncomeCents: number; completedAppointments: number; averageTicketCents: number; occupancyPercent: number; confirmedAppointments: number; depositedAppointments: number; pendingAppointments: number; canceledAppointments: number; noShowAppointments: number; changes: { incomePercent: number | null; expensePercent: number | null; completedPercent: number | null } };
-  today: { appointments: number; estimatedIncomeCents: number; confirmed: number; deposited: number; pending: number; canceled: number };
+  metrics: {
+    incomeCents: number;
+    expenseCents: number;
+    netIncomeCents: number;
+    totalAppointments: number;
+    completedAppointments: number;
+    averageTicketCents: number;
+    occupancyPercent: number;
+    cancellationRatePercent: number;
+    noShowRatePercent: number;
+    confirmedAppointments: number;
+    depositedAppointments: number;
+    depositIncomeCents: number;
+    pendingCollectionCents: number;
+    pendingAppointments: number;
+    canceledAppointments: number;
+    noShowAppointments: number;
+    changes: {
+      incomePercent: number | null;
+      expensePercent: number | null;
+      netIncomePercent: number | null;
+      completedPercent: number | null;
+      averageTicketPercent: number | null;
+      occupancyPercent: number | null;
+      cancellationRatePercent: number | null;
+      noShowRatePercent: number | null;
+    };
+  };
+  today: {
+    appointments: number;
+    estimatedIncomeCents: number;
+    expenseCents: number;
+    netIncomeCents: number;
+    confirmed: number;
+    completed: number;
+    deposited: number;
+    pending: number;
+    canceled: number;
+    noShow: number;
+    paymentMethods: Array<{ amountCents: number; method: string }>;
+    movements: Array<{ amountCents: number; concept: string; description: string; kind: "income" | "expense"; label: string; method: string; sortAt: string; time: string }>;
+    upcoming: Array<{
+      id: string;
+      time: string;
+      client: string;
+      service: string;
+      professional: string;
+      status: string;
+      paymentStatus: string;
+      paymentMethod: string;
+      depositAmountCents: number | null;
+    }>;
+  };
   chart: Array<{ date: string; incomeCents: number; expenseCents: number }>;
-  services: Array<{ id: string; name: string; appointments: number; incomeCents: number; incomeSharePercent: number }>;
-  team: Array<{ id: string; name: string; completedAppointments: number; incomeCents: number; occupancyPercent: number }>;
+  services: Array<{ id: string; name: string; appointments: number; incomeCents: number; averageTicketCents: number; incomeSharePercent: number }>;
+  team: Array<{ id: string; name: string; completedAppointments: number; incomeCents: number; averageTicketCents: number; occupancyPercent: number }>;
 };
 
 export type DashboardExpense = {
@@ -15,6 +66,7 @@ export type DashboardExpense = {
   description: string;
   amountCents: number;
   category: string;
+  paymentMethod: string | null;
   occurredOn: string;
   createdAt: string;
 };
@@ -24,7 +76,7 @@ export async function getDashboardSummary(period: DashboardSummaryPeriod) {
   return response.data;
 }
 
-export function createDashboardExpense(input: { description: string; amountCents: number; category: string; occurredOn: string }) {
+export function createDashboardExpense(input: { description: string; amountCents: number; category: string; paymentMethod: string; occurredOn: string }) {
   return apiRequest("/api/v1/dashboard/expenses", { method: "POST", body: JSON.stringify(input) });
 }
 

@@ -141,7 +141,7 @@ export function ManualAppointmentModal({
       <section className="modal-panel-enter modal-scroll-panel w-full max-w-4xl overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#ffffff] shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
               Turno manual
             </p>
             <h2 className="mt-1 text-xl font-semibold">Cargar un turno</h2>
@@ -165,7 +165,7 @@ export function ManualAppointmentModal({
                       setServiceId(event.target.value);
                       resetTime();
                     }}
-                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)]"
+                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-ink)]"
                   >
                     <option value="">Elegir servicio</option>
                     {data?.services.map((service) => (
@@ -185,7 +185,7 @@ export function ManualAppointmentModal({
                         setAssigneeId("");
                         resetTime();
                       }}
-                      className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)]"
+                      className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-ink)]"
                     >
                       {data.branches.map((branch) => (
                         <option key={branch.id} value={branch.id}>
@@ -206,7 +206,7 @@ export function ManualAppointmentModal({
                         setAssigneeId(event.target.value);
                         resetTime();
                       }}
-                      className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)]"
+                      className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-ink)]"
                     >
                       <option value="">Elegir profesional</option>
                       {branchTeam.map((member) => (
@@ -240,7 +240,7 @@ export function ManualAppointmentModal({
                         className={`rounded-lg border px-3 py-2 text-left text-sm ${
                           effectiveSelectedDay === day.date
                             ? "border-[var(--color-ink)] bg-[rgba(32,24,54,0.06)]"
-                            : "border-[var(--color-border)] bg-white/60 hover:border-[var(--color-accent)]"
+                            : "border-[var(--color-border)] bg-white/60 hover:border-[var(--color-ink)]"
                         }`}
                       >
                         <span className="block font-semibold capitalize">{dayLabel(day.date)}</span>
@@ -259,7 +259,7 @@ export function ManualAppointmentModal({
                         className={`rounded-md border px-3 py-2 font-mono text-sm font-semibold ${
                           startsAt === slot.startsAt
                             ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-button-text)]"
-                            : "border-[var(--color-border)] bg-white/65 hover:border-[var(--color-accent)]"
+                            : "border-[var(--color-border)] bg-white/65 hover:border-[var(--color-ink)]"
                         }`}
                       >
                         {slot.time}
@@ -283,7 +283,7 @@ export function ManualAppointmentModal({
                     value={customerName}
                     onChange={(event) => setCustomerName(event.target.value)}
                     placeholder="Nombre y apellido"
-                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)]"
+                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-ink)]"
                   />
                 </label>
                 <label className="grid gap-1.5 text-sm">
@@ -292,7 +292,7 @@ export function ManualAppointmentModal({
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
                     placeholder="Ej: 1123456789"
-                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)]"
+                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-ink)]"
                   />
                 </label>
                 <label className="grid gap-1.5 text-sm sm:col-span-2">
@@ -304,7 +304,7 @@ export function ManualAppointmentModal({
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="cliente@email.com"
-                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-accent)]"
+                    className="h-10 rounded-md border border-[var(--color-border-strong)] bg-white/80 px-3 outline-none focus:border-[var(--color-ink)]"
                   />
                 </label>
               </div>
@@ -312,7 +312,7 @@ export function ManualAppointmentModal({
           </div>
 
           <aside className="h-fit rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 lg:sticky lg:top-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
               Resumen
             </p>
             <div className="mt-4 space-y-3 text-sm">
@@ -343,7 +343,7 @@ export function ManualAppointmentModal({
                       type="radio"
                       checked={depositPaid}
                       onChange={() => setDepositPaid(true)}
-                      className="cursor-pointer accent-[var(--color-accent)]"
+                      className="cursor-pointer accent-[var(--color-ink)]"
                     />
                     Abonó seña
                   </label>
@@ -352,7 +352,7 @@ export function ManualAppointmentModal({
                       type="radio"
                       checked={!depositPaid}
                       onChange={() => setDepositPaid(false)}
-                      className="cursor-pointer accent-[var(--color-accent)]"
+                      className="cursor-pointer accent-[var(--color-ink)]"
                     />
                     No abonó todavía
                   </label>

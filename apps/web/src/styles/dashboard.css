@@ -35,7 +35,7 @@ samp,
   width: auto;
   height: auto;
   opacity: 1;
-  border: 1px solid rgba(255, 255, 255, 0.045);
+  border: 0;
   border-radius: 18px;
   background: none;
   transform: none;
@@ -44,8 +44,13 @@ samp,
 
 .dashboard-sidebar-brand {
   position: relative;
-  padding: 0.25rem 0.5rem 1.15rem;
+  padding: 0.1rem 0.5rem 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-sidebar-brand img {
+  height: 3.75rem !important;
+  width: auto;
 }
 
 .dashboard-mobile-header {
@@ -432,7 +437,7 @@ samp,
   }
 
   .dashboard-sidebar-brand img {
-    height: 4.4rem !important;
+    height: 3.35rem !important;
   }
 
   .dashboard-sidebar-section-label {
@@ -494,7 +499,7 @@ samp,
   }
 
   .dashboard-sidebar-brand img {
-    height: 3.8rem !important;
+    height: 3rem !important;
   }
 
   .dashboard-sidebar-nav {
@@ -550,11 +555,10 @@ samp,
 
   .dashboard-sidebar-brand {
     padding: 1.5rem 0.25rem 1rem;
-    border-bottom: 0;
   }
 
   .dashboard-sidebar-brand img {
-    height: 3rem !important;
+    height: 2.75rem !important;
   }
 
   .dashboard-sidebar-nav {
@@ -597,7 +601,7 @@ samp,
   }
 
   .dashboard-sidebar-brand img {
-    height: 2.7rem !important;
+    height: 2.45rem !important;
   }
 
   .dashboard-sidebar-nav button {
@@ -621,7 +625,7 @@ samp,
 
 @media (max-width: 767px) and (max-height: 600px) {
   .dashboard-sidebar-brand img {
-    height: 2.35rem !important;
+    height: 2.2rem !important;
   }
 
   .dashboard-sidebar-nav {

@@ -26,6 +26,7 @@ export const createExpenseSchema = z.object({
   description: z.string().trim().min(2).max(160),
   amountCents: z.number().int().positive().max(1_000_000_000),
   category: z.string().trim().min(2).max(80),
+  paymentMethod: z.enum(["cash", "bank_transfer", "mercadopago", "other"]).optional(),
   occurredOn: z.string().datetime()
 }).strict();
 

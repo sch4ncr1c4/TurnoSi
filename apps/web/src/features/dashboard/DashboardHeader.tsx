@@ -33,11 +33,11 @@ export function DashboardHeader({
       : "Operación diaria, cierre de caja y analítica del negocio.";
 
   return (
-    <header className="bg-[var(--color-dashboard-page)] px-5 py-3 sm:px-7">
+    <header className="bg-[var(--color-dashboard-page)] px-4 py-2 sm:px-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">{pageTitle}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-muted-strong)]">
+          <h1 className="mt-1 text-xl font-extrabold sm:text-2xl">{pageTitle}</h1>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--color-muted-strong)]">
             {pageDescription}
           </p>
         </div>

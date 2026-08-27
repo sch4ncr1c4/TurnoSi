@@ -106,6 +106,7 @@ model Expense {
   description    String
   amountCents    Int
   category       String
+  paymentMethod  String?
   occurredOn     DateTime
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())

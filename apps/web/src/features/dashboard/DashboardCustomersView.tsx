@@ -91,7 +91,7 @@ export function DashboardCustomersView() {
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-base font-semibold">Clientes</h2>
-              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+              <p className="mt-0.5 text-xs text-[var(--color-muted-strong)]">
                 Seguimiento de contacto, ausencias y bloqueos de reserva.
               </p>
             </div>
@@ -101,8 +101,8 @@ export function DashboardCustomersView() {
           </div>
         </CardHeader>
         <CardBody className="p-0">
-          <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-white p-3 lg:flex-row lg:items-end lg:justify-start">
-            <label className="w-full min-w-0 lg:max-w-xl xl:max-w-2xl">
+          <div className="grid gap-3 border-b border-[var(--color-border)] bg-white p-3 lg:grid-cols-[minmax(280px,560px)_minmax(240px,300px)] lg:items-end">
+            <label className="w-full min-w-0">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 Buscar
               </span>
@@ -113,14 +113,14 @@ export function DashboardCustomersView() {
                   setPage(1);
                 }}
                 placeholder="Escribí al menos 2 letras, email o teléfono"
-                className="h-10 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
+                className="h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
               />
             </label>
-            <div className="w-full lg:w-auto">
+            <div className="w-full">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 Estado
               </span>
-              <div className="grid grid-cols-3 rounded-md border border-[var(--color-border)] bg-white/55 p-1 text-sm lg:min-w-[300px]">
+              <div className="grid grid-cols-3 rounded-md border border-[var(--color-border)] bg-[#f6f7f9] p-1 text-xs">
                 {([
                   ["all", "Todos"],
                   ["active", "Habilitados"],
@@ -133,7 +133,7 @@ export function DashboardCustomersView() {
                       setStatus(value);
                       setPage(1);
                     }}
-                    className={`rounded px-2.5 py-1.5 font-medium transition-colors ${
+                    className={`rounded px-2 py-1.5 font-medium transition-colors ${
                       status === value
                         ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
                         : "text-[var(--color-muted-strong)] hover:bg-white/70"
@@ -146,14 +146,14 @@ export function DashboardCustomersView() {
             </div>
           </div>
 
-          <div className="grid gap-2.5 bg-[rgba(32,24,54,0.025)] p-3 sm:p-4">
+          <div className="grid gap-2 bg-[#f6f7f9] p-3 sm:p-4">
             {customers.map((customer) => (
               <article
                 key={customer.id}
-                className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_8px_22px_rgba(32,24,54,0.035)] xl:grid-cols-[minmax(260px,1.1fr)_minmax(0,0.95fr)_auto] xl:items-center"
+                className="grid gap-3 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 lg:grid-cols-[minmax(220px,0.9fr)_minmax(250px,0.8fr)_auto] lg:items-center"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${
                       customer.blockedAt
                         ? "bg-[#fde8e5] text-[#9f1f16]"
                         : "bg-[var(--color-ink)] text-[var(--color-button-text)]"
@@ -162,19 +162,19 @@ export function DashboardCustomersView() {
                     </span>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-semibold text-[var(--color-ink)]">
+                      <p className="truncate text-sm font-semibold text-[var(--color-ink)]">
                         {customer.fullName}
                       </p>
                       <CustomerStatusBadge blocked={Boolean(customer.blockedAt)} />
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-[var(--color-muted-strong)]">
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--color-muted-strong)]">
                       <span>{customer.phone || "Sin teléfono"}</span>
                       <span>{customer.email || "Sin email"}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-2 border-y border-[var(--color-border)] py-2 sm:grid-cols-2 xl:border-y-0 xl:border-l xl:py-0 xl:pl-4">
+                <div className="grid gap-x-4 gap-y-2 border-y border-[var(--color-border)] py-2 sm:grid-cols-2 lg:border-y-0 lg:border-l lg:py-0 lg:pl-4">
                   <CustomerInfoLine
                     label="Ausencias"
                     value={`${customer.noShowCount}`}
@@ -189,13 +189,13 @@ export function DashboardCustomersView() {
                     </div>
                   </div>
                   {customer.blockedReason && (
-                    <p className="rounded-md border border-[#e7b9b2] bg-[#fff3f1] px-2 py-1 text-xs text-[#8f1b13] sm:col-span-2">
+                    <p className="rounded-md border border-[#e7b9b2] bg-[#fff6f5] px-2 py-1 text-xs text-[#8f1b13] sm:col-span-2">
                       Motivo: {customer.blockedReason}
                     </p>
                   )}
                 </div>
 
-                <div className="flex xl:justify-self-end">
+                <div className="flex lg:justify-self-end">
                   {customer.blockedAt ? (
                     <button
                       type="button"
@@ -203,7 +203,7 @@ export function DashboardCustomersView() {
                       title="Desbloquear cliente"
                       aria-label={`Desbloquear a ${customer.fullName}`}
                       onClick={() => void handleUnblock(customer)}
-                      className="group inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-border-strong)] text-[var(--color-ink)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/75 hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="group inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-border-strong)] text-[var(--color-ink)] transition-all duration-200 ease-out hover:bg-white/75 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {unblockingId === customer.id ? (
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-border-strong)] border-t-[var(--color-ink)]" />
@@ -212,7 +212,7 @@ export function DashboardCustomersView() {
                           src={lockOpenIcon}
                           alt=""
                           aria-hidden="true"
-                          className="h-[18px] w-[18px] opacity-80 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
+                          className="h-4 w-4 opacity-80 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
                         />
                       )}
                     </button>
@@ -226,7 +226,7 @@ export function DashboardCustomersView() {
                         setSelected(customer);
                         setReason("");
                       }}
-                      className="group inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e7b9b2] text-[#b42318] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#fff3f1] hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="group inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#e7b9b2] text-[#b42318] transition-all duration-200 ease-out hover:bg-[#fff6f5] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {blockingId === customer.id ? (
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#e7b9b2] border-t-[#b42318]" />
@@ -235,7 +235,7 @@ export function DashboardCustomersView() {
                           src={lockIcon}
                           alt=""
                           aria-hidden="true"
-                          className="h-[18px] w-[18px] opacity-85 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
+                          className="h-4 w-4 opacity-85 transition duration-200 group-hover:-rotate-6 group-hover:scale-110"
                         />
                       )}
                     </button>
@@ -244,28 +244,28 @@ export function DashboardCustomersView() {
               </article>
             ))}
             {!canSearchCustomers && (
-              <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/70 p-6 text-center">
+              <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/70 p-4 text-center">
                 <p className="text-sm font-semibold text-[var(--color-ink)]">
                   Buscá un cliente para empezar
                 </p>
-                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                <p className="mt-1 text-xs text-[var(--color-muted)]">
                   Podés buscar por nombre, email o número de teléfono.
                 </p>
               </div>
             )}
             {canSearchCustomers && !customersQuery.isPending && customers.length === 0 && (
-              <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/50 p-6 text-center">
+              <div className="rounded-lg border border-dashed border-[var(--color-border-strong)] bg-white/50 p-4 text-center">
                 <p className="text-sm font-semibold text-[var(--color-ink)]">
                   No encontramos clientes
                 </p>
-                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                <p className="mt-1 text-xs text-[var(--color-muted)]">
                   Probá con otra búsqueda o cambiá el filtro activo.
                 </p>
               </div>
             )}
           </div>
           {canSearchCustomers && (customersQuery.data?.pagination.totalPages ?? 0) > 1 && (
-            <div className="flex items-center justify-between border-t border-[var(--color-border)] p-4 text-sm">
+            <div className="flex items-center justify-between border-t border-[var(--color-border)] p-3 text-sm">
               <Button
                 type="button"
                 disabled={page <= 1}

@@ -1,4 +1,5 @@
-import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { StatusBadge, TimeInput } from "../../components/ui";
 import trashIcon from "../../components/assets/icons/actions/trash.svg";
@@ -37,12 +38,26 @@ export function AvailabilityWeeklySchedule({
   onUpdateBreakTime,
   onUpdateSlotTime
 }: AvailabilityWeeklyScheduleProps) {
+  const [menuPosition, setMenuPosition] = useState<{ left: number; top: number } | null>(null);
+  const [activeDayData, setActiveDayData] = useState<{ enabled: boolean; hasBreak: boolean; dayIndex: number } | null>(null);
+
+  const toggleDayMenu = (dayIndex: number, button: HTMLButtonElement, enabled: boolean, hasBreak: boolean) => {
+    const rect = button.getBoundingClientRect();
+    const menuWidth = 176;
+    setMenuPosition({
+      left: Math.max(8, Math.min(window.innerWidth - menuWidth - 8, rect.right - menuWidth)),
+      top: rect.bottom + 6
+    });
+    setActiveDayData({ enabled, hasBreak, dayIndex });
+    onToggleDayMenu(dayIndex);
+  };
+
   useEffect(() => {
     if (activeDayMenu === null) return;
 
     const closeOnOutsidePointer = (event: globalThis.PointerEvent) => {
       const target = event.target;
-      if (target instanceof Element && target.closest("[data-day-actions]")) return;
+      if (target instanceof Element && (target.closest("[data-day-actions]") || target.closest("[data-day-menu]"))) return;
       onCloseDayMenu();
     };
 
@@ -68,21 +83,15 @@ export function AvailabilityWeeklySchedule({
                 <StatusBadge enabled={day.enabled} status={day.status} />
                 <button
                   type="button"
-                  onClick={() => onToggleDayMenu(dayIndex)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-lg text-[var(--color-muted)] hover:bg-white/60"
+                  onClick={(event) => toggleDayMenu(dayIndex, event.currentTarget, day.enabled, Boolean(day.break))}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-transparent text-[var(--color-ink)] transition-colors hover:bg-[#f6f7f9]"
                 >
-                  ⋮
+                  <span className="flex items-center gap-0.5" aria-hidden="true">
+                    <span className="h-1 w-1 rounded-full bg-current" />
+                    <span className="h-1 w-1 rounded-full bg-current" />
+                    <span className="h-1 w-1 rounded-full bg-current" />
+                  </span>
                 </button>
-                {activeDayMenu === dayIndex && (
-                  <DayActionsMenu
-                    enabled={day.enabled}
-                    hasBreak={Boolean(day.break)}
-                    onDuplicateAll={() => onDuplicateAll(dayIndex)}
-                    onDuplicate={() => onDuplicateDay(dayIndex)}
-                    onToggleBreak={() => onToggleBreak(dayIndex)}
-                    onToggleStatus={() => onToggleDayStatus(dayIndex)}
-                  />
-                )}
               </div>
             </div>
 
@@ -131,7 +140,7 @@ export function AvailabilityWeeklySchedule({
         ))}
       </div>
 
-      <div className="stable-scrollbar hidden overflow-x-auto min-[1500px]:block">
+      <div className="stable-scrollbar hidden overflow-x-auto overflow-y-visible min-[1500px]:block">
         <div className="min-w-[820px] px-4 pb-4">
           <div className="grid grid-cols-[130px_minmax(170px,1fr)_150px_88px_34px] min-[1720px]:grid-cols-[130px_minmax(300px,1fr)_150px_88px_34px] px-2 py-3 text-center text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--color-muted-strong)]">
             <span className="text-left">Día</span>
@@ -145,7 +154,7 @@ export function AvailabilityWeeklySchedule({
             {availability.map((day, dayIndex) => (
               <div
                 key={day.day}
-                className="grid grid-cols-[130px_minmax(170px,1fr)_150px_88px_34px] min-[1720px]:grid-cols-[130px_minmax(300px,1fr)_150px_88px_34px] items-center rounded-lg border border-[var(--color-border)] bg-white/58 px-3 py-2.5 shadow-[0_10px_24px_rgba(32,24,54,0.035)]"
+                className="relative grid grid-cols-[130px_minmax(170px,1fr)_150px_88px_34px] min-[1720px]:grid-cols-[130px_minmax(300px,1fr)_150px_88px_34px] items-center rounded-lg border border-[var(--color-border)] bg-white/58 px-3 py-2.5 shadow-[0_10px_24px_rgba(32,24,54,0.035)]"
               >
                 <div className="flex items-center gap-2.5">
                   <span
@@ -208,21 +217,15 @@ export function AvailabilityWeeklySchedule({
                 <div data-day-actions className="relative">
                   <button
                     type="button"
-                    onClick={() => onToggleDayMenu(dayIndex)}
-                    className="flex h-8 w-8 items-center justify-center rounded-md text-lg text-[var(--color-muted)] hover:bg-white/60"
+                    onClick={(event) => toggleDayMenu(dayIndex, event.currentTarget, day.enabled, Boolean(day.break))}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-transparent text-[var(--color-ink)] transition-colors hover:bg-[#f6f7f9]"
                   >
-                    ⋮
+                    <span className="flex items-center gap-0.5" aria-hidden="true">
+                      <span className="h-1 w-1 rounded-full bg-current" />
+                      <span className="h-1 w-1 rounded-full bg-current" />
+                      <span className="h-1 w-1 rounded-full bg-current" />
+                    </span>
                   </button>
-                  {activeDayMenu === dayIndex && (
-                    <DayActionsMenu
-                      enabled={day.enabled}
-                      hasBreak={Boolean(day.break)}
-                      onDuplicateAll={() => onDuplicateAll(dayIndex)}
-                      onDuplicate={() => onDuplicateDay(dayIndex)}
-                      onToggleBreak={() => onToggleBreak(dayIndex)}
-                      onToggleStatus={() => onToggleDayStatus(dayIndex)}
-                    />
-                  )}
                 </div>
               </div>
             ))}
@@ -235,6 +238,21 @@ export function AvailabilityWeeklySchedule({
           Los horarios se aplican semanalmente. Podés agregar excepciones para días específicos en feriados.
         </p>
       </div>
+
+      {activeDayMenu !== null && activeDayData && menuPosition &&
+        createPortal(
+          <div data-day-menu style={{ position: "fixed", left: menuPosition.left, top: menuPosition.top, zIndex: 50 }}>
+            <DayActionsMenu
+              enabled={activeDayData.enabled}
+              hasBreak={activeDayData.hasBreak}
+              onDuplicateAll={() => onDuplicateAll(activeDayData.dayIndex)}
+              onDuplicate={() => onDuplicateDay(activeDayData.dayIndex)}
+              onToggleBreak={() => onToggleBreak(activeDayData.dayIndex)}
+              onToggleStatus={() => onToggleDayStatus(activeDayData.dayIndex)}
+            />
+          </div>,
+          document.body
+        )}
     </>
   );
 }
@@ -255,32 +273,32 @@ function DayActionsMenu({
   onToggleStatus: () => void;
 }) {
   return (
-    <div className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-1.5 text-left shadow-[0_18px_48px_rgba(32,24,54,0.18)]">
+    <div className="w-44 overflow-hidden rounded-md border border-[var(--color-border)] bg-[#ffffff] p-1 text-left shadow-[0_18px_42px_rgba(32,24,54,0.16)]">
       <button
         type="button"
         onClick={onDuplicateAll}
-        className="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold hover:bg-[rgba(253,134,6,0.1)]"
+        className="block w-full rounded px-3 py-2 text-left text-xs font-semibold leading-4 text-[var(--color-ink)] hover:bg-[#f6f7f9]"
       >
         Duplicar a todos
       </button>
       <button
         type="button"
         onClick={onDuplicate}
-        className="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold hover:bg-[rgba(253,134,6,0.1)]"
+        className="block w-full rounded px-3 py-2 text-left text-xs font-semibold leading-4 text-[var(--color-ink)] hover:bg-[#f6f7f9]"
       >
         Elegir días
       </button>
       <button
         type="button"
         onClick={onToggleBreak}
-        className="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold hover:bg-[rgba(253,134,6,0.1)]"
+        className="mt-1 block w-full rounded border-t border-transparent px-3 py-2 text-left text-xs font-semibold leading-4 text-[var(--color-ink)] hover:bg-[#f6f7f9]"
       >
         {hasBreak ? "Quitar descanso" : "Agregar descanso"}
       </button>
       <button
         type="button"
         onClick={onToggleStatus}
-        className="block w-full rounded-md px-3 py-2 text-left text-xs font-semibold hover:bg-[rgba(253,134,6,0.1)]"
+        className="block w-full rounded px-3 py-2 text-left text-xs font-semibold leading-4 text-[var(--color-ink)] hover:bg-[#f6f7f9]"
       >
         {enabled ? "Desactivar día" : "Activar día"}
       </button>

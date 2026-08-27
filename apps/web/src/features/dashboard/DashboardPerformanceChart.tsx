@@ -93,11 +93,10 @@ function ChartTooltip({ active, label, payload }: ChartTooltipProps) {
 export function DashboardPerformanceChart({ data }: { data: ChartPoint[] }) {
   const hasValues = data.some((item) => item.incomeCents > 0 || item.expenseCents > 0);
   const today = data.find((item) => item.date === localTodayKey()) ?? data.at(-1);
-  const chartWidth = Math.max(760, data.length * 42);
 
   if (!hasValues) {
     return (
-      <div className="grid min-h-56 place-items-center text-sm text-[var(--color-muted)]">
+      <div className="grid min-h-44 place-items-center text-sm text-[var(--color-muted)]">
         Todavía no hay datos suficientes para este período.
       </div>
     );
@@ -106,22 +105,22 @@ export function DashboardPerformanceChart({ data }: { data: ChartPoint[] }) {
   return (
     <div className="min-w-0">
       {today && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-md bg-[rgba(32,24,54,0.07)] px-2 py-1 font-semibold text-[var(--color-ink)]">
+        <div className="mb-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <span className="rounded-md bg-[rgba(32,24,54,0.07)] px-2 py-0.5 font-semibold text-[var(--color-ink)]">
             Día activo: {fullDateLabel(today.date)}
           </span>
-          <span className="rounded-md bg-[rgba(253,134,6,0.09)] px-2 py-1 text-[var(--color-muted-strong)]">
+          <span className="rounded-md bg-[rgba(32,24,54,0.06)] px-2 py-0.5 text-[var(--color-muted-strong)]">
             Ingresos {formatMoney(today.incomeCents)}
           </span>
-          <span className="rounded-md bg-[rgba(119,111,135,0.1)] px-2 py-1 text-[var(--color-muted-strong)]">
+          <span className="rounded-md bg-[rgba(119,111,135,0.1)] px-2 py-0.5 text-[var(--color-muted-strong)]">
             Gastos {formatMoney(today.expenseCents)}
           </span>
         </div>
       )}
-      <div className="overflow-x-auto pb-1">
-        <div className="h-60" style={{ minWidth: chartWidth }}>
+      <div className="overflow-x-auto pb-1 sm:overflow-x-visible">
+        <div className="h-48 min-w-[560px] sm:min-w-0">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ bottom: 2, left: 12, right: 18, top: 8 }}>
+            <BarChart data={data} margin={{ bottom: 0, left: 4, right: 10, top: 4 }}>
               <CartesianGrid stroke="rgba(32,24,54,0.08)" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -130,35 +129,35 @@ export function DashboardPerformanceChart({ data }: { data: ChartPoint[] }) {
                 interval={0}
                 minTickGap={0}
                 tickLine={false}
-                tick={{ fill: "var(--color-muted)", fontSize: 10 }}
+                tick={{ fill: "var(--color-muted)", fontSize: 9 }}
               />
               <YAxis
-                width={74}
+                width={60}
                 tickFormatter={formatAxisMoney}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "var(--color-muted)", fontSize: 10 }}
+                tick={{ fill: "var(--color-muted)", fontSize: 9 }}
               />
               <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(32,24,54,0.035)" }} />
               <Legend
                 verticalAlign="top"
                 align="right"
                 iconType="circle"
-                wrapperStyle={{ fontSize: 12, paddingBottom: 8 }}
+                wrapperStyle={{ fontSize: 11, paddingBottom: 4 }}
               />
               <Bar
                 dataKey="incomeCents"
                 name="Ingresos"
                 fill="var(--color-accent)"
-                radius={[5, 5, 0, 0]}
-                maxBarSize={26}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={20}
               />
               <Bar
                 dataKey="expenseCents"
                 name="Gastos"
                 fill="#776f87"
-                radius={[5, 5, 0, 0]}
-                maxBarSize={26}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={20}
               />
             </BarChart>
           </ResponsiveContainer>

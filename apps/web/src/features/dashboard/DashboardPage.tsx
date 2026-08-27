@@ -792,8 +792,12 @@ export function DashboardPage({ brand }: DashboardPageProps) {
           />
 
           <div
-            className={`min-w-0 max-w-full space-y-4 overflow-x-clip pb-10 pt-4 sm:pb-12 ${
-              effectiveActiveView === "settings" ? "px-3 sm:px-5" : "px-5 sm:px-7"
+            className={`min-w-0 max-w-full overflow-x-clip ${
+              effectiveActiveView === "summary"
+                ? "space-y-3 px-4 pb-8 pt-2 sm:px-6 sm:pb-10"
+                : `space-y-4 pb-10 pt-4 sm:pb-12 ${
+                    effectiveActiveView === "settings" ? "px-3 sm:px-5" : "px-5 sm:px-7"
+                  }`
             }`}
           >
             {billingError && (
