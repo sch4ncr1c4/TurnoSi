@@ -849,6 +849,7 @@ function ExpensesList({
   isLoading: boolean;
   onDelete: (expenseId: string) => void;
 }) {
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const total = expenses.reduce((sum, item) => sum + item.amountCents, 0);
   const expensesByDay = expenses.reduce<Array<{ date: string; expenses: DashboardExpense[]; totalCents: number }>>(
     (groups, expense) => {
@@ -864,6 +865,9 @@ function ExpensesList({
     },
     []
   );
+  const safeDayIndex = Math.min(selectedDayIndex, Math.max(expensesByDay.length - 1, 0));
+  const selectedGroup = expensesByDay[safeDayIndex];
+  const visibleExpenses = selectedGroup?.expenses.slice(0, 3) ?? [];
 
   return (
     <article className="rounded-lg border border-[var(--color-border)] bg-white p-3">
@@ -876,7 +880,7 @@ function ExpensesList({
           {formatMoney(total)}
         </span>
       </div>
-      <div className="mt-2.5 max-h-52 overflow-y-auto pr-1">
+      <div className="mt-2.5 pr-1">
         {isLoading ? (
           <p className="rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-sm text-[var(--color-muted)]">
             Cargando gastos...
@@ -886,41 +890,62 @@ function ExpensesList({
             No hay gastos registrados en este período.
           </p>
         ) : (
-          <div className="space-y-3">
-            {expensesByDay.map((group) => (
-              <section key={group.date}>
-                <div className="mb-1.5 flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-semibold text-[var(--color-muted-strong)]">{group.date}</p>
-                  <span className="font-mono text-[11px] font-semibold text-[var(--color-ink)]">
-                    {formatMoney(group.totalCents)}
-                  </span>
+          <section>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                aria-label="Ver día anterior"
+                disabled={safeDayIndex >= expensesByDay.length - 1}
+                onClick={() => setSelectedDayIndex(Math.min(safeDayIndex + 1, expensesByDay.length - 1))}
+                className="rounded px-1 text-lg leading-none text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.05)] disabled:invisible"
+              >
+                ‹
+              </button>
+              <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+                <p className="text-[11px] font-semibold text-[var(--color-muted-strong)]">{selectedGroup?.date}</p>
+                <span className="font-mono text-[11px] font-semibold text-[var(--color-ink)]">
+                  {formatMoney(selectedGroup?.totalCents ?? 0)}
+                </span>
+              </div>
+              <button
+                type="button"
+                aria-label="Ver día más reciente"
+                disabled={safeDayIndex === 0}
+                onClick={() => setSelectedDayIndex(Math.max(safeDayIndex - 1, 0))}
+                className="rounded px-1 text-lg leading-none text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.05)] disabled:invisible"
+              >
+                ›
+              </button>
+            </div>
+            <div className="divide-y divide-[var(--color-border)] rounded-md bg-[#f6f7f9] px-2">
+              {visibleExpenses.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold">{item.description}</p>
+                    <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
+                      {item.category} · {formatExpenseMethod(item.paymentMethod)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-mono text-xs font-semibold">{formatMoney(item.amountCents)}</p>
+                    <button
+                      type="button"
+                      disabled={deletingId === item.id}
+                      onClick={() => onDelete(item.id)}
+                      className="mt-0.5 text-[11px] font-semibold text-[#b04b43] disabled:opacity-50"
+                    >
+                      {deletingId === item.id ? "Eliminando..." : "Eliminar"}
+                    </button>
+                  </div>
                 </div>
-                <div className="divide-y divide-[var(--color-border)] rounded-md bg-[#f6f7f9] px-2">
-                  {group.expenses.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold">{item.description}</p>
-                        <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
-                          {item.category} · {formatExpenseMethod(item.paymentMethod)}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="font-mono text-xs font-semibold">{formatMoney(item.amountCents)}</p>
-                        <button
-                          type="button"
-                          disabled={deletingId === item.id}
-                          onClick={() => onDelete(item.id)}
-                          className="mt-0.5 text-[11px] font-semibold text-[#b04b43] disabled:opacity-50"
-                        >
-                          {deletingId === item.id ? "Eliminando..." : "Eliminar"}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+              ))}
+            </div>
+            {selectedGroup && selectedGroup.expenses.length > 3 ? (
+              <p className="mt-1 text-center text-[10px] text-[var(--color-muted)]">
+                Mostrando 3 de {selectedGroup.expenses.length} gastos de este día
+              </p>
+            ) : null}
+          </section>
         )}
       </div>
     </article>

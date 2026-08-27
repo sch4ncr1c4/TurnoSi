@@ -114,19 +114,17 @@ export function DashboardSidebar({
       </header>
       <div className="dashboard-mobile-header-spacer md:hidden" aria-hidden="true" />
 
-      {!isMobileMenuOpen && (
-        <button
-          type="button"
-          aria-label="Abrir menú"
-          aria-expanded={false}
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="dashboard-mobile-burger md:hidden"
-        >
-          <span />
-          <span />
-          <span />
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+        aria-expanded={isMobileMenuOpen}
+        onClick={() => setIsMobileMenuOpen((current) => !current)}
+        className={`dashboard-mobile-burger md:hidden ${isMobileMenuOpen ? "dashboard-mobile-burger--open" : ""}`}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
 
       {isMobileMenuOpen && (
         <button
@@ -145,19 +143,6 @@ export function DashboardSidebar({
         <p className="dashboard-sidebar-section-label dashboard-sidebar-section-label--mobile hidden max-md:block">
           Espacio de trabajo
         </p>
-        <button
-          type="button"
-          aria-label="Cerrar menú"
-          aria-expanded={isMobileMenuOpen}
-          onClick={() => setIsMobileMenuOpen(false)}
-          className={`dashboard-mobile-burger dashboard-mobile-burger--drawer hidden max-md:block ${
-            isMobileMenuOpen ? "dashboard-mobile-burger--open" : ""
-          }`}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
       </div>
 
       <p className="dashboard-sidebar-section-label max-md:hidden">Espacio de trabajo</p>
