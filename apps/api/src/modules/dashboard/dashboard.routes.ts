@@ -7,6 +7,7 @@ import { requireEditor } from "../../lib/membership.js";
 import { authenticatedRateLimit } from "../../middlewares/rate-limit.js";
 import { auditLog } from "../audit/audit.service.js";
 import {
+  analyticsReportPdfQuerySchema,
   createExpenseSchema,
   dashboardExpensesQuerySchema,
   dashboardSummaryQuerySchema,
@@ -16,6 +17,7 @@ import {
 import {
   getDashboardExpenses,
   getDashboardSummary,
+  renderAnalyticsReportPdf,
   renderDailyClosingPdf
 } from "./dashboard.service.js";
 
@@ -45,6 +47,22 @@ dashboardRouter.get("/daily-closing.pdf", authenticatedRateLimit, async (request
     .set({
       "Cache-Control": "no-store",
       "Content-Disposition": `inline; filename="cierre-caja-${date}.pdf"`,
+      "Content-Length": String(pdf.length),
+      "Content-Type": "application/pdf"
+    })
+    .send(pdf);
+});
+
+dashboardRouter.get("/analytics-report.pdf", authenticatedRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  requireEditor(tenant.role);
+  const { from, to } = analyticsReportPdfQuerySchema.parse(request.query);
+  const pdf = await renderAnalyticsReportPdf(tenant.organizationId, tenant.timezone, from, to);
+  response
+    .status(200)
+    .set({
+      "Cache-Control": "no-store",
+      "Content-Disposition": `inline; filename="resumen-analitico-${from}-${to}.pdf"`,
       "Content-Length": String(pdf.length),
       "Content-Type": "application/pdf"
     })

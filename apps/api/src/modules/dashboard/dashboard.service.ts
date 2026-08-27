@@ -417,7 +417,6 @@ export async function getDashboardSummary(
       prisma.expense.findMany({
         where: { organizationId, occurredOn: { gte: ranges.today.from, lt: ranges.today.to } },
         orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
-        take: 5,
         select: { amountCents: true, category: true, description: true, occurredOn: true, paymentMethod: true }
       })
     ]);
@@ -463,7 +462,7 @@ export async function getDashboardSummary(
       noShow: today.noShowCount,
       paymentMethods: Array.from(paymentMethods, ([method, amountCents]) => ({ amountCents, method })),
       movements: [
-        ...todayIncomeMovements.slice(0, 5),
+        ...todayIncomeMovements,
         ...todayExpenses.map((expense) => ({
           amountCents: expense.amountCents,
           concept: expense.description,
@@ -474,7 +473,7 @@ export async function getDashboardSummary(
           sortAt: expense.occurredOn.toISOString(),
           time: localTime(expense.occurredOn, timezone)
         }))
-      ].sort((a, b) => a.sortAt.localeCompare(b.sortAt)).slice(0, 8),
+      ].sort((a, b) => a.sortAt.localeCompare(b.sortAt)),
       upcoming: upcomingAppointments.map((appointment) => {
         const assigneeName = appointment.assignedUser
           ? [appointment.assignedUser.firstName, appointment.assignedUser.lastName].filter(Boolean).join(" ").trim() ||
@@ -632,6 +631,112 @@ export async function getDailyClosingData(
   };
 }
 
+async function getAnalyticsReportData(
+  organizationId: string,
+  timezone: string,
+  fromDate: string,
+  toDate: string
+) {
+  const today = localDate(new Date(), timezone);
+  if (toDate > today) {
+    throw new AppError(400, "FUTURE_REPORT_DATE", "Cannot generate a report for a future date");
+  }
+
+  const from = zonedTimeToUtc(fromDate, 0, timezone);
+  const to = zonedTimeToUtc(shiftDate(toDate, 1), 0, timezone);
+  const reportRange = {
+    selected: { from, to },
+    selectedPrevious: { from, to },
+    today: { from, to }
+  };
+  const [organization, periodMetrics, expenseTotals, daily, services, team] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true, slug: true }
+    }),
+    metricsForRanges(organizationId, reportRange),
+    prisma.expense.aggregate({
+      where: { organizationId, occurredOn: { gte: from, lt: to } },
+      _sum: { amountCents: true }
+    }),
+    prisma.$queryRaw<Array<{ date: string; incomeCents: bigint; expenseCents: bigint }>>(Prisma.sql`
+      WITH days AS (
+        SELECT generate_series(${fromDate}::date, ${toDate}::date, interval '1 day')::date AS date
+      ), income AS (
+        SELECT (a."startsAt" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone})::date AS date,
+               SUM(${recognizedIncomeSql})::bigint AS amount
+        FROM "Appointment" a
+        JOIN "Service" s ON s."id" = a."serviceId"
+        LEFT JOIN "AppointmentDepositPayment" dp ON dp."appointmentId" = a."id"
+        WHERE a."organizationId" = ${organizationId} AND a."deletedAt" IS NULL
+          AND a."startsAt" >= ${from} AND a."startsAt" < ${to}
+        GROUP BY 1
+      ), expense AS (
+        SELECT (e."occurredOn" AT TIME ZONE 'UTC' AT TIME ZONE ${timezone})::date AS date,
+               SUM(e."amountCents")::bigint AS amount
+        FROM "Expense" e
+        WHERE e."organizationId" = ${organizationId}
+          AND e."occurredOn" >= ${from} AND e."occurredOn" < ${to}
+        GROUP BY 1
+      )
+      SELECT to_char(d.date, 'YYYY-MM-DD') AS date,
+             COALESCE(i.amount, 0)::bigint AS "incomeCents",
+             COALESCE(e.amount, 0)::bigint AS "expenseCents"
+      FROM days d LEFT JOIN income i USING (date) LEFT JOIN expense e USING (date)
+      ORDER BY d.date
+    `),
+    prisma.$queryRaw<Array<{ name: string; appointmentCount: bigint; incomeCents: bigint }>>(Prisma.sql`
+      SELECT s."name",
+             COUNT(*) FILTER (WHERE a."status" NOT IN ('canceled', 'no_show')) AS "appointmentCount",
+             COALESCE(SUM(${recognizedIncomeSql}), 0)::bigint AS "incomeCents"
+      FROM "Appointment" a JOIN "Service" s ON s."id" = a."serviceId"
+      LEFT JOIN "AppointmentDepositPayment" dp ON dp."appointmentId" = a."id"
+      WHERE a."organizationId" = ${organizationId} AND a."deletedAt" IS NULL
+        AND a."startsAt" >= ${from} AND a."startsAt" < ${to}
+      GROUP BY s."id", s."name" ORDER BY "incomeCents" DESC
+    `),
+    prisma.$queryRaw<Array<{ name: string; appointmentCount: bigint; incomeCents: bigint }>>(Prisma.sql`
+      SELECT COALESCE(NULLIF(TRIM(CONCAT_WS(' ', u."firstName", u."lastName")), ''), u."email") AS name,
+             COUNT(a."id") FILTER (WHERE a."status" IN ('paid', 'completed')) AS "appointmentCount",
+             COALESCE(SUM(${recognizedIncomeSql}), 0)::bigint AS "incomeCents"
+      FROM "Membership" m JOIN "User" u ON u."id" = m."userId"
+      LEFT JOIN "Appointment" a ON a."assignedUserId" = u."id"
+        AND a."organizationId" = m."organizationId" AND a."deletedAt" IS NULL
+        AND a."startsAt" >= ${from} AND a."startsAt" < ${to}
+      LEFT JOIN "Service" s ON s."id" = a."serviceId"
+      LEFT JOIN "AppointmentDepositPayment" dp ON dp."appointmentId" = a."id"
+      WHERE m."organizationId" = ${organizationId}
+      GROUP BY u."id", u."firstName", u."lastName", u."email"
+      ORDER BY "incomeCents" DESC
+    `)
+  ]);
+
+  const expenseCents = expenseTotals._sum.amountCents ?? 0;
+  return {
+    daily: daily.map((item) => ({
+      date: item.date,
+      expenseCents: Number(item.expenseCents),
+      incomeCents: Number(item.incomeCents)
+    })),
+    fromDate,
+    generatedAt: new Date(),
+    metrics: deriveDashboardMetrics(periodMetrics.current, periodMetrics.current, expenseCents, expenseCents),
+    organizationName: organization?.name ?? organization?.slug ?? "Negocio",
+    services: services.map((item) => ({
+      appointments: Number(item.appointmentCount),
+      incomeCents: Number(item.incomeCents),
+      name: item.name
+    })),
+    team: team.map((item) => ({
+      appointments: Number(item.appointmentCount),
+      incomeCents: Number(item.incomeCents),
+      name: item.name
+    })),
+    timezone,
+    toDate
+  };
+}
+
 function writePdfRow(
   doc: PDFKit.PDFDocument,
   columns: Array<{ text: string; width: number; align?: "left" | "right" }>,
@@ -750,6 +855,133 @@ export async function renderDailyClosingPdf(
         { text: money(expense.amountCents), width: 72, align: "right" }
       ], y);
       y += 22;
+    }
+  }
+
+  doc.end();
+  return done;
+}
+
+export async function renderAnalyticsReportPdf(
+  organizationId: string,
+  timezone: string,
+  fromDate: string,
+  toDate: string
+) {
+  const report = await getAnalyticsReportData(organizationId, timezone, fromDate, toDate);
+  const doc = new PDFDocument({
+    bufferPages: true,
+    info: {
+      Author: "TurnoSi",
+      Subject: `Resumen analítico ${fromDate} a ${toDate}`,
+      Title: `Resumen analítico - ${report.organizationName}`
+    },
+    margin: 42,
+    size: "A4"
+  });
+  const chunks: Buffer[] = [];
+  const done = new Promise<Buffer>((resolve, reject) => {
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+  });
+
+  doc.font("Helvetica-Bold").fontSize(18).fillColor("#160f33").text("Resumen analítico");
+  doc.font("Helvetica").fontSize(10).fillColor("#5f596b")
+    .text(report.organizationName)
+    .text(`Período: ${localLongDate(report.fromDate)} al ${localLongDate(report.toDate)}`)
+    .text(`Generado: ${localLongDate(localDate(report.generatedAt, report.timezone))} · ${localTime(report.generatedAt, report.timezone)} hs`);
+
+  let y = doc.y + 18;
+  const summary = [
+    ["Ingresos", money(report.metrics.incomeCents)],
+    ["Gastos", money(report.metrics.expenseCents)],
+    ["Ganancia neta", money(report.metrics.netIncomeCents)],
+    ["Turnos", String(report.metrics.totalAppointments)],
+    ["Ticket promedio", money(report.metrics.averageTicketCents)],
+    ["Ocupación", `${report.metrics.occupancyPercent.toLocaleString("es-AR")}%`]
+  ];
+  for (const [index, [label, value]] of summary.entries()) {
+    const column = index % 3;
+    const row = Math.floor(index / 3);
+    const x = 42 + column * 170;
+    const cardY = y + row * 66;
+    doc.roundedRect(x, cardY, 158, 54, 8).fillAndStroke("#fbfaf8", "#ded9e3");
+    doc.fillColor("#5f596b").font("Helvetica").fontSize(9).text(label, x + 14, cardY + 10);
+    doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(14).text(value, x + 14, cardY + 27);
+  }
+  y += 146;
+
+  doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(13).text("Estado de turnos", 42, y);
+  y += 22;
+  doc.font("Helvetica").fontSize(9).fillColor("#5f596b");
+  writePdfRow(doc, [
+    { text: `Confirmados: ${report.metrics.confirmedAppointments}`, width: 102 },
+    { text: `Completados: ${report.metrics.completedAppointments}`, width: 106 },
+    { text: `Pendientes: ${report.metrics.pendingAppointments}`, width: 98 },
+    { text: `Cancelados: ${report.metrics.canceledAppointments}`, width: 102 },
+    { text: `No asistió: ${report.metrics.noShowAppointments}`, width: 104 }
+  ], y);
+  y += 32;
+
+  doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(13).text("Detalle diario", 42, y);
+  y += 24;
+  doc.fontSize(9).fillColor("#5f596b");
+  writePdfRow(doc, [
+    { text: "Fecha", width: 130 },
+    { text: "Ingresos", width: 125, align: "right" },
+    { text: "Gastos", width: 125, align: "right" },
+    { text: "Ganancia neta", width: 132, align: "right" }
+  ], y);
+  y += 16;
+  doc.moveTo(42, y).lineTo(553, y).strokeColor("#ded9e3").stroke();
+  y += 8;
+  for (const day of report.daily) {
+    y = ensurePdfSpace(doc, y);
+    doc.font("Helvetica").fontSize(9).fillColor("#160f33");
+    writePdfRow(doc, [
+      { text: localLongDate(day.date), width: 130 },
+      { text: money(day.incomeCents), width: 125, align: "right" },
+      { text: money(day.expenseCents), width: 125, align: "right" },
+      { text: money(day.incomeCents - day.expenseCents), width: 132, align: "right" }
+    ], y);
+    y += 20;
+  }
+
+  y = ensurePdfSpace(doc, y + 16, 90);
+  doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(13).text("Rendimiento por servicio", 42, y);
+  y += 24;
+  if (report.services.length === 0) {
+    doc.font("Helvetica").fontSize(9).fillColor("#5f596b").text("Sin servicios registrados en el período.", 42, y);
+    y += 22;
+  } else {
+    for (const service of report.services) {
+      y = ensurePdfSpace(doc, y);
+      doc.font("Helvetica").fontSize(9).fillColor("#160f33");
+      writePdfRow(doc, [
+        { text: service.name, width: 300 },
+        { text: `${service.appointments} turnos`, width: 100, align: "right" },
+        { text: money(service.incomeCents), width: 112, align: "right" }
+      ], y);
+      y += 20;
+    }
+  }
+
+  y = ensurePdfSpace(doc, y + 16, 90);
+  doc.fillColor("#160f33").font("Helvetica-Bold").fontSize(13).text("Rendimiento del equipo", 42, y);
+  y += 24;
+  if (report.team.length === 0) {
+    doc.font("Helvetica").fontSize(9).fillColor("#5f596b").text("Sin integrantes registrados.", 42, y);
+  } else {
+    for (const member of report.team) {
+      y = ensurePdfSpace(doc, y);
+      doc.font("Helvetica").fontSize(9).fillColor("#160f33");
+      writePdfRow(doc, [
+        { text: member.name, width: 300 },
+        { text: `${member.appointments} realizados`, width: 100, align: "right" },
+        { text: money(member.incomeCents), width: 112, align: "right" }
+      ], y);
+      y += 20;
     }
   }
 

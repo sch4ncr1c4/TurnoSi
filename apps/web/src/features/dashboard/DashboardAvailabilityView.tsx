@@ -681,13 +681,13 @@ export function DashboardAvailabilityView({ subscription }: DashboardAvailabilit
         {canManageMultipleBranches && (
           <div className="flex flex-col gap-2 px-1 min-[900px]:flex-row min-[900px]:items-center min-[900px]:justify-between">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-muted)]">
+                <span className="shrink-0 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-[var(--color-muted)]">
                 Sede
               </span>
               <select
                 value={activeBranchId}
                 onChange={(event) => handleBranchChange(event.target.value)}
-                className="h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] outline-none transition-colors hover:border-[var(--color-ink)] focus:border-[var(--color-accent)] sm:w-[260px]"
+                className="h-8 w-full rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-xs font-semibold text-[var(--color-ink)] outline-none transition-colors hover:border-[var(--color-ink)] focus:border-[var(--color-accent)] sm:w-[260px]"
                 aria-label="Seleccionar sede"
               >
                 {(branchesQuery.data ?? []).map((branch) => (
@@ -702,7 +702,7 @@ export function DashboardAvailabilityView({ subscription }: DashboardAvailabilit
               <button
                 type="button"
                 onClick={openCreateBranch}
-                className={`h-9 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] ${buttonMotionClass}`}
+                className={`h-8 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-xs font-semibold text-[var(--color-ink)] ${buttonMotionClass}`}
               >
                 + Nueva sede
               </button>
@@ -710,7 +710,7 @@ export function DashboardAvailabilityView({ subscription }: DashboardAvailabilit
                 type="button"
                 disabled={!selectedBranch}
                 onClick={openEditBranch}
-                className={`h-9 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 ${buttonMotionClass}`}
+                className={`h-8 shrink-0 whitespace-nowrap rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-xs font-semibold text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50 ${buttonMotionClass}`}
               >
                 Editar sede
               </button>
@@ -720,7 +720,7 @@ export function DashboardAvailabilityView({ subscription }: DashboardAvailabilit
 
         <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <div className="border-b border-[var(--color-border)] px-4 pt-4">
-          <div className="stable-scrollbar flex gap-4 overflow-x-auto whitespace-nowrap text-sm font-medium text-[var(--color-muted-strong)] sm:gap-6">
+          <div className="stable-scrollbar flex gap-4 overflow-x-auto whitespace-nowrap text-xs font-medium text-[var(--color-muted-strong)] sm:gap-6">
             {availabilityTabs.map((tab) => (
               <button
                 key={tab.value}
@@ -886,14 +886,14 @@ function AvailabilityActionBar({
     <div className="flex flex-col gap-3 border-b border-[var(--color-border)] bg-[#ffffff] px-4 py-4 min-[900px]:flex-row min-[900px]:items-center min-[900px]:justify-between">
       <div className="min-w-0">
         <h3 className="text-sm font-semibold text-[var(--color-ink)]">{title}</h3>
-        <p className="mt-1 text-sm text-[var(--color-muted-strong)]">{description}</p>
+        <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">{description}</p>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {secondaryActionLabel && onSecondaryAction && (
           <button
             type="button"
             onClick={onSecondaryAction}
-            className="rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-4 py-2 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            className="h-8 rounded-md border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-xs font-semibold text-[var(--color-ink)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
           >
             {secondaryActionLabel}
           </button>
@@ -901,7 +901,7 @@ function AvailabilityActionBar({
         <button
           type="button"
           onClick={onAction}
-          className="rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)] transition-shadow hover:shadow-[0_12px_28px_rgba(253,134,6,0.24)]"
+          className="h-8 rounded-md bg-[var(--color-accent)] px-3 text-xs font-semibold text-white shadow-[0_10px_24px_rgba(253,134,6,0.2)] transition-shadow hover:shadow-[0_12px_28px_rgba(253,134,6,0.24)]"
         >
           {actionLabel}
         </button>

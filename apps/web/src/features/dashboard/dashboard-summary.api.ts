@@ -1,4 +1,4 @@
-import { ApiError, apiRequest, getApiUrl } from "../../lib/api";
+import { ApiError, apiRequest, getApiUrl, refreshAuthSession } from "../../lib/api";
 
 export type DashboardSummaryPeriod = "7d" | "30d" | "current_month" | "previous_month";
 export type DashboardSummary = {
@@ -96,15 +96,28 @@ export async function getDailyClosingPdf(date: string, retry = true) {
   let response = await fetch(getApiUrl(path), { credentials: "include" });
 
   if (response.status === 401 && retry) {
-    const refreshed = await fetch(getApiUrl("/api/v1/auth/refresh"), {
-      credentials: "include",
-      method: "POST"
-    });
-    if (refreshed.ok) response = await fetch(getApiUrl(path), { credentials: "include" });
+    const refreshed = await refreshAuthSession();
+    if (refreshed) response = await fetch(getApiUrl(path), { credentials: "include" });
   }
 
   if (!response.ok) {
     throw new ApiError("No se pudo generar el cierre de caja", "PDF_FAILED", response.status);
+  }
+
+  return response.blob();
+}
+
+export async function getAnalyticsReportPdf(from: string, to: string, retry = true) {
+  const path = `/api/v1/dashboard/analytics-report.pdf?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  let response = await fetch(getApiUrl(path), { credentials: "include" });
+
+  if (response.status === 401 && retry) {
+    const refreshed = await refreshAuthSession();
+    if (refreshed) response = await fetch(getApiUrl(path), { credentials: "include" });
+  }
+
+  if (!response.ok) {
+    throw new ApiError("No se pudo generar el resumen analítico", "PDF_FAILED", response.status);
   }
 
   return response.blob();

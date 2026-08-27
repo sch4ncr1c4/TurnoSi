@@ -107,8 +107,24 @@ export function AccountAccessSettings({
   async function savePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSavingPassword) return;
-    if (!passwords.currentPassword && !passwords.newPassword) {
-      setToast("No hay cambios por guardar.");
+    if (!passwords.currentPassword) {
+      setPasswordMessage("Ingresá tu contraseña actual.");
+      return;
+    }
+    if (!passwords.newPassword) {
+      setPasswordMessage("Ingresá una contraseña nueva.");
+      return;
+    }
+    if (passwords.newPassword.length < 12) {
+      setPasswordMessage("La contraseña nueva debe tener al menos 12 caracteres.");
+      return;
+    }
+    if (passwords.currentPassword.length > 128 || passwords.newPassword.length > 128) {
+      setPasswordMessage("La contraseña no puede superar los 128 caracteres.");
+      return;
+    }
+    if (passwords.currentPassword === passwords.newPassword) {
+      setPasswordMessage("La contraseña nueva debe ser diferente de la actual.");
       return;
     }
     setPasswordMessage("");
@@ -118,11 +134,19 @@ export function AccountAccessSettings({
       queryClient.clear();
       navigate("/login", { replace: true });
     } catch (error) {
-      setPasswordMessage(
-        error instanceof ApiError && error.code === "INVALID_CURRENT_PASSWORD"
-          ? "La contraseña actual no es correcta."
-          : "No pudimos cambiar la contraseña."
-      );
+      if (error instanceof ApiError) {
+        if (error.code === "INVALID_CURRENT_PASSWORD") {
+          setPasswordMessage("La contraseña actual no es correcta.");
+        } else if (error.code === "PASSWORD_UNCHANGED") {
+          setPasswordMessage("La contraseña nueva debe ser diferente de la actual.");
+        } else if (error.code === "VALIDATION_ERROR") {
+          setPasswordMessage("Revisá que ambas contraseñas sean válidas.");
+        } else {
+          setPasswordMessage("No pudimos cambiar la contraseña.");
+        }
+      } else {
+        setPasswordMessage("No pudimos cambiar la contraseña.");
+      }
     } finally {
       setIsSavingPassword(false);
     }
@@ -134,15 +158,15 @@ export function AccountAccessSettings({
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold">Cuenta y acceso</h2>
-            <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+            <h2 className="text-sm font-semibold">Cuenta y acceso</h2>
+            <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
               Estos cambios se guardan independientemente del negocio.
             </p>
           </div>
           {!isProfileEditing && (
             <Button
               type="button"
-              className="group gap-2"
+              className="group h-8 gap-2 px-3 text-xs"
               onClick={() => setIsProfileEditing(true)}
             >
               <img
@@ -156,10 +180,10 @@ export function AccountAccessSettings({
           )}
         </div>
       </CardHeader>
-      <CardBody className="space-y-4 p-4 sm:p-5">
+      <CardBody className="space-y-3 p-3 sm:p-4">
         <form
           onSubmit={saveProfile}
-          className="grid max-w-4xl gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 md:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,240px)_minmax(0,240px)_minmax(0,320px)]"
+          className="grid max-w-4xl gap-3 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 md:grid-cols-2 sm:p-4 xl:grid-cols-[minmax(0,240px)_minmax(0,240px)_minmax(0,320px)]"
         >
           <AccountField
             label="Nombre del propietario"
@@ -191,7 +215,7 @@ export function AccountAccessSettings({
           />
           {isProfileEditing && (
             <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] bg-[#ffffff] px-3 py-3 md:col-span-2 xl:col-span-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-[var(--color-muted-strong)]">
+              <p className="text-[0.6875rem] text-[var(--color-muted-strong)]">
                 Guardá los cambios para actualizar tu acceso.
               </p>
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -208,7 +232,7 @@ export function AccountAccessSettings({
                 <Button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="bg-[var(--color-ink)] text-white"
+                  className="h-8 bg-[var(--color-ink)] px-3 text-xs text-white"
                 >
                   {isSavingProfile ? "Guardando..." : "Guardar cuenta"}
                 </Button>
@@ -222,17 +246,17 @@ export function AccountAccessSettings({
           )}
         </form>
 
-        <section className="max-w-4xl rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-4 sm:p-5">
+        <section className="max-w-4xl rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 sm:p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold">Seguridad</p>
-              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+              <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
                 Actualizá tu contraseña solo cuando necesites reforzar el acceso.
               </p>
             </div>
             <Button
               type="button"
-              className="w-full sm:w-auto"
+              className="h-8 w-full px-3 text-xs sm:w-auto"
               onClick={() => {
                 setPasswordMessage("");
                 setShowPasswordModal(true);
@@ -283,7 +307,10 @@ export function AccountAccessSettings({
               type="password"
               autoComplete="current-password"
               value={passwords.currentPassword}
-              onChange={(currentPassword) => setPasswords((current) => ({ ...current, currentPassword }))}
+              onChange={(currentPassword) => {
+                setPasswordMessage("");
+                setPasswords((current) => ({ ...current, currentPassword }));
+              }}
             />
             <PasswordRequirementField
               label="Nueva contraseña"
@@ -291,12 +318,13 @@ export function AccountAccessSettings({
               autoComplete="new-password"
               minLength={12}
               value={passwords.newPassword}
-              onChange={(event) =>
+              onChange={(event) => {
+                setPasswordMessage("");
                 setPasswords((current) => ({
                   ...current,
                   newPassword: event.target.value
-                }))
-              }
+                }));
+              }}
             />
             {passwordMessage && <p className="text-sm text-[#b42318]">{passwordMessage}</p>}
           </div>
@@ -354,7 +382,7 @@ function AccountField({
     highlightChanges && savedValue !== undefined && value !== savedValue;
 
   return (
-    <label className="relative grid gap-1.5 text-sm">
+    <label className="relative grid gap-1 text-xs">
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
       <input
         required
@@ -365,7 +393,7 @@ function AccountField({
         placeholder={placeholder}
         autoComplete={autoComplete ?? (type === "email" ? "email" : "name")}
         onChange={(event) => onChange(event.target.value)}
-        className={`rounded-md border bg-[rgba(32,24,54,0.035)] px-3 py-2 outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:bg-[rgba(32,24,54,0.035)] focus:ring-2 ${
+        className={`h-9 rounded-md border bg-[#ffffff] px-3 text-xs outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:bg-[#ffffff] focus:ring-2 ${
           changed
             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
             : "border-[var(--color-border-strong)] focus:border-[var(--color-accent)] focus:ring-[rgba(253,134,6,0.2)]"

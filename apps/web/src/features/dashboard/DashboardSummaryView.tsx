@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { ModalCloseButton } from "../../components/ui/ModalCloseButton";
 import { DashboardPerformanceChart } from "./DashboardPerformanceChart";
 import {
   createDashboardExpense,
   deleteDashboardExpense,
+  getAnalyticsReportPdf,
   getDailyClosingPdf,
   getDashboardExpenses,
   getDashboardSummary,
@@ -39,27 +41,46 @@ function formatMoney(cents: number) {
   return money.format(cents / 100);
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "America/Argentina/Buenos_Aires"
-  }).format(new Date(value));
-}
-
 function formatExpenseMethod(value: string | null) {
   return paymentMethods.find((method) => method.value === value)?.label ?? "Sin método";
 }
 
-function localDateInputValue() {
+function localDateInputValue(value: Date | string = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     day: "2-digit",
     month: "2-digit",
     timeZone: "America/Argentina/Buenos_Aires",
     year: "numeric"
-  }).formatToParts(new Date());
+  }).formatToParts(new Date(value));
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
+}
+
+function shiftDateValue(date: string, days: number) {
+  const value = new Date(`${date}T12:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+function expenseDateBounds(period: DashboardSummaryPeriod) {
+  const today = localDateInputValue();
+  const currentMonthStart = `${today.slice(0, 7)}-01`;
+  const previousMonthEnd = shiftDateValue(currentMonthStart, -1);
+  const previousMonthStart = `${previousMonthEnd.slice(0, 7)}-01`;
+
+  if (period === "7d") return { min: shiftDateValue(today, -6), max: today };
+  if (period === "30d") return { min: shiftDateValue(today, -29), max: today };
+  if (period === "previous_month") return { min: previousMonthStart, max: previousMonthEnd };
+  return { min: currentMonthStart, max: today };
+}
+
+function formatExpenseDate(date: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC"
+  }).format(new Date(`${date}T12:00:00.000Z`));
 }
 
 function Change({ value }: { value: number | null }) {
@@ -82,8 +103,16 @@ export function DashboardSummaryView({
   const [period, setPeriod] = useState<DashboardSummaryPeriod>("current_month");
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const [isOpeningClosingPdf, setIsOpeningClosingPdf] = useState(false);
+  const [isDailyCashOpen, setIsDailyCashOpen] = useState(false);
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const maxClosingDate = localDateInputValue();
+  const [isAnalyticsReportOpen, setIsAnalyticsReportOpen] = useState(false);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [analyticsReportError, setAnalyticsReportError] = useState("");
+  const [analyticsReportDates, setAnalyticsReportDates] = useState({
+    from: `${maxClosingDate.slice(0, 7)}-01`,
+    to: maxClosingDate
+  });
   const [closingDate, setClosingDate] = useState(maxClosingDate);
   const [expense, setExpense] = useState({
     amount: "",
@@ -94,6 +123,7 @@ export function DashboardSummaryView({
   });
   const [expenseErrors, setExpenseErrors] = useState<Partial<Record<keyof typeof expense, string>>>({});
   const queryClient = useQueryClient();
+  const expensesPeriod: DashboardSummaryPeriod = activeSection === "daily" ? "current_month" : period;
   const summaryQuery = useQuery({
     queryKey: ["dashboard", "summary", period],
     queryFn: () => getDashboardSummary(period),
@@ -101,8 +131,8 @@ export function DashboardSummaryView({
     refetchOnWindowFocus: false
   });
   const expensesQuery = useQuery({
-    queryKey: ["dashboard", "expenses", period],
-    queryFn: () => getDashboardExpenses(period),
+    queryKey: ["dashboard", "expenses", expensesPeriod],
+    queryFn: () => getDashboardExpenses(expensesPeriod),
     staleTime: 60_000,
     refetchOnWindowFocus: false
   });
@@ -168,8 +198,45 @@ export function DashboardSummaryView({
         link.click();
       }
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setIsDailyCashOpen(false);
     } finally {
       setIsOpeningClosingPdf(false);
+    }
+  }
+
+  async function downloadAnalyticsReport() {
+    const { from, to } = analyticsReportDates;
+    if (!from || !to) {
+      setAnalyticsReportError("Elegí ambas fechas.");
+      return;
+    }
+    if (from > to) {
+      setAnalyticsReportError("La fecha desde no puede ser posterior a la fecha hasta.");
+      return;
+    }
+    const days = (Date.parse(`${to}T00:00:00.000Z`) - Date.parse(`${from}T00:00:00.000Z`)) / 86_400_000 + 1;
+    if (days > 366) {
+      setAnalyticsReportError("El rango máximo es de 366 días.");
+      return;
+    }
+
+    setAnalyticsReportError("");
+    setIsDownloadingReport(true);
+    try {
+      const blob = await getAnalyticsReportPdf(from, to);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `resumen-analitico-${from}-${to}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setIsAnalyticsReportOpen(false);
+    } catch {
+      setAnalyticsReportError("No se pudo generar el resumen. Intentá nuevamente.");
+    } finally {
+      setIsDownloadingReport(false);
     }
   }
 
@@ -251,31 +318,31 @@ export function DashboardSummaryView({
   const statusCards = [
     {
       accent: "bg-emerald-500",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       label: "Confirmados",
       value: data.metrics.confirmedAppointments
     },
     {
       accent: "bg-[var(--color-ink)]",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       label: "Completados",
       value: data.metrics.completedAppointments
     },
     {
       accent: "bg-sky-500",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       label: "Pendientes",
       value: data.metrics.pendingAppointments
     },
     {
       accent: "bg-rose-500",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       label: "Cancelados",
       value: data.metrics.canceledAppointments
     },
     {
       accent: "bg-zinc-500",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       label: "No asistencias",
       value: data.metrics.noShowAppointments
     }
@@ -283,21 +350,21 @@ export function DashboardSummaryView({
   const paymentCards = [
     {
       accent: "bg-[var(--color-accent)]",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       helper: "Cantidad de reservas con seña aprobada en el período.",
       label: "Señas cobradas",
       value: data.metrics.depositedAppointments
     },
     {
       accent: "bg-emerald-500",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       helper: "Importe total cobrado como seña en el período.",
       label: "Total en señas",
       value: formatMoney(data.metrics.depositIncomeCents)
     },
     {
       accent: "bg-sky-500",
-      className: "border-zinc-200 bg-[#f6f7f9]",
+      className: "border-zinc-200 bg-[rgba(32,24,54,0.08)]",
       helper: "Saldo estimado por cobrar de turnos pendientes o confirmados, descontando señas aprobadas.",
       label: "Pendiente de cobro",
       value: formatMoney(data.metrics.pendingCollectionCents)
@@ -313,6 +380,10 @@ export function DashboardSummaryView({
 
       {activeSection === "daily" ? (
         <div className="w-full space-y-6 2xl:max-w-[1480px]">
+          <DailyCashLauncher
+            netIncomeCents={data.today.netIncomeCents}
+            onOpen={() => setIsDailyCashOpen(true)}
+          />
           <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.62fr)]">
             <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
@@ -348,33 +419,42 @@ export function DashboardSummaryView({
             <UpcomingAppointments appointments={data.today.upcoming} onManage={onViewAgenda} compact />
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(260px,1fr)]">
-            <DailyMovements movements={data.today.movements} />
-            <article className="rounded-lg border border-[var(--color-border)] bg-white p-5">
-              <h2 className="text-sm font-semibold">Gastos del día</h2>
-              <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Se descuentan del cierre de caja.</p>
-              <p className="mt-5 font-mono text-xl font-semibold">{formatMoney(data.today.expenseCents)}</p>
-              <button
-                type="button"
-                onClick={() => setIsExpenseFormOpen(true)}
-                className="mt-5 h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-white text-xs font-semibold text-[var(--color-ink)] hover:bg-[rgba(32,24,54,0.04)]"
-              >
-                Registrar gasto
-              </button>
-            </article>
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+            <DailyMovements
+              expenseCents={data.today.expenseCents}
+              movements={data.today.movements}
+            />
+            <ExpensesList
+              key="daily-expenses"
+              deletingId={deletingExpenseId}
+              expenses={expensesQuery.data ?? []}
+              isLoading={expensesQuery.isLoading}
+              period="current_month"
+              onDelete={(expenseId) => {
+                setDeletingExpenseId(expenseId);
+                deleteExpenseMutation.mutate(expenseId);
+              }}
+            />
           </section>
 
-          <DailyClosingCard
-            closingDate={closingDate}
-            expenseCents={data.today.expenseCents}
-            incomeCents={data.today.estimatedIncomeCents}
-            isOpening={isOpeningClosingPdf}
-            maxClosingDate={maxClosingDate}
-            netIncomeCents={data.today.netIncomeCents}
-            paymentMethods={data.today.paymentMethods}
-            onChangeDate={setClosingDate}
-            onOpenPdf={openDailyClosingPdf}
-          />
+          {isDailyCashOpen ? (
+            <DailyCashModal
+              closingDate={closingDate}
+              expenseCents={data.today.expenseCents}
+              incomeCents={data.today.estimatedIncomeCents}
+              isOpening={isOpeningClosingPdf}
+              maxClosingDate={maxClosingDate}
+              netIncomeCents={data.today.netIncomeCents}
+              paymentMethods={data.today.paymentMethods}
+              onChangeDate={setClosingDate}
+              onClose={() => setIsDailyCashOpen(false)}
+              onOpenPdf={openDailyClosingPdf}
+              onRegisterExpense={() => {
+                setIsDailyCashOpen(false);
+                setIsExpenseFormOpen(true);
+              }}
+            />
+          ) : null}
 
           {isExpenseFormOpen && (
             <ExpenseModal onClose={() => setIsExpenseFormOpen(false)}>
@@ -393,6 +473,18 @@ export function DashboardSummaryView({
         </div>
       ) : (
         <>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setAnalyticsReportError("");
+                setIsAnalyticsReportOpen(true);
+              }}
+              className="h-8 rounded-md border border-[var(--color-border-strong)] bg-white px-4 text-xs font-semibold text-[var(--color-ink)] hover:bg-[rgba(32,24,54,0.04)]"
+            >
+              Descargar resumen
+            </button>
+          </div>
           <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             {cards.map((card) => (
               <article
@@ -471,15 +563,7 @@ export function DashboardSummaryView({
             </div>
           </div>
         </article>
-        <ExpensesList
-          deletingId={deletingExpenseId}
-          expenses={expensesQuery.data ?? []}
-          isLoading={expensesQuery.isLoading}
-          onDelete={(expenseId) => {
-            setDeletingExpenseId(expenseId);
-            deleteExpenseMutation.mutate(expenseId);
-          }}
-        />
+        <ExpenseDistribution expenses={expensesQuery.data ?? []} isLoading={expensesQuery.isLoading} />
           </section>
 
           <section className={`grid gap-3 ${data.team.length > 0 ? "xl:grid-cols-2" : ""}`}>
@@ -512,6 +596,20 @@ export function DashboardSummaryView({
           />
         )}
           </section>
+          {isAnalyticsReportOpen ? (
+            <AnalyticsReportModal
+              dates={analyticsReportDates}
+              error={analyticsReportError}
+              isDownloading={isDownloadingReport}
+              maxDate={maxClosingDate}
+              onChange={(dates) => {
+                setAnalyticsReportDates(dates);
+                setAnalyticsReportError("");
+              }}
+              onClose={() => setIsAnalyticsReportOpen(false)}
+              onSubmit={() => void downloadAnalyticsReport()}
+            />
+          ) : null}
         </>
       )}
     </div>
@@ -552,7 +650,36 @@ function SummarySectionTabs({
   );
 }
 
-function DailyClosingCard({
+function DailyCashLauncher({
+  netIncomeCents,
+  onOpen
+}: {
+  netIncomeCents: number;
+  onOpen: () => void;
+}) {
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 className="text-sm font-semibold">Caja diaria</h2>
+        <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Revisá el balance y descargá el cierre del día.</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-1 font-mono text-xs font-semibold text-[var(--color-ink)]">
+          Neto {formatMoney(netIncomeCents)}
+        </span>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="h-8 rounded-md bg-[var(--color-ink)] px-4 text-xs font-semibold text-[var(--color-button-text)]"
+        >
+          Ver caja
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function DailyCashModal({
   closingDate,
   expenseCents,
   incomeCents,
@@ -561,7 +688,9 @@ function DailyClosingCard({
   netIncomeCents,
   paymentMethods,
   onChangeDate,
-  onOpenPdf
+  onClose,
+  onOpenPdf,
+  onRegisterExpense
 }: {
   closingDate: string;
   expenseCents: number;
@@ -571,57 +700,96 @@ function DailyClosingCard({
   netIncomeCents: number;
   paymentMethods: DashboardSummary["today"]["paymentMethods"];
   onChangeDate: (date: string) => void;
+  onClose: () => void;
   onOpenPdf: () => void;
+  onRegisterExpense: () => void;
 }) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isOpening) onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpening, onClose]);
+
   return (
-    <section className="rounded-lg border border-[var(--color-border)] bg-white p-4 sm:p-5">
-      <div>
-        <h3 className="text-sm font-semibold">Cierre de caja</h3>
-        <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Acción final del día con detalle de caja.</p>
-      </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <ClosingMetric label="Ingresos" value={formatMoney(incomeCents)} />
-        <ClosingMetric label="Gastos" value={formatMoney(expenseCents)} />
-        <ClosingMetric label="Neto / caja esperada" value={formatMoney(netIncomeCents)} />
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--color-border)] pt-3">
-        {paymentMethods.length === 0 ? (
-          <span className="rounded-md bg-white px-2 py-1 text-[11px] text-[var(--color-muted)]">Sin cobros registrados</span>
-        ) : (
-          paymentMethods.map((item) => (
-            <span key={item.method} className="rounded-md bg-white px-2 py-1 text-[11px] text-[var(--color-muted-strong)]">
-              {item.method}: <strong className="font-mono text-[var(--color-ink)]">{formatMoney(item.amountCents)}</strong>
-            </span>
-          ))
-        )}
-      </div>
-      <div className="mt-4 grid gap-4 border-t border-[var(--color-border)] pt-4 sm:grid-cols-[minmax(0,18rem)_auto] sm:items-end sm:justify-between">
-        <label className="text-[11px] font-semibold text-[var(--color-muted-strong)]">
-          Fecha del cierre
-          <input
-            type="date"
-            max={maxClosingDate}
-            value={closingDate}
-            onChange={(event) => onChangeDate(event.target.value > maxClosingDate ? maxClosingDate : event.target.value)}
-            className="mt-1 h-8 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-xs font-normal text-[var(--color-ink)]"
-          />
-        </label>
-        <button
-          type="button"
-          disabled={isOpening}
-          onClick={onOpenPdf}
-          className="h-9 rounded-md bg-[var(--color-ink)] px-4 text-xs font-semibold text-[var(--color-button-text)] transition hover:opacity-95 disabled:cursor-wait disabled:opacity-60 sm:justify-self-end"
-        >
-          {isOpening ? "Generando..." : "Abrir cierre"}
-        </button>
-      </div>
-    </section>
+    <div
+      className="viewport-overlay modal-overlay-enter z-[100] grid place-items-center bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget && !isOpening) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="daily-cash-title"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-lg overflow-x-hidden rounded-xl border border-[rgba(32,24,54,0.12)] bg-white shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+      >
+        <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-4 py-3">
+          <div>
+            <h2 id="daily-cash-title" className="text-sm font-semibold text-[var(--color-ink)]">Caja diaria</h2>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Balance y cierre de caja.</p>
+          </div>
+          <ModalCloseButton disabled={isOpening} onClick={onClose} />
+        </header>
+        <div className="p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <ClosingMetric label="Ingresos" value={formatMoney(incomeCents)} />
+            <ClosingMetric label="Gastos" value={formatMoney(expenseCents)} />
+            <ClosingMetric label="Neto / caja esperada" value={formatMoney(netIncomeCents)} />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--color-border)] pt-3">
+            {paymentMethods.length === 0 ? (
+              <span className="text-[11px] text-[var(--color-muted)]">Sin cobros registrados</span>
+            ) : (
+              paymentMethods.map((item) => (
+                <span key={item.method} className="rounded-md bg-[rgba(32,24,54,0.04)] px-2 py-1 text-[11px] text-[var(--color-muted-strong)]">
+                  {item.method}: <strong className="font-mono text-[var(--color-ink)]">{formatMoney(item.amountCents)}</strong>
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+        <footer className="grid gap-3 border-t border-[var(--color-border)] px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <label className="text-[11px] font-semibold text-[var(--color-muted-strong)]">
+            Fecha del cierre
+            <input
+              type="date"
+              max={maxClosingDate}
+              value={closingDate}
+              onChange={(event) => onChangeDate(event.target.value > maxClosingDate ? maxClosingDate : event.target.value)}
+              className="mt-1 h-8 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-xs font-normal text-[var(--color-ink)]"
+            />
+          </label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              disabled={isOpening}
+              onClick={onRegisterExpense}
+              className="h-8 rounded-md border border-[var(--color-border-strong)] bg-white px-4 text-xs font-semibold text-[var(--color-ink)] disabled:opacity-60"
+            >
+              Registrar gasto
+            </button>
+            <button
+              type="button"
+              disabled={isOpening}
+              onClick={onOpenPdf}
+              className="h-8 rounded-md bg-[var(--color-ink)] px-4 text-xs font-semibold text-[var(--color-button-text)] disabled:cursor-wait disabled:opacity-60"
+            >
+              {isOpening ? "Generando..." : "Cerrar caja y descargar"}
+            </button>
+          </div>
+        </footer>
+      </section>
+    </div>
   );
 }
 
 function ClosingMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-[#f6f7f9] px-3 py-2.5">
+    <div className="rounded-md bg-[rgba(32,24,54,0.08)] px-3 py-2.5">
       <p className="text-[10px] font-medium text-[var(--color-muted)]">{label}</p>
       <p className="mt-1 font-mono text-sm font-semibold text-[var(--color-ink)]">{value}</p>
     </div>
@@ -638,7 +806,7 @@ function TodayMetric({
   value: string;
 }) {
   return (
-    <div className="rounded-md bg-[#f6f7f9] px-3 py-2">
+    <div className="rounded-md bg-[rgba(32,24,54,0.08)] px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] text-[var(--color-muted)]">{label}</p>
         <span className={`h-1.5 w-1.5 rounded-full ${tone}`} />
@@ -691,7 +859,7 @@ function UpcomingAppointments({
         compact ? (
           <div className="mt-4 space-y-2.5">
             {appointments.map((appointment) => (
-              <div key={appointment.id} className="grid gap-2 rounded-md bg-[#f6f7f9] p-3">
+              <div key={appointment.id} className="grid gap-2 rounded-md bg-[rgba(32,24,54,0.08)] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold">
@@ -777,34 +945,112 @@ function SummaryBadge({ label, tone }: { label: string; tone: "appointment" | "p
 }
 
 function DailyMovements({
+  expenseCents,
   movements
 }: {
+  expenseCents: number;
   movements: DashboardSummary["today"]["movements"];
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <article className="rounded-lg border border-[var(--color-border)] bg-white p-4">
-      <h2 className="text-sm font-semibold">Movimientos del día</h2>
-      <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Ingresos y gastos ordenados por hora.</p>
-      {movements.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-xs text-[var(--color-muted)]">
-          Sin movimientos registrados.
-        </p>
-      ) : (
-        <div className="mt-4 space-y-2">
-          {movements.map((movement, index) => (
-            <div key={`${movement.kind}-${index}`} className="flex items-center justify-between gap-3 rounded-md bg-[#f6f7f9] px-3 py-2.5">
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold">{movement.time} · {movement.concept}</p>
-                <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">{movement.method} · {movement.kind === "expense" ? "Gasto" : "Ingreso"} · {movement.label}</p>
-              </div>
-              <span className={`shrink-0 font-mono text-xs font-semibold ${movement.kind === "expense" ? "text-[#b04b43]" : "text-[#287553]"}`}>
-                {movement.kind === "expense" ? "-" : "+"}{formatMoney(movement.amountCents)}
-              </span>
-            </div>
-          ))}
+    <>
+      <article className="rounded-lg border border-[var(--color-border)] bg-white p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold">Movimientos del día</h2>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Ingresos y gastos ordenados por hora.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-1 font-mono text-xs font-semibold text-[var(--color-ink)]">
+              Gastos {formatMoney(expenseCents)}
+            </span>
+          </div>
         </div>
-      )}
-    </article>
+        {movements.length === 0 ? (
+          <p className="mt-3 rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-xs text-[var(--color-muted)]">
+            Sin movimientos registrados.
+          </p>
+        ) : (
+          <div className="mt-4">
+            <MovementRows movements={movements.slice(0, 3)} />
+            {movements.length > 3 ? (
+              <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                className="mt-2 w-full rounded-md border border-[var(--color-border)] bg-white py-1.5 text-[11px] font-semibold text-[var(--color-ink)] hover:bg-[rgba(32,24,54,0.04)]"
+              >
+                Ver todos ({movements.length})
+              </button>
+            ) : null}
+          </div>
+        )}
+      </article>
+      {isOpen ? <DailyMovementsModal movements={movements} onClose={() => setIsOpen(false)} /> : null}
+    </>
+  );
+}
+
+function MovementRows({ movements }: { movements: DashboardSummary["today"]["movements"] }) {
+  return (
+    <div className="space-y-2">
+      {movements.map((movement, index) => (
+        <div key={`${movement.kind}-${movement.sortAt}-${index}`} className="flex items-center justify-between gap-3 rounded-md bg-[rgba(32,24,54,0.08)] px-3 py-2.5">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold">{movement.time} · {movement.concept}</p>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">{movement.method} · {movement.kind === "expense" ? "Gasto" : "Ingreso"} · {movement.label}</p>
+          </div>
+          <span className={`shrink-0 font-mono text-xs font-semibold ${movement.kind === "expense" ? "text-[#b04b43]" : "text-[#287553]"}`}>
+            {movement.kind === "expense" ? "-" : "+"}{formatMoney(movement.amountCents)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DailyMovementsModal({
+  movements,
+  onClose
+}: {
+  movements: DashboardSummary["today"]["movements"];
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="viewport-overlay modal-overlay-enter z-[100] grid place-items-center bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="daily-movements-title"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-xl overflow-x-hidden rounded-xl border border-[rgba(32,24,54,0.12)] bg-white shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+      >
+        <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-4 py-3">
+          <div>
+            <h2 id="daily-movements-title" className="text-sm font-semibold text-[var(--color-ink)]">Movimientos del día</h2>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">{movements.length} movimientos registrados.</p>
+          </div>
+          <ModalCloseButton onClick={onClose} />
+        </header>
+        <div className="p-3">
+          <MovementRows movements={movements} />
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -815,22 +1061,30 @@ function ExpenseModal({
   children: ReactNode;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/30 px-3 py-4 sm:items-center">
-      <div className="w-full max-w-md rounded-lg bg-white shadow-[0_24px_80px_rgba(4,2,12,0.32)]">
+    <div
+      className="viewport-overlay modal-overlay-enter z-[100] grid place-items-center bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="modal-panel-enter modal-scroll-panel w-full max-w-md overflow-x-hidden rounded-xl border border-[rgba(32,24,54,0.12)] bg-white shadow-[0_28px_90px_rgba(32,24,54,0.34)]">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
           <div>
             <h2 className="text-sm font-semibold text-[var(--color-ink)]">Registrar gasto</h2>
             <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Cargá un egreso para el cierre del día.</p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.05)]"
-          >
-            ×
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
         <div className="p-3">{children}</div>
       </div>
@@ -838,117 +1092,368 @@ function ExpenseModal({
   );
 }
 
-function ExpensesList({
-  deletingId,
-  expenses,
-  isLoading,
-  onDelete
+function AnalyticsReportModal({
+  dates,
+  error,
+  isDownloading,
+  maxDate,
+  onChange,
+  onClose,
+  onSubmit
 }: {
-  deletingId: string | null;
+  dates: { from: string; to: string };
+  error: string;
+  isDownloading: boolean;
+  maxDate: string;
+  onChange: (dates: { from: string; to: string }) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isDownloading) onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDownloading, onClose]);
+
+  return (
+    <div
+      className="viewport-overlay modal-overlay-enter z-[100] grid place-items-center bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget && !isDownloading) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="analytics-report-title"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-md overflow-x-hidden rounded-xl border border-[rgba(32,24,54,0.12)] bg-white shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+      >
+        <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-4 py-3">
+          <div>
+            <h2 id="analytics-report-title" className="text-sm font-semibold text-[var(--color-ink)]">
+              Descargar resumen
+            </h2>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
+              Elegí el período que querés incluir.
+            </p>
+          </div>
+          <ModalCloseButton disabled={isDownloading} onClick={onClose} />
+        </header>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit();
+          }}
+        >
+          <div className="grid gap-3 p-4 sm:grid-cols-2">
+            <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+              Desde
+              <input
+                type="date"
+                max={dates.to || maxDate}
+                value={dates.from}
+                onChange={(event) => onChange({ ...dates, from: event.target.value })}
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-xs font-normal text-[var(--color-ink)]"
+              />
+            </label>
+            <label className="text-xs font-semibold text-[var(--color-muted-strong)]">
+              Hasta
+              <input
+                type="date"
+                min={dates.from}
+                max={maxDate}
+                value={dates.to}
+                onChange={(event) => onChange({ ...dates, to: event.target.value })}
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-xs font-normal text-[var(--color-ink)]"
+              />
+            </label>
+            {error ? <p className="text-[11px] font-medium text-[#b04b43] sm:col-span-2">{error}</p> : null}
+          </div>
+          <footer className="flex flex-col-reverse gap-2 border-t border-[var(--color-border)] px-4 py-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              disabled={isDownloading}
+              onClick={onClose}
+              className="h-8 rounded-md border border-[var(--color-border-strong)] bg-white px-4 text-xs font-semibold text-[var(--color-ink)] disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isDownloading}
+              className="h-8 rounded-md bg-[var(--color-ink)] px-4 text-xs font-semibold text-white disabled:cursor-wait disabled:opacity-60"
+            >
+              {isDownloading ? "Generando..." : "Descargar PDF"}
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function ExpenseDistribution({
+  expenses,
+  isLoading
+}: {
   expenses: DashboardExpense[];
   isLoading: boolean;
-  onDelete: (expenseId: string) => void;
 }) {
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const total = expenses.reduce((sum, item) => sum + item.amountCents, 0);
-  const expensesByDay = expenses.reduce<Array<{ date: string; expenses: DashboardExpense[]; totalCents: number }>>(
-    (groups, expense) => {
-      const date = formatDate(expense.occurredOn);
-      const group = groups.find((item) => item.date === date);
-      if (group) {
-        group.expenses.push(expense);
-        group.totalCents += expense.amountCents;
-      } else {
-        groups.push({ date, expenses: [expense], totalCents: expense.amountCents });
-      }
+  const total = expenses.reduce((sum, expense) => sum + expense.amountCents, 0);
+  const categories = Array.from(
+    expenses.reduce((groups, expense) => {
+      groups.set(expense.category, (groups.get(expense.category) ?? 0) + expense.amountCents);
       return groups;
-    },
-    []
-  );
-  const safeDayIndex = Math.min(selectedDayIndex, Math.max(expensesByDay.length - 1, 0));
-  const selectedGroup = expensesByDay[safeDayIndex];
-  const visibleExpenses = selectedGroup?.expenses.slice(0, 3) ?? [];
+    }, new Map<string, number>()),
+    ([category, amountCents]) => ({ amountCents, category })
+  ).sort((a, b) => b.amountCents - a.amountCents);
 
   return (
     <article className="rounded-lg border border-[var(--color-border)] bg-white p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">Gastos registrados</h2>
-          <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Gestionados por día</p>
+          <h2 className="text-sm font-semibold">Distribución de gastos</h2>
+          <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Participación por categoría</p>
         </div>
         <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-0.5 font-mono text-xs font-semibold">
           {formatMoney(total)}
         </span>
       </div>
-      <div className="mt-2.5 pr-1">
-        {isLoading ? (
-          <p className="rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-sm text-[var(--color-muted)]">
-            Cargando gastos...
-          </p>
-        ) : expenses.length === 0 ? (
-          <p className="rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-sm text-[var(--color-muted)]">
-            No hay gastos registrados en este período.
-          </p>
-        ) : (
-          <section>
-            <div className="mb-1.5 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                aria-label="Ver día anterior"
-                disabled={safeDayIndex >= expensesByDay.length - 1}
-                onClick={() => setSelectedDayIndex(Math.min(safeDayIndex + 1, expensesByDay.length - 1))}
-                className="rounded px-1 text-lg leading-none text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.05)] disabled:invisible"
-              >
-                ‹
-              </button>
-              <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
-                <p className="text-[11px] font-semibold text-[var(--color-muted-strong)]">{selectedGroup?.date}</p>
-                <span className="font-mono text-[11px] font-semibold text-[var(--color-ink)]">
-                  {formatMoney(selectedGroup?.totalCents ?? 0)}
-                </span>
-              </div>
-              <button
-                type="button"
-                aria-label="Ver día más reciente"
-                disabled={safeDayIndex === 0}
-                onClick={() => setSelectedDayIndex(Math.max(safeDayIndex - 1, 0))}
-                className="rounded px-1 text-lg leading-none text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.05)] disabled:invisible"
-              >
-                ›
-              </button>
-            </div>
-            <div className="divide-y divide-[var(--color-border)] rounded-md bg-[#f6f7f9] px-2">
-              {visibleExpenses.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold">{item.description}</p>
-                    <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
-                      {item.category} · {formatExpenseMethod(item.paymentMethod)}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-mono text-xs font-semibold">{formatMoney(item.amountCents)}</p>
-                    <button
-                      type="button"
-                      disabled={deletingId === item.id}
-                      onClick={() => onDelete(item.id)}
-                      className="mt-0.5 text-[11px] font-semibold text-[#b04b43] disabled:opacity-50"
-                    >
-                      {deletingId === item.id ? "Eliminando..." : "Eliminar"}
-                    </button>
-                  </div>
+      {isLoading ? (
+        <p className="mt-3 rounded-md bg-[rgba(32,24,54,0.04)] p-4 text-center text-xs text-[var(--color-muted)]">
+          Cargando gastos...
+        </p>
+      ) : categories.length === 0 ? (
+        <p className="mt-3 rounded-md bg-[rgba(32,24,54,0.04)] p-4 text-center text-xs text-[var(--color-muted)]">
+          No hay gastos en este período.
+        </p>
+      ) : (
+        <div className="mt-3 space-y-3">
+          {categories.map((item) => {
+            const percentage = total ? Math.round((item.amountCents / total) * 1000) / 10 : 0;
+            return (
+              <div key={item.category}>
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="truncate font-semibold text-[var(--color-ink)]">{item.category}</span>
+                  <span className="shrink-0 font-mono font-semibold text-[var(--color-ink)]">
+                    {formatMoney(item.amountCents)} · {percentage.toLocaleString("es-AR")}%
+                  </span>
                 </div>
-              ))}
-            </div>
-            {selectedGroup && selectedGroup.expenses.length > 3 ? (
-              <p className="mt-1 text-center text-[10px] text-[var(--color-muted)]">
-                Mostrando 3 de {selectedGroup.expenses.length} gastos de este día
-              </p>
-            ) : null}
-          </section>
-        )}
-      </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[rgba(32,24,54,0.08)]">
+                  <div
+                    className="h-full rounded-full bg-[var(--color-accent)]"
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </article>
+  );
+}
+
+function ExpensesList({
+  deletingId,
+  expenses,
+  isLoading,
+  onDelete,
+  period
+}: {
+  deletingId: string | null;
+  expenses: DashboardExpense[];
+  isLoading: boolean;
+  onDelete: (expenseId: string) => void;
+  period: DashboardSummaryPeriod;
+}) {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isAllOpen, setIsAllOpen] = useState(false);
+  const bounds = expenseDateBounds(period);
+  const activeDate = selectedDate ?? (expenses[0] ? localDateInputValue(expenses[0].occurredOn) : bounds.max);
+  const selectedExpenses = expenses.filter((expense) => localDateInputValue(expense.occurredOn) === activeDate);
+  const selectedTotal = selectedExpenses.reduce((sum, item) => sum + item.amountCents, 0);
+  const visibleExpenses = selectedExpenses.slice(0, 3);
+
+  return (
+    <>
+      <article className="rounded-lg border border-[var(--color-border)] bg-white p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Gastos registrados</h2>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Gestionados por día</p>
+          </div>
+          <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-0.5 font-mono text-xs font-semibold">
+            {formatMoney(selectedTotal)}
+          </span>
+        </div>
+        <div className="mt-2.5 pr-1">
+          {isLoading ? (
+            <p className="rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-xs text-[var(--color-muted)]">
+              Cargando gastos...
+            </p>
+          ) : (
+            <section>
+              <div className="mb-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Ver día anterior"
+                  disabled={activeDate <= bounds.min}
+                  onClick={() => setSelectedDate(shiftDateValue(activeDate, -1))}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--color-border)] text-base leading-none text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.05)] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  ‹
+                </button>
+                <input
+                  type="date"
+                  aria-label="Fecha de los gastos"
+                  min={bounds.min}
+                  max={bounds.max}
+                  value={activeDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  className="h-8 min-w-0 flex-1 rounded-md border border-[var(--color-border-strong)] bg-white px-2 text-[11px] font-semibold text-[var(--color-ink)]"
+                />
+                <button
+                  type="button"
+                  aria-label="Ver día siguiente"
+                  disabled={activeDate >= bounds.max}
+                  onClick={() => setSelectedDate(shiftDateValue(activeDate, 1))}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-[var(--color-border)] text-base leading-none text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.05)] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  ›
+                </button>
+              </div>
+              {selectedExpenses.length === 0 ? (
+                <p className="rounded-md bg-[rgba(32,24,54,0.04)] p-4 text-center text-xs text-[var(--color-muted)]">
+                  No hay gastos registrados este día.
+                </p>
+              ) : (
+                <ExpenseRows
+                  deletingId={deletingId}
+                  expenses={visibleExpenses}
+                  onDelete={onDelete}
+                />
+              )}
+              {selectedExpenses.length > 3 ? (
+              <button
+                type="button"
+                onClick={() => setIsAllOpen(true)}
+                className="mt-2 w-full rounded-md border border-[var(--color-border)] bg-white py-1.5 text-[11px] font-semibold text-[var(--color-ink)] hover:bg-[rgba(32,24,54,0.04)]"
+              >
+                Ver todos ({selectedExpenses.length})
+              </button>
+              ) : null}
+            </section>
+          )}
+        </div>
+      </article>
+      {isAllOpen ? (
+        <ExpensesDayModal
+          date={activeDate}
+          deletingId={deletingId}
+          expenses={selectedExpenses}
+          onClose={() => setIsAllOpen(false)}
+          onDelete={onDelete}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function ExpenseRows({
+  deletingId,
+  expenses,
+  onDelete
+}: {
+  deletingId: string | null;
+  expenses: DashboardExpense[];
+  onDelete: (expenseId: string) => void;
+}) {
+  return (
+    <div className="divide-y divide-[var(--color-border)] rounded-md bg-[rgba(32,24,54,0.08)] px-2">
+      {expenses.map((item) => (
+        <div key={item.id} className="flex items-center justify-between gap-3 py-2">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold">{item.description}</p>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
+              {item.category} · {formatExpenseMethod(item.paymentMethod)}
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="font-mono text-xs font-semibold">{formatMoney(item.amountCents)}</p>
+            <button
+              type="button"
+              disabled={deletingId === item.id}
+              onClick={() => onDelete(item.id)}
+              className="mt-0.5 text-[11px] font-semibold text-[#b04b43] disabled:opacity-50"
+            >
+              {deletingId === item.id ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExpensesDayModal({
+  date,
+  deletingId,
+  expenses,
+  onClose,
+  onDelete
+}: {
+  date: string;
+  deletingId: string | null;
+  expenses: DashboardExpense[];
+  onClose: () => void;
+  onDelete: (expenseId: string) => void;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  const total = expenses.reduce((sum, item) => sum + item.amountCents, 0);
+
+  return (
+    <div
+      className="viewport-overlay modal-overlay-enter z-[100] grid place-items-center bg-[rgba(32,24,54,0.58)] p-3 backdrop-blur-sm"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="expenses-day-title"
+        className="modal-panel-enter modal-scroll-panel w-full max-w-md overflow-x-hidden rounded-xl border border-[rgba(32,24,54,0.12)] bg-white shadow-[0_28px_90px_rgba(32,24,54,0.34)]"
+      >
+        <header className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-4 py-3">
+          <div>
+            <h2 id="expenses-day-title" className="text-sm font-semibold text-[var(--color-ink)]">
+              Gastos del día
+            </h2>
+            <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
+              {formatExpenseDate(date)} · {formatMoney(total)}
+            </p>
+          </div>
+          <ModalCloseButton onClick={onClose} />
+        </header>
+        <div className="p-3">
+          <ExpenseRows deletingId={deletingId} expenses={expenses} onDelete={onDelete} />
+        </div>
+      </section>
+    </div>
   );
 }
 

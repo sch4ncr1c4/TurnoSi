@@ -75,7 +75,7 @@ function formatImageBytes(bytes?: number) {
 
 function SettingsSectionIcon({ icon }: { icon: string }) {
   return (
-    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[rgba(253,134,6,0.12)]">
+    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[rgba(32,24,54,0.08)]">
       <img
         src={icon}
         alt=""
@@ -1135,7 +1135,7 @@ function moneyToCents(value: string) {
               {index > 0 && (
                 <span
                   aria-hidden="true"
-                  className="mx-0.5 h-5 w-px shrink-0 bg-[var(--color-border)]"
+                  className="mx-1 h-4 w-px shrink-0 bg-[var(--color-border)]"
                 />
               )}
               <button
@@ -1151,7 +1151,7 @@ function moneyToCents(value: string) {
                   }
                   setActiveTab(value);
                 }}
-                className={`group flex min-w-[132px] snap-start items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-bold transition-colors 2xl:min-w-[132px] 2xl:px-3 ${
+                className={`group flex min-w-[132px] snap-start items-center justify-center gap-2 rounded-md px-3 h-8 text-xs font-semibold transition-colors 2xl:min-w-[132px] 2xl:px-3 ${
                   activeTab === value
                     ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
                     : "text-[var(--color-ink)] hover:bg-white/60"
@@ -1238,7 +1238,7 @@ function moneyToCents(value: string) {
                   activeSettingsIcon && <SettingsSectionIcon icon={activeSettingsIcon} />
                 )}
                 <div>
-              <h2 className="text-base font-semibold">
+              <h2 className="text-sm font-semibold">
                 {{
                   business: "Identidad del negocio",
                   contact: "Contacto",
@@ -1247,7 +1247,7 @@ function moneyToCents(value: string) {
                   account: "Cuenta"
                 }[activeTab]}
               </h2>
-              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+              <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
                 {{
                   business: "Definí la identidad y presentación principal de tu negocio.",
                   contact: "Configurá canales de contacto, ubicación y redes.",
@@ -1268,14 +1268,14 @@ function moneyToCents(value: string) {
           <CardBody className="grid gap-3 p-3 sm:p-4 md:grid-cols-2">
             {activeTab === "business" && (
               <>
-                <section className="grid items-start gap-4 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 md:col-span-2 sm:p-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+                <section className="grid items-start gap-3 rounded-xl border border-[var(--color-border)] bg-[#ffffff] p-3 md:col-span-2 sm:p-4 xl:grid-cols-[300px_minmax(0,1fr)]">
                   <div className="min-w-0 self-start">
                     <div>
-                      <div className="mb-2 flex items-center gap-2 text-sm">
+                      <div className="mb-2 flex items-center gap-2 text-xs">
                         <span className="font-semibold text-[var(--color-muted-strong)]">
                           Logo del negocio
                         </span>
-                        <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-strong)]">
+                        <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--color-muted-strong)]">
                           Opcional
                         </span>
                       </div>
@@ -1293,13 +1293,13 @@ function moneyToCents(value: string) {
                             </span>
                           )}
                         </div>
-                        <label className="grid min-h-24 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
+                        <label className="grid min-h-24 cursor-pointer place-items-center rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] px-3 py-3 text-center hover:border-[var(--color-accent)] hover:bg-[rgba(32,24,54,0.08)]">
                           <span>
-                            <span className="block text-xl leading-none">↥</span>
-                            <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
+                            <span className="block text-lg leading-none">↥</span>
+                            <span className="mt-2 block text-xs font-semibold text-[var(--color-ink)]">
                               Subí tu logo
                             </span>
-                            <span className="mt-1 block text-xs text-[var(--color-muted)]">
+                            <span className="mt-1 block text-[0.6875rem] text-[var(--color-muted)]">
                               PNG o JPG, máx. 2MB
                             </span>
                           </span>
@@ -1311,8 +1311,8 @@ function moneyToCents(value: string) {
                           />
                         </label>
                       </div>
-                      <label className="mt-3 flex min-h-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[#ffffff] px-3 py-2 text-center text-sm font-semibold hover:border-[var(--color-accent)] hover:bg-[#fff7ed]">
-                        <span className="text-base leading-none">✎</span>
+                      <label className="mt-3 flex min-h-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[#ffffff] px-3 py-2 text-center text-xs font-semibold hover:border-[var(--color-accent)] hover:bg-[rgba(32,24,54,0.08)]">
+                        <span className="text-sm leading-none">✎</span>
                         <span>{logoPreview ? "Cambiar logo" : "Subir logo"}</span>
                         <input
                           type="file"
@@ -1334,7 +1334,7 @@ function moneyToCents(value: string) {
                       value={settings.businessName}
                       onChange={(value) => updateSetting("businessName", value)}
                     />
-                    <label className="relative grid gap-1.5 text-sm">
+                    <label className="relative grid gap-1 text-xs">
                       <span className="font-semibold text-[var(--color-muted-strong)]">
                         Rubro
                       </span>
@@ -1351,7 +1351,7 @@ function moneyToCents(value: string) {
                           }
                           updateSetting("category", event.target.value);
                         }}
-                        className={`h-10 appearance-none rounded-md border bg-[#ffffff] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                        className={`h-9 appearance-none rounded-md border bg-[#ffffff] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.category !== savedSettings.category
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1366,7 +1366,7 @@ function moneyToCents(value: string) {
                         ))}
                         <option value={customBusinessCategory}>Otro</option>
                       </select>
-                      <span className="pointer-events-none absolute bottom-0 right-3 grid h-10 place-items-center text-sm text-[var(--color-muted-strong)]">
+                      <span className="pointer-events-none absolute bottom-0 right-3 grid h-9 place-items-center text-xs text-[var(--color-muted-strong)]">
                         ⌄
                       </span>
                     </label>
@@ -1382,7 +1382,8 @@ function moneyToCents(value: string) {
                         onChange={(event) =>
                           updateSetting("description", event.target.value)
                         }
-                        className={`min-h-32 resize-none overflow-hidden rounded-md border bg-[#ffffff] px-3 py-2 text-sm outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
+                        style={{ fontSize: "12px", lineHeight: "16px" }}
+                        className={`min-h-28 resize-none overflow-hidden rounded-md border bg-[#ffffff] px-3 py-2 text-[0.75rem] leading-4 outline-none transition placeholder:text-[var(--color-muted)] hover:border-[var(--color-accent)] focus:ring-2 ${
                           showUnsavedState &&
                           settings.description !== savedSettings.description
                             ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1401,12 +1402,12 @@ function moneyToCents(value: string) {
                     <SettingsSectionIcon icon={galleryIcon} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold">Galería del local</h3>
-                        <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-strong)]">
+                        <h3 className="text-sm font-semibold">Galería del local</h3>
+                        <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--color-muted-strong)]">
                           {galleryImagesCount}/{gallerySlots.length} fotos
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                      <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
                         Mostrá tu espacio y el ambiente de tu negocio.
                       </p>
                     </div>
@@ -1496,10 +1497,10 @@ function moneyToCents(value: string) {
                         return (
                           <div className="grid h-full min-h-[9.85rem] place-items-center rounded-lg border border-dashed border-[var(--color-border-strong)] bg-[#ffffff] px-4 text-center lg:min-h-[9.15rem] xl:min-h-[9.85rem]">
                             <span>
-                              <span className="block text-sm font-semibold text-[var(--color-ink)]">
-                                Máximo alcanzado
-                              </span>
-                              <span className="mt-1 block text-xs text-[var(--color-muted)]">
+                            <span className="block text-xs font-semibold text-[var(--color-ink)]">
+                              Máximo alcanzado
+                            </span>
+                            <span className="mt-1 block text-[0.6875rem] text-[var(--color-muted)]">
                                 {galleryImagesCount}/{gallerySlots.length} fotos cargadas
                               </span>
                             </span>
@@ -1513,10 +1514,10 @@ function moneyToCents(value: string) {
                             <span className="block text-2xl leading-none text-[var(--color-ink)]">
                               +
                             </span>
-                            <span className="mt-2 block text-sm font-semibold text-[var(--color-ink)]">
+                            <span className="mt-2 block text-xs font-semibold text-[var(--color-ink)]">
                               Agregar foto
                             </span>
-                            <span className="mt-1 block text-xs text-[var(--color-muted)]">
+                            <span className="mt-1 block text-[0.6875rem] text-[var(--color-muted)]">
                               JPG, PNG o WebP, máx. 10MB
                             </span>
                           </span>
@@ -1531,7 +1532,7 @@ function moneyToCents(value: string) {
                     })()}
                   </div>
 
-                  <p className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                  <p className="mt-3 flex items-center gap-2 text-[0.6875rem] text-[var(--color-muted)]">
                     <span aria-hidden="true">ⓘ</span>
                     Se recomienda usar fotos horizontales y bien iluminadas.
                   </p>
@@ -1598,14 +1599,14 @@ function moneyToCents(value: string) {
                   value={settings.city}
                   onChange={(value) => updateSetting("city", value)}
                 />
-                <label className="relative grid gap-1.5 text-sm">
+                    <label className="relative grid gap-1 text-xs">
                   <span className="font-semibold text-[var(--color-muted-strong)]">
                     Provincia
                   </span>
                   <select
                     value={settings.province}
                     onChange={(event) => updateSetting("province", event.target.value)}
-                    className={`h-10 appearance-none rounded-md border bg-[#ffffff] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
+                    className={`h-9 appearance-none rounded-md border bg-[#ffffff] px-3 pr-9 text-[var(--color-ink)] outline-none transition hover:border-[var(--color-accent)] focus:ring-2 ${
                       showUnsavedState &&
                       settings.province !== savedSettings.province
                         ? "border-[#d65a50] focus:border-[#d65a50] focus:ring-[rgba(214,90,80,0.16)]"
@@ -1617,7 +1618,7 @@ function moneyToCents(value: string) {
                       <option key={province} value={province}>{province}</option>
                     ))}
                   </select>
-                  <span className="pointer-events-none absolute bottom-0 right-3 grid h-10 place-items-center text-sm text-[var(--color-muted-strong)]">
+                  <span className="pointer-events-none absolute bottom-0 right-3 grid h-9 place-items-center text-xs text-[var(--color-muted-strong)]">
                     ⌄
                   </span>
                 </label>
@@ -1648,8 +1649,8 @@ function moneyToCents(value: string) {
                 <div className="flex items-start gap-3">
                   <SettingsSectionIcon icon={paymentsDepositIcon} />
                   <div>
-                  <h3 className="text-base font-semibold">Seña online</h3>
-                  <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                  <h3 className="text-sm font-semibold">Seña online</h3>
+                  <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
                     El cliente paga por Mercado Pago y el dinero entra directo al local.
                   </p>
                   </div>
@@ -1673,7 +1674,7 @@ function moneyToCents(value: string) {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_minmax(240px,300px)]">
-                <label className="grid gap-1.5 text-sm">
+                <label className="grid gap-1 text-xs">
                   <span className="font-semibold text-[var(--color-muted-strong)]">
                     Access Token del local
                   </span>
@@ -1688,7 +1689,7 @@ function moneyToCents(value: string) {
                         ? "Pegá un token nuevo para reemplazar el actual"
                         : "APP_USR-..."
                     }
-                    className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-sm outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[#ffffff] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
+                    className="h-10 rounded-lg border border-[var(--color-border-strong)] bg-[#ffffff] px-3 text-xs outline-none transition hover:border-[var(--color-accent)] read-only:cursor-not-allowed read-only:bg-[#ffffff] focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
                     type="password"
                     autoComplete="off"
                   />
@@ -1753,7 +1754,7 @@ function moneyToCents(value: string) {
                 <h3 className="text-sm font-semibold text-[var(--color-ink)]">
                   Link de reservas
                 </h3>
-                <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
                   Compartilo con tus clientes para que puedan pedir turnos online.
                 </p>
               </div>
@@ -1809,28 +1810,28 @@ function moneyToCents(value: string) {
         {activeTab === "account" && <Card className="border-[#e7b9b2] bg-[rgba(253,232,229,0.45)]">
           <CardHeader>
             <div>
-              <h2 className="text-base font-semibold text-[#8f1b13]">
+              <h2 className="text-sm font-semibold text-[#8f1b13]">
                 Zona peligrosa
               </h2>
-              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+              <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
                 Acciones críticas de la cuenta y del local.
               </p>
             </div>
           </CardHeader>
-          <CardBody className="p-4">
-            <div className="flex flex-col gap-3 rounded-lg border border-[#e7b9b2] bg-[#ffffff] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardBody className="p-3 sm:p-4">
+            <div className="flex flex-col gap-3 rounded-lg border border-[#e7b9b2] bg-[#ffffff] p-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-[#8f1b13]">
                   Eliminar cuenta
                 </p>
-                <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                <p className="mt-1 text-[0.6875rem] text-[var(--color-muted-strong)]">
                   Esta acción eliminará el local, turnos, configuración y accesos.
                 </p>
               </div>
               <Button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="border-[#b42318] text-[#b42318] hover:bg-[#fde8e5]"
+                className="h-8 px-3 text-xs border-[#b42318] text-[#b42318] hover:bg-[#fde8e5]"
               >
                 Eliminar cuenta
               </Button>
@@ -1881,10 +1882,10 @@ function moneyToCents(value: string) {
                 </div>
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-bold text-[var(--color-ink)]">
+                <h2 className="text-sm font-bold text-[var(--color-ink)]">
                   {profileCompletionPercent === 100 ? "Perfil completo" : "Perfil en progreso"}
                 </h2>
-                <p className="mt-1 text-xs leading-5 text-[var(--color-muted-strong)]">
+                <p className="mt-1 text-[0.6875rem] leading-4 text-[var(--color-muted-strong)]">
                   {profileCompletionPercent === 100
                     ? "Tu página pública ya tiene lo esencial."
                     : "Completá estos datos para publicar mejor."}
@@ -1938,10 +1939,10 @@ function moneyToCents(value: string) {
                       />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-[var(--color-ink)]">
+                      <span className="block truncate text-xs font-semibold text-[var(--color-ink)]">
                         {item.label}
                       </span>
-                      <span className="text-xs text-[var(--color-muted)]">
+                      <span className="text-[0.6875rem] text-[var(--color-muted)]">
                         {item.done ? "Completado" : "Pendiente"}
                       </span>
                     </span>
@@ -1963,10 +1964,10 @@ function moneyToCents(value: string) {
             </div>
 
             <div className="mt-3 rounded-xl border border-[rgba(253,134,6,0.24)] bg-[rgba(253,134,6,0.035)] p-3.5">
-              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--color-accent)]">
+              <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.12em] text-[var(--color-accent)]">
                 {profileCompletionPercent === 100 ? "Todo listo" : "Siguiente paso"}
               </p>
-              <p className="mt-1 text-sm leading-5 text-[var(--color-ink)]">
+              <p className="mt-1 text-xs leading-4 text-[var(--color-ink)]">
                 {profileCompletionPercent === 100
                   ? "Tu perfil está completo y visible para tus clientes."
                   : "Revisá los bloques pendientes antes de compartir tu página."}
@@ -2081,16 +2082,16 @@ function SettingsField({
     highlightChanges && savedValue !== undefined && value !== savedValue;
 
   return (
-    <label className={`relative grid min-w-0 gap-1.5 text-sm ${className}`}>
+    <label className={`relative grid min-w-0 gap-1 text-xs ${className}`}>
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
-      <span className={`flex h-10 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
+      <span className={`flex h-9 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
         changed
           ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
           : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
       } bg-[#ffffff]`}>
         {prefix && (
           <span
-            className={`shrink-0 border-r border-[var(--color-border)] px-3 py-2 text-[var(--color-muted)] ${
+            className={`shrink-0 border-r border-[var(--color-border)] px-3 text-xs text-[var(--color-muted)] ${
               readOnly ? "bg-[#ffffff]" : "bg-[#ffffff]"
             }`}
           >
@@ -2112,7 +2113,7 @@ function SettingsField({
             href={actionHref}
             target="_blank"
             rel="noreferrer"
-            className={`shrink-0 border-l border-[var(--color-border)] px-3 py-2 font-semibold text-[var(--color-ink)] hover:bg-[rgba(253,134,6,0.1)] ${
+            className={`shrink-0 border-l border-[var(--color-border)] px-3 text-xs font-semibold text-[var(--color-ink)] hover:bg-[rgba(253,134,6,0.1)] ${
               readOnly ? "bg-[#ffffff]" : ""
             }`}
           >
@@ -2121,7 +2122,7 @@ function SettingsField({
         )}
       </span>
       {readOnly && actionHref && (
-        <span className="text-xs text-[var(--color-muted)]">
+        <span className="text-[0.6875rem] text-[var(--color-muted)]">
           Se genera automáticamente desde el nombre del local.
         </span>
       )}
@@ -2154,17 +2155,17 @@ function ArgentinaPhoneField({
   }
 
   return (
-    <label className="relative grid min-w-0 gap-1.5 text-sm">
+    <label className="relative grid min-w-0 gap-1 text-xs">
       <span className="font-semibold text-[var(--color-muted-strong)]">{label}</span>
       <span
-        className={`flex h-10 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
+        className={`flex h-9 min-w-0 overflow-hidden rounded-md border transition hover:border-[var(--color-accent)] focus-within:ring-2 ${
           changed
             ? "border-[#d65a50] focus-within:border-[#d65a50] focus-within:ring-[rgba(214,90,80,0.16)]"
             : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)] focus-within:ring-[rgba(253,134,6,0.2)]"
         } bg-[#ffffff]`}
       >
         <span
-          className={`inline-flex shrink-0 items-center border-r border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-ink)] ${
+          className={`inline-flex shrink-0 items-center border-r border-[var(--color-border)] px-3 text-xs font-semibold text-[var(--color-ink)] ${
             readOnly ? "bg-[#ffffff]" : "bg-[#ffffff]"
           }`}
         >
@@ -2371,7 +2372,7 @@ function GalleryCropModal({
           </div>
 
           <div className="rounded-2xl border border-[var(--color-border)] bg-[#ffffff] p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
               Referencia
             </p>
             <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">

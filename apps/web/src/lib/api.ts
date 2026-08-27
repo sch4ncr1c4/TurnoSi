@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
+let refreshPromise: Promise<boolean> | null = null;
 
 if (
   import.meta.env.PROD &&
@@ -11,6 +12,22 @@ if (
 
 export function getApiUrl(path: string) {
   return `${API_BASE_URL}${path}`;
+}
+
+export function refreshAuthSession() {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+      method: "POST",
+      credentials: "include"
+    })
+      .then((response) => response.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
 }
 
 type ApiFailure = {
@@ -76,11 +93,8 @@ export async function apiRequest<T>(
   });
 
   if (response.status === 401 && retry && path !== "/api/v1/auth/refresh") {
-    const refreshed = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
-      method: "POST",
-      credentials: "include"
-    });
-    if (refreshed.ok) return apiRequest<T>(path, init, false);
+    const refreshed = await refreshAuthSession();
+    if (refreshed) return apiRequest<T>(path, init, false);
   }
 
   return parseResponse<T>(response);
