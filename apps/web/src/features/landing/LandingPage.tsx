@@ -4,12 +4,20 @@ import { Link } from "react-router-dom";
 
 import { preloadAuthPage } from "@/app/route-loaders";
 import { billingPlans } from "../billing/billing.plans";
-import turnosiLogo from "@/components/assets/logos/turnosi-horizontal.svg";
+import turnoarLogo from "@/components/assets/logos/logo-turnoar.svg";
 import statusCheckIcon from "@/components/assets/icons/status/status-check.svg";
 
-type LandingPageProps = {
-  brand: ReactNode;
-};
+function LandingBrand() {
+  return (
+    <img
+      src={turnoarLogo}
+      alt="turnoar"
+      width="241"
+      height="65"
+      className="h-18 w-auto shrink-0"
+    />
+  );
+}
 
 const navigationLinks = [
   {
@@ -133,7 +141,7 @@ function LandingHeroParticles({ className = "" }: { className?: string }) {
   );
 }
 
-export function LandingPage({ brand }: LandingPageProps) {
+export function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(() => window.scrollY > 12);
   const shouldReduceMotion = useReducedMotion();
@@ -268,7 +276,9 @@ export function LandingPage({ brand }: LandingPageProps) {
                       : "[&_img]:h-14 sm:[&_img]:h-16"
                   }`}
                 >
-                  {brand}
+                  <div className="inline-flex items-center justify-center py-3">
+                    <LandingBrand />
+                  </div>
                 </div>
 
             <nav
@@ -437,10 +447,10 @@ export function LandingPage({ brand }: LandingPageProps) {
                     <div className="bg-[rgba(32,24,54,0.98)] p-4 text-white">
                       <div className="mb-8 flex items-center gap-2">
                         <img
-                          src={turnosiLogo}
-                          alt="TurnoSi"
-                          width="1510"
-                          height="398"
+                          src={turnoarLogo}
+                          alt="turnoar"
+                          width="241"
+                          height="65"
                           className="h-6 w-auto opacity-95"
                         />
                       </div>
@@ -561,10 +571,10 @@ export function LandingPage({ brand }: LandingPageProps) {
                     <div className="landing-product-mobile-panel landing-dashboard-tablet-screen grid grid-cols-[76px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-white/14 bg-[#ffffff] text-[var(--color-ink)] shadow-[0_28px_72px_rgba(4,2,12,0.28)]">
                     <div className="bg-[rgba(32,24,54,0.98)] p-3 text-white">
                       <img
-                        src={turnosiLogo}
-                        alt="TurnoSi"
-                        width="1510"
-                        height="398"
+                        src={turnoarLogo}
+                        alt="turnoar"
+                        width="241"
+                        height="65"
                         className="h-5 w-auto min-w-[58px] opacity-95"
                       />
                       <div className="mt-8 space-y-3">
@@ -1160,7 +1170,7 @@ export function LandingPage({ brand }: LandingPageProps) {
 
               <div className="landing-footer-main">
                 <div className="landing-footer-brand">
-                  <div>{brand}</div>
+                  <div className="py-3"><LandingBrand /></div>
                   <p>Turnos, clientes y equipo conectados para trabajar con más orden.</p>
                 </div>
 

@@ -1,7 +1,13 @@
-import { FormEvent, useDeferredValue, useState } from "react";
+import { FormEvent, useDeferredValue, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { Brand } from "../../components/brand/Brand";
+import loginPasswordIcon from "../../components/assets/icons/auth/login-password.svg";
+import loginUserIcon from "../../components/assets/icons/auth/login-user.svg";
+import navHomeIcon from "../../components/assets/icons/navigation/home.svg";
+import navOrganizationsIcon from "../../components/assets/icons/settings/business-identity.svg";
+import navSubscriptionsIcon from "../../components/assets/icons/settings/payments-wallet.svg";
 import { Button } from "../../components/ui";
 import {
   deleteSuperadminOrganization,
@@ -43,6 +49,14 @@ const actionLabels = {
   pause: "Pausar acceso",
   cancel: "Cancelar acceso"
 } as const;
+
+type SuperadminSection = "overview" | "organizations" | "subscriptions";
+
+const superadminSections = [
+  { id: "overview", label: "Resumen", icon: navHomeIcon },
+  { id: "organizations", label: "Organizaciones", icon: navOrganizationsIcon },
+  { id: "subscriptions", label: "Suscripciones", icon: navSubscriptionsIcon }
+] as const;
 
 function formatDate(value: string | null) {
   if (!value) return "Sin actividad";
@@ -111,6 +125,7 @@ function SubscriptionPill({
 
 function LoginPanel() {
   const queryClient = useQueryClient();
+  const shouldReduceMotion = useReducedMotion();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const loginMutation = useMutation({
@@ -126,75 +141,91 @@ function LoginPanel() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] px-4 py-6 text-[var(--color-ink)]">
-      <section className="mx-auto grid min-h-[calc(100vh-48px)] max-w-5xl overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.92)] shadow-[0_24px_80px_rgba(32,24,54,0.12)] lg:grid-cols-[0.86fr_1fr]">
-        <div className="relative flex flex-col justify-between overflow-hidden bg-[var(--color-ink)] p-7 text-white sm:p-9">
-          <div className="absolute inset-x-0 bottom-0 h-52 bg-[radial-gradient(circle_at_20%_40%,rgba(253,134,6,0.22),transparent_34%),radial-gradient(circle_at_85%_80%,rgba(255,255,255,0.09),transparent_28%)]" />
-          <div className="relative z-10 [&_img]:h-14 sm:[&_img]:h-16">
-            <Brand boxed />
+    <main className="grid min-h-screen bg-white text-[var(--color-ink)] lg:grid-cols-2">
+      <aside className="auth-brand-panel relative hidden overflow-hidden bg-[var(--color-ink)] px-8 py-8 text-white lg:flex">
+        <motion.div
+          className="relative z-10 mx-auto flex w-full max-w-[34rem] flex-1 flex-col justify-center text-center"
+          initial={shouldReduceMotion ? false : { opacity: 0, x: -28 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <div className="mb-10 flex justify-center [&_*]:text-white">
+            <Brand boxed variant="turnoar" />
           </div>
-          <div className="relative z-10 my-10 max-w-md">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-              Acceso interno
-            </p>
-            <h1 className="mt-3 text-4xl font-semibold leading-tight">
-              Panel privado para operar TurnoSi.
-            </h1>
-            <p className="mt-4 text-sm leading-6 text-white/64">
-              Gestioná cuentas propietarias, planes manuales, extensiones y bajas desde un único lugar protegido.
-            </p>
-            <div className="mt-7 grid gap-3 text-sm text-white/72">
-              <span className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                Sesión aislada con cookie exclusiva de superadmin.
-              </span>
-              <span className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                Cambios críticos con motivo obligatorio y auditoría.
-              </span>
-            </div>
-          </div>
-          <p className="relative z-10 text-xs text-white/42">
-            Uso interno. No compartas estas credenciales.
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+            Operación interna
           </p>
-        </div>
+          <h1 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl">
+            Control central.
+            <span className="block">Decisiones seguras.</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-white/68">
+            Administrá organizaciones, planes y accesos desde un entorno privado y auditado.
+          </p>
+          <div className="mx-auto mt-8 grid w-full max-w-md grid-cols-2 gap-3 text-left text-xs text-white/70">
+            <span className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              Sesión independiente
+            </span>
+            <span className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              Acciones auditadas
+            </span>
+          </div>
+        </motion.div>
+      </aside>
 
-        <div className="flex items-center justify-center p-6 sm:p-10">
-          <form
+      <section className="auth-surface-pattern relative flex min-w-0 flex-col overflow-hidden bg-white">
+        <div className="relative z-10 flex justify-center bg-[var(--color-ink)] px-5 py-4 [&>div]:py-0 [&_img]:h-12 lg:hidden">
+          <Brand boxed variant="turnoar" />
+        </div>
+        <div className="relative z-10 flex flex-1 items-center justify-center px-5 py-8 sm:px-7">
+          <motion.form
             onSubmit={submit}
-            className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-white/78 p-6 shadow-[0_18px_54px_rgba(32,24,54,0.08)]"
+            className="w-full max-w-[500px] rounded-2xl border border-[rgba(32,24,54,0.11)] bg-white/90 px-7 py-7 shadow-[0_24px_70px_rgba(32,24,54,0.12)] backdrop-blur sm:px-9 sm:py-8 lg:-translate-y-2 lg:px-10 lg:py-9"
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 32, scale: 0.985 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut", delay: 0.08 }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              Superadmin
+            <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--color-ink)]">
+              Acceso Superadmin
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">Iniciar sesión</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
-              Accedé al panel interno de cuentas y planes.
+            <h2 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
+              Iniciar sesión
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-[var(--color-muted-strong)]">
+              Ingresá tus credenciales internas para continuar.
             </p>
-            <label className="mt-6 grid gap-1.5 text-sm">
-              <span className="font-semibold text-[var(--color-muted-strong)]">Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white/90 px-3 outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
-                autoComplete="username"
-                required
-              />
-            </label>
-            <label className="mt-4 grid gap-1.5 text-sm">
-              <span className="font-semibold text-[var(--color-muted-strong)]">
-                Contraseña
-              </span>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="h-11 rounded-lg border border-[var(--color-border-strong)] bg-white/90 px-3 outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(253,134,6,0.16)]"
-                autoComplete="current-password"
-                required
-              />
-            </label>
+            <div className="mt-6 space-y-4">
+              <label className="block text-sm">
+                <span className="mb-2 block font-medium">Email</span>
+                <span className="group/auth-field relative block">
+                  <img src={loginUserIcon} alt="" aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 z-10 h-[22px] w-[22px] -translate-y-1/2 opacity-60" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-12 pr-3 text-sm outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)]"
+                    autoComplete="username"
+                    required
+                  />
+                </span>
+              </label>
+              <label className="block text-sm">
+                <span className="mb-2 block font-medium">Contraseña</span>
+                <span className="group/auth-field relative block">
+                  <img src={loginPasswordIcon} alt="" aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 z-10 h-[21px] w-[21px] -translate-y-1/2 opacity-60" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-12 pr-3 text-sm outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)]"
+                    autoComplete="current-password"
+                    required
+                  />
+                </span>
+              </label>
+            </div>
             {loginMutation.isError ? (
-              <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p role="alert" className="mt-4 rounded-lg border border-[#f0c9c5] bg-[#fff3f1] px-3 py-2 text-sm text-[#9f261d]">
                 No pudimos iniciar sesión como superadmin.
               </p>
             ) : null}
@@ -202,14 +233,14 @@ function LoginPanel() {
               type="submit"
               variant="accent"
               disabled={loginMutation.isPending}
-              className="mt-5 w-full"
+              className="auth-submit-button mt-5 h-11 w-full rounded-lg shadow-[0_14px_30px_rgba(32,24,54,0.2)]"
             >
               {loginMutation.isPending ? "Entrando..." : "Entrar"}
             </Button>
-            <p className="mt-4 text-center text-xs text-[var(--color-muted)]">
-              Acceso restringido a operación interna.
-            </p>
-          </form>
+            <div className="mt-5 border-t border-[var(--color-border)] pt-4 text-center text-xs text-[var(--color-muted)]">
+              Acceso restringido · Actividad registrada
+            </div>
+          </motion.form>
         </div>
       </section>
     </main>
@@ -218,6 +249,9 @@ function LoginPanel() {
 
 export function SuperAdminPage() {
   const queryClient = useQueryClient();
+  const shouldReduceMotion = useReducedMotion();
+  const [activeSection, setActiveSection] = useState<SuperadminSection>("overview");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -229,6 +263,22 @@ export function SuperAdminPage() {
   const [extensionDays, setExtensionDays] = useState("7");
   const [actionReason, setActionReason] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+
+  useEffect(() => {
+    if (!selectedId) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedId(null);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedId]);
 
   const sessionQuery = useQuery({
     queryKey: ["superadmin", "session"],
@@ -315,49 +365,109 @@ export function SuperAdminPage() {
     actionReason.trim().length >= 8 &&
     (subscriptionAction !== "extend" || Number(extensionDays) > 0)
   );
+  const sectionCopy = {
+    overview: ["Resumen general", "Estado actual de la operación interna"],
+    organizations: ["Organizaciones", "Gestión de negocios y cuentas propietarias"],
+    subscriptions: ["Suscripciones", "Control de planes y accesos activos"]
+  } as const;
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)]">
-      <header className="bg-[var(--color-bg)] px-4 pt-4 sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[var(--color-ink)] px-4 py-3 text-white shadow-[0_18px_60px_rgba(32,24,54,0.16)] sm:px-5">
-          <div className="flex items-center gap-4">
-            <div className="[&_*]:text-white [&_img]:h-11 sm:[&_img]:h-12">
-            <Brand boxed />
-            </div>
-            <div className="hidden border-l border-white/12 pl-4 sm:block">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-                Panel interno
-              </p>
-              <p className="mt-1 text-sm text-white/62">
-                Gestión de cuentas y operación
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-1.5 text-sm">
-            <span className="hidden max-w-[220px] truncate px-2 text-white/62 md:inline">
-              {sessionQuery.data?.data.email}
-            </span>
-            <Button
-              type="button"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-              className="border-white/15 bg-white/[0.03] px-3 py-2 text-white hover:bg-white/10"
-            >
-              Cerrar sesión
-            </Button>
-          </div>
+    <main className="dashboard-shell min-h-screen overflow-x-clip bg-[#f7f7f8] text-[var(--color-ink)]">
+      <header className="dashboard-mobile-header dot-pattern-corner dot-pattern-bottom-left z-50 flex items-center justify-between border-b border-white/10 bg-[var(--color-ink)] px-4 py-3 text-white md:hidden">
+        <div className="[&_*]:text-white [&_img]:h-12">
+          <Brand boxed variant="turnoar" />
         </div>
       </header>
+      <div className="dashboard-mobile-header-spacer md:hidden" aria-hidden="true" />
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="space-y-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-              Panel interno
+      <button
+        type="button"
+        aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+        aria-expanded={isMobileMenuOpen}
+        onClick={() => setIsMobileMenuOpen((current) => !current)}
+        className={`dashboard-mobile-burger md:hidden ${isMobileMenuOpen ? "dashboard-mobile-burger--open" : ""}`}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      {isMobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          className="fixed inset-0 z-[60] bg-[rgba(18,13,31,0.42)] backdrop-blur-[3px] md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside className={`dashboard-sidebar dot-pattern-corner dot-pattern-bottom-left z-[70] flex flex-col border-r border-white/10 bg-[var(--color-ink)] px-5 py-5 text-white transition-transform duration-300 ease-out max-md:overflow-y-auto max-md:shadow-[-24px_0_70px_rgba(18,13,31,0.28)] md:z-40 md:px-4 md:py-4 ${
+        isMobileMenuOpen ? "max-md:translate-x-0" : "max-md:translate-x-full"
+      }`}>
+        <div className="dashboard-sidebar-brand flex items-center justify-center max-md:justify-start">
+          <div className="max-md:hidden [&_*]:text-white">
+            <Brand boxed variant="turnoar" />
+          </div>
+          <p className="dashboard-sidebar-section-label dashboard-sidebar-section-label--mobile hidden max-md:block">
+            Administración
+          </p>
+        </div>
+
+        <p className="dashboard-sidebar-section-label max-md:hidden">Administración</p>
+        <nav className="dashboard-sidebar-nav space-y-1 md:shrink-0" aria-label="Navegación del superadmin">
+          {superadminSections.map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => {
+                setActiveSection(section.id);
+                setIsMobileMenuOpen(false);
+              }}
+              className={`dashboard-sidebar-nav-item block w-full text-left text-sm ${activeSection === section.id ? "is-active" : ""}`}
+            >
+              <span className="flex items-center gap-3">
+                <img src={section.icon} alt="" aria-hidden="true" className="dashboard-sidebar-nav-icon h-5 w-5 shrink-0 invert" />
+                <span>{section.label}</span>
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="dashboard-sidebar-footer mt-auto border-t border-white/10 pt-5">
+          <div className="dashboard-sidebar-organization mb-5 rounded-xl border border-white/12 bg-white/[0.04] p-3">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.15em] text-white/40">
+              Cuenta interna
             </p>
-            <h1 className="mt-2 text-3xl font-semibold">Cuentas y operación</h1>
+            <p className="mt-2 truncate text-sm font-semibold text-white">Superadmin</p>
+            <p className="mt-1 truncate text-xs text-white/55">{sessionQuery.data?.data.email}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            className="dashboard-sidebar-logout w-full rounded-md border border-white/20 px-4 py-2.5 text-sm font-medium text-white/72 hover:bg-white/10 hover:text-white disabled:opacity-60"
+          >
+            <span>{logoutMutation.isPending ? "Cerrando sesión..." : "Cerrar sesión"}</span>
+          </button>
+        </div>
+      </aside>
+
+      <section className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6">
+        <div className="space-y-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)]">
+                Panel interno · {superadminSections.find((section) => section.id === activeSection)?.label}
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold">{sectionCopy[activeSection][0]}</h1>
+            </div>
+            <p className="text-sm text-[var(--color-muted-strong)]">
+              {sectionCopy[activeSection][1]}
+            </p>
           </div>
 
+          {activeSection === "overview" ? (
+          <>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               ["Negocios", overviewQuery.data?.data.organizations],
@@ -366,22 +476,67 @@ export function SuperAdminPage() {
             ].map(([label, value]) => (
               <article
                 key={label}
-                className="rounded-2xl border border-[var(--color-border)] bg-white/55 p-4"
+                className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[0_8px_24px_rgba(32,24,54,0.04)]"
               >
                 <p className="text-xs uppercase tracking-[0.14em] text-[var(--color-muted)]">
                   {label}
                 </p>
-                <p className="mt-2 text-2xl font-semibold">{value ?? "-"}</p>
+                <p className="mt-2 text-xl font-semibold">{value ?? "-"}</p>
               </article>
             ))}
           </div>
 
-          <section className="rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.86)]">
+          <section className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[0_8px_24px_rgba(32,24,54,0.04)]">
+            <div>
+              <h2 className="text-lg font-semibold">Gestión rápida</h2>
+              <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
+                Accedé directamente a las áreas operativas del sistema.
+              </p>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setActiveSection("organizations")}
+                className="group flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[#f7f7f8] p-4 text-left transition hover:border-[var(--color-accent)] hover:bg-white"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white">
+                  <img src={navOrganizationsIcon} alt="" aria-hidden="true" className="h-5 w-5 opacity-70" />
+                </span>
+                <span>
+                  <strong className="block text-sm">Administrar organizaciones</strong>
+                  <span className="mt-1 block text-xs text-[var(--color-muted-strong)]">Cuentas, propietarios y datos del negocio</span>
+                </span>
+                <span className="ml-auto text-lg text-[var(--color-muted)] transition group-hover:translate-x-1">→</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSection("subscriptions")}
+                className="group flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[#f7f7f8] p-4 text-left transition hover:border-[var(--color-accent)] hover:bg-white"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white">
+                  <img src={navSubscriptionsIcon} alt="" aria-hidden="true" className="h-5 w-5 opacity-70" />
+                </span>
+                <span>
+                  <strong className="block text-sm">Gestionar suscripciones</strong>
+                  <span className="mt-1 block text-xs text-[var(--color-muted-strong)]">Planes, estados y extensiones manuales</span>
+                </span>
+                <span className="ml-auto text-lg text-[var(--color-muted)] transition group-hover:translate-x-1">→</span>
+              </button>
+            </div>
+          </section>
+          </>
+          ) : (
+
+          <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_8px_24px_rgba(32,24,54,0.04)]">
             <div className="flex flex-col gap-3 border-b border-[var(--color-border)] p-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Organizaciones</h2>
+                <h2 className="text-lg font-semibold">
+                  {activeSection === "subscriptions" ? "Planes por organización" : "Organizaciones"}
+                </h2>
                 <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
-                  Buscá por negocio, URL pública, dueño o email.
+                  {activeSection === "subscriptions"
+                    ? "Seleccioná una cuenta para administrar su plan y acceso."
+                    : "Buscá por negocio, URL pública, dueño o email."}
                 </p>
               </div>
               <input
@@ -393,6 +548,11 @@ export function SuperAdminPage() {
             </div>
 
             <div className="divide-y divide-[var(--color-border)]">
+              <div className="hidden grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)_minmax(220px,auto)] gap-4 bg-[#f7f7f8] px-4 py-2.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-[var(--color-muted)] md:grid">
+                <span>Negocio</span>
+                <span>Propietario</span>
+                <span className="text-right">Suscripción</span>
+              </div>
               {organizationsQuery.isLoading ? (
                 <p className="p-4 text-sm text-[var(--color-muted-strong)]">
                   Cargando cuentas...
@@ -413,9 +573,9 @@ export function SuperAdminPage() {
                     setActionMessage("");
                     setActionReason("");
                   }}
-                  className={`grid w-full gap-4 p-4 text-left transition hover:bg-white/65 md:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)_auto] ${
+                  className={`grid w-full gap-4 p-4 text-left transition hover:bg-[#f7f7f8] md:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)_minmax(220px,auto)] ${
                     selectedId === organization.id
-                      ? "bg-white shadow-[inset_3px_0_0_var(--color-accent)]"
+                      ? "bg-[#f7f7f8] shadow-[inset_3px_0_0_var(--color-accent)]"
                       : ""
                   }`}
                 >
@@ -444,21 +604,29 @@ export function SuperAdminPage() {
               ))}
             </div>
           </section>
+          )}
         </div>
 
-        <aside className="lg:sticky lg:top-5 lg:self-start">
-          <section className="rounded-2xl border border-[var(--color-border)] bg-white/70">
-            {!selectedId ? (
-              <div className="p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                  Detalle
-                </p>
-                <h2 className="mt-2 text-xl font-semibold">Elegí una cuenta</h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--color-muted-strong)]">
-                  Desde acá podés revisar datos, plan, miembros, sedes, pagos y borrar una organización completa.
-                </p>
-              </div>
-            ) : detailQuery.isLoading ? (
+        {selectedId && (
+        <aside className="fixed inset-0 z-[90] flex justify-end" aria-label="Detalle de la organización">
+          <motion.button
+            type="button"
+            aria-label="Cerrar detalle"
+            onClick={() => setSelectedId(null)}
+            className="absolute inset-0 bg-[rgba(32,24,54,0.34)] backdrop-blur-[2px]"
+            initial={shouldReduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+          />
+          <motion.section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="superadmin-detail-title"
+            className="relative z-10 h-full w-full max-w-[30rem] overflow-y-auto border-l border-[var(--color-border)] bg-white shadow-[-24px_0_70px_rgba(32,24,54,0.16)]"
+            initial={shouldReduceMotion ? false : { x: "100%" }}
+            animate={{ x: 0 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
+            {detailQuery.isLoading ? (
               <p className="p-5 text-sm text-[var(--color-muted-strong)]">
                 Cargando detalle...
               </p>
@@ -470,7 +638,7 @@ export function SuperAdminPage() {
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
                         Cuenta
                       </p>
-                      <h2 className="mt-2 text-xl font-semibold">{detail.name}</h2>
+                      <h2 id="superadmin-detail-title" className="mt-2 text-xl font-semibold">{detail.name}</h2>
                       <p className="mt-1 text-sm text-[var(--color-muted-strong)]">
                         {detail.address || "Sin dirección"} · {detail.phone || "Sin teléfono"}
                       </p>
@@ -478,9 +646,10 @@ export function SuperAdminPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedId(null)}
-                      className="rounded-full border border-[var(--color-border)] px-3 py-1 text-sm"
+                      aria-label="Cerrar detalle"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-xl leading-none transition hover:bg-[#f1f1f3]"
                     >
-                      Cerrar
+                      ×
                     </button>
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
@@ -500,7 +669,7 @@ export function SuperAdminPage() {
                 </div>
 
                 <div className="space-y-5 p-5">
-                  <section className="rounded-2xl border border-[var(--color-border)] bg-[rgba(255,251,244,0.8)] p-4">
+                  <section className="rounded-xl border border-[var(--color-border)] bg-[#f7f7f8] p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
@@ -520,7 +689,7 @@ export function SuperAdminPage() {
                       {detail.subscription ? <SubscriptionPill organization={detail} /> : null}
                     </div>
 
-                    <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white/65 p-3">
+                    <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white p-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
                         Acciones internas
                       </p>
@@ -709,8 +878,9 @@ export function SuperAdminPage() {
                 No pudimos cargar esta cuenta.
               </p>
             )}
-          </section>
+          </motion.section>
         </aside>
+        )}
       </section>
     </main>
   );

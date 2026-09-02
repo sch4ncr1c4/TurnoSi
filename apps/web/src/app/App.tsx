@@ -39,26 +39,26 @@ function AppRoutes() {
       <Routes>
         <Route
           path={ROUTES.home}
-          element={<LandingPage brand={<Brand boxed />} />}
+          element={<LandingPage />}
         />
         <Route
           path={ROUTES.login}
-          element={<AuthPage brand={<Brand asLink boxed />} route="login" />}
+          element={<AuthPage brand={<Brand asLink boxed variant="turnoar" />} route="login" />}
         />
         <Route
           path={ROUTES.register}
-          element={<AuthPage brand={<Brand asLink boxed />} route="register" />}
+          element={<AuthPage brand={<Brand asLink boxed variant="turnoar" />} route="register" />}
         />
         <Route
           path={ROUTES.recoverPassword}
-          element={<PasswordRecoveryPage brand={<Brand asLink boxed />} />}
+          element={<PasswordRecoveryPage brand={<Brand asLink boxed variant="turnoar" />} />}
         />
         <Route path={ROUTES.superadmin} element={<SuperAdminPage />} />
         <Route
           path={ROUTES.dashboard}
           element={
             <AuthGuard>
-              <DashboardPage brand={<Brand boxed />} />
+              <DashboardPage brand={<Brand boxed variant="turnoar" />} />
             </AuthGuard>
           }
         />
