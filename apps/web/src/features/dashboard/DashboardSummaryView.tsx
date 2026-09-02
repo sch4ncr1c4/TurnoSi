@@ -2,6 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
+import averageTicketIcon from "../../components/assets/icons/analytics/badge-dollar-sign.svg";
+import completedAppointmentsIcon from "../../components/assets/icons/analytics/calendar-check-2.svg";
+import cancellationIcon from "../../components/assets/icons/analytics/calendar-x-2.svg";
+import incomeIcon from "../../components/assets/icons/analytics/circle-dollar-sign.svg";
+import occupancyIcon from "../../components/assets/icons/analytics/gauge.svg";
+import expenseIcon from "../../components/assets/icons/analytics/receipt-text.svg";
+import netIncomeIcon from "../../components/assets/icons/analytics/trending-up.svg";
+import noShowIcon from "../../components/assets/icons/analytics/user-x.svg";
+import calendarRangeIcon from "../../components/assets/icons/navigation/calendar-range.svg";
+import analyticsIcon from "../../components/assets/icons/navigation/chart-no-axes-combined.svg";
 import { ModalCloseButton } from "../../components/ui/ModalCloseButton";
 import { DashboardPerformanceChart } from "./DashboardPerformanceChart";
 import {
@@ -260,48 +270,56 @@ export function DashboardSummaryView({
     {
       change: data.metrics.changes.incomePercent,
       helper: "Ingresos reconocidos: turnos pagados/completados y señas aprobadas.",
+      icon: incomeIcon,
       label: "Ingresos",
       value: formatMoney(data.metrics.incomeCents)
     },
     {
       change: data.metrics.changes.expensePercent,
       helper: "Gastos registrados dentro del período seleccionado.",
+      icon: expenseIcon,
       label: "Gastos",
       value: formatMoney(data.metrics.expenseCents)
     },
     {
       change: data.metrics.changes.netIncomePercent,
       helper: "Ingresos menos gastos del período seleccionado.",
+      icon: netIncomeIcon,
       label: "Ganancia neta",
       value: formatMoney(data.metrics.netIncomeCents)
     },
     {
       change: data.metrics.changes.completedPercent,
       helper: "Turnos cobrados o completados dentro del período.",
+      icon: completedAppointmentsIcon,
       label: "Turnos realizados",
       value: String(data.metrics.completedAppointments)
     },
     {
       change: data.metrics.changes.averageTicketPercent,
       helper: "Promedio facturado por turno realizado en el período seleccionado.",
+      icon: averageTicketIcon,
       label: "Ticket promedio",
       value: formatMoney(data.metrics.averageTicketCents)
     },
     {
       change: data.metrics.changes.occupancyPercent,
       helper: "Turnos confirmados o completados sobre el total agendado. No mide ocupación horaria real.",
+      icon: occupancyIcon,
       label: "Ocupación",
       value: `${data.metrics.occupancyPercent.toLocaleString("es-AR")}%`
     },
     {
       change: data.metrics.changes.cancellationRatePercent,
       helper: "Porcentaje de turnos cancelados sobre el total agendado.",
+      icon: cancellationIcon,
       label: "Cancelación",
       value: `${data.metrics.cancellationRatePercent.toLocaleString("es-AR")}%`
     },
     {
       change: data.metrics.changes.noShowRatePercent,
       helper: "Porcentaje de turnos marcados como No asistió sobre el total agendado.",
+      icon: noShowIcon,
       label: "No asistencia",
       value: `${data.metrics.noShowRatePercent.toLocaleString("es-AR")}%`
     }
@@ -490,17 +508,24 @@ export function DashboardSummaryView({
               <article
                 key={card.label}
                 title={card.helper}
-                className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 shadow-[0_8px_22px_rgba(32,24,54,0.03)]"
+                className="flex min-h-[5.25rem] items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white px-3 py-3 shadow-[0_8px_22px_rgba(32,24,54,0.03)]"
               >
-                <p className="text-xs font-medium text-[var(--color-muted-strong)]">
-                  {card.label}
-                </p>
-                <p className="mt-1 font-mono text-base font-semibold tracking-tight text-[var(--color-ink)]">
-                  {card.value}
-                </p>
-                <p className="mt-1 text-[10px] text-[var(--color-muted)]">
-                  <Change value={card.change} />
-                </p>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgba(32,24,54,0.055)]">
+                  <img src={card.icon} alt="" aria-hidden="true" className="h-[1.125rem] w-[1.125rem] opacity-70" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-[var(--color-muted-strong)]">
+                    {card.label}
+                  </p>
+                  <div className="mt-1 flex min-w-0 items-end justify-between gap-2">
+                    <p className="shrink-0 font-mono text-base font-semibold leading-none tracking-tight text-[var(--color-ink)]">
+                      {card.value}
+                    </p>
+                    <p className="truncate text-right text-[10px] leading-4 text-[var(--color-muted)]">
+                      <Change value={card.change} />
+                    </p>
+                  </div>
+                </div>
               </article>
             ))}
           </section>
@@ -624,24 +649,32 @@ function SummarySectionTabs({
   onChange: (section: "daily" | "analytics") => void;
 }) {
   const tabs = [
-    { label: "Diario", value: "daily" as const },
-    { label: "Analítica", value: "analytics" as const }
+    { icon: calendarRangeIcon, label: "Diario", value: "daily" as const },
+    { icon: analyticsIcon, label: "Analítica", value: "analytics" as const }
   ];
 
   return (
-    <nav className="inline-flex h-9 overflow-hidden rounded-lg border border-[var(--color-border)] bg-white p-0.5 shadow-[0_8px_22px_rgba(32,24,54,0.03)]">
+    <nav className="inline-flex overflow-hidden rounded-lg border border-[var(--color-border)] bg-white p-0.5 shadow-[0_8px_20px_rgba(32,24,54,0.035)]">
       {tabs.map((tab, index) => (
         <div key={tab.value} className="flex items-center">
           {index > 0 && <span className="mx-1 h-4 w-px bg-[var(--color-border)]" />}
           <button
             type="button"
             onClick={() => onChange(tab.value)}
-            className={`h-8 rounded-md px-3 text-xs font-semibold transition ${
+            className={`group inline-flex h-8 w-[8.25rem] shrink-0 items-center justify-center gap-2 rounded-md px-3 text-[0.75rem] font-semibold leading-4 transition-colors ${
               active === tab.value
                 ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
                 : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
             }`}
           >
+            <img
+              src={tab.icon}
+              alt=""
+              aria-hidden="true"
+              className={`h-4 w-4 shrink-0 opacity-75 transition duration-200 group-hover:scale-110 ${
+                active === tab.value ? "invert" : ""
+              }`}
+            />
             {tab.label}
           </button>
         </div>

@@ -1143,6 +1143,7 @@ function moneyToCents(value: string) {
                   settingsTabButtonRefs.current[value] = node;
                 }}
                 type="button"
+                style={{ fontSize: "0.75rem", lineHeight: "1rem" }}
                 onClick={() => {
                   if (activeTab !== value && hasPendingChanges) {
                     setShowUnsavedState(true);
@@ -1151,10 +1152,10 @@ function moneyToCents(value: string) {
                   }
                   setActiveTab(value);
                 }}
-                className={`group flex min-w-[132px] snap-start items-center justify-center gap-2 rounded-md px-3 h-8 text-xs font-semibold transition-colors 2xl:min-w-[132px] 2xl:px-3 ${
+                className={`group inline-flex h-8 w-[8.25rem] shrink-0 snap-start items-center justify-center gap-2 whitespace-nowrap rounded-md px-2 text-[0.75rem] font-semibold leading-4 transition-colors ${
                   activeTab === value
                     ? "bg-[var(--color-ink)] text-[var(--color-button-text)]"
-                    : "text-[var(--color-ink)] hover:bg-white/60"
+                    : "text-[var(--color-muted-strong)] hover:bg-[rgba(32,24,54,0.04)]"
                 }`}
               >
                 <img

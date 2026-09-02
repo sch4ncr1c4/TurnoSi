@@ -1,20 +1,20 @@
+import { turnoarEmailLogoBase64 } from "./email-logo.js";
+
 const colors = {
   accent: "#fd8606",
-  border: "rgba(32, 24, 54, 0.14)",
+  accentSoft: "#fff4e8",
+  border: "#dedde3",
   ink: "#201836",
-  muted: "#64625a",
-  page: "#f0ead9",
-  surface: "#fffaf4"
+  muted: "#67636f",
+  page: "#f4f4f6",
+  surface: "#ffffff"
 };
 
 type EmailTemplateInput = {
   eyebrow: string;
   title: string;
   intro: string;
-  action?: {
-    label: string;
-    url: string;
-  };
+  action?: { label: string; url: string };
   code?: string;
   note: string;
 };
@@ -28,12 +28,25 @@ function escapeHtml(value: string) {
       '"': "&quot;",
       "'": "&#039;"
     };
-
     return replacements[character] ?? character;
   });
 }
 
-export function renderTurnosiEmail(input: EmailTemplateInput) {
+export function getTurnoarEmailFrom(configuredFrom: string) {
+  const addressMatch = configuredFrom.match(/<([^>]+)>/);
+  return addressMatch
+    ? `Turnoar <${addressMatch[1]}>`
+    : `Turnoar <${configuredFrom.trim()}>`;
+}
+
+export const turnoarEmailLogoAttachment = {
+  content: turnoarEmailLogoBase64,
+  content_id: "turnoar-logo",
+  content_type: "image/png",
+  filename: "turnoar-logo.png"
+} as const;
+
+export function renderTurnoarEmail(input: EmailTemplateInput) {
   const eyebrow = escapeHtml(input.eyebrow);
   const title = escapeHtml(input.title);
   const intro = escapeHtml(input.intro);
@@ -42,9 +55,9 @@ export function renderTurnosiEmail(input: EmailTemplateInput) {
   const actionHtml = input.action
     ? `
       <tr>
-        <td style="padding: 22px 0 8px;">
-          <a href="${escapeHtml(input.action.url)}" style="display:inline-block;border-radius:10px;background:${colors.ink};color:${colors.surface};font-size:14px;font-weight:700;text-decoration:none;padding:13px 18px;">
-            ${escapeHtml(input.action.label)}
+        <td style="padding:24px 0 4px;">
+          <a href="${escapeHtml(input.action.url)}" target="_blank" style="display:inline-block;border-radius:8px;background:${colors.ink};color:#ffffff;font-family:Arial,'Helvetica Neue',sans-serif;font-size:14px;font-weight:700;line-height:20px;text-decoration:none;padding:12px 20px;">
+            ${escapeHtml(input.action.label)}&nbsp;&nbsp;→
           </a>
         </td>
       </tr>`
@@ -53,10 +66,14 @@ export function renderTurnosiEmail(input: EmailTemplateInput) {
   const codeHtml = input.code
     ? `
       <tr>
-        <td style="padding: 18px 0 8px;">
-          <div style="display:inline-block;border:1px solid ${colors.border};border-radius:14px;background:#ffffff;padding:14px 18px;color:${colors.ink};font-family:'Courier New',monospace;font-size:30px;font-weight:800;letter-spacing:8px;">
-            ${escapeHtml(input.code)}
-          </div>
+        <td style="padding:24px 0 4px;">
+          <table role="presentation" cellspacing="0" cellpadding="0">
+            <tr>
+              <td class="email-code" style="border:1px solid ${colors.border};border-left:3px solid ${colors.accent};border-radius:10px;background:#f8f8fa;padding:15px 20px;color:${colors.ink};font-family:'Courier New',Courier,monospace;font-size:28px;font-weight:700;line-height:34px;letter-spacing:8px;white-space:nowrap;">
+                ${escapeHtml(input.code)}
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>`
     : "";
@@ -66,53 +83,73 @@ export function renderTurnosiEmail(input: EmailTemplateInput) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
     <title>${title}</title>
+    <style>
+      :root { color-scheme: light dark; supported-color-schemes: light dark; }
+      @media (prefers-color-scheme: dark) {
+        body.email-body, .email-page { background-color:#0d0d0f !important; }
+        .email-card { background-color:#171719 !important; border-color:#36363c !important; }
+        .email-title { color:#f7f7f8 !important; }
+        .email-copy { color:#c9c7cf !important; }
+        .email-code { background-color:#101012 !important; border-color:#414148 !important; color:#ffffff !important; }
+        .email-note { background-color:#382108 !important; border-color:#8a4a08 !important; color:#ffd7ad !important; }
+        .email-security { border-color:#36363c !important; color:#aaa7b1 !important; }
+        .email-footer { color:#8f8c96 !important; }
+      }
+      [data-ogsc] .email-page { background-color:#0d0d0f !important; }
+      [data-ogsc] .email-card { background-color:#171719 !important; border-color:#36363c !important; }
+      [data-ogsc] .email-title { color:#f7f7f8 !important; }
+      [data-ogsc] .email-copy { color:#c9c7cf !important; }
+      [data-ogsc] .email-code { background-color:#101012 !important; border-color:#414148 !important; color:#ffffff !important; }
+      [data-ogsc] .email-note { background-color:#382108 !important; border-color:#8a4a08 !important; color:#ffd7ad !important; }
+      [data-ogsc] .email-security { border-color:#36363c !important; color:#aaa7b1 !important; }
+      [data-ogsc] .email-footer { color:#8f8c96 !important; }
+    </style>
   </head>
-  <body style="margin:0;background:${colors.page};font-family:Inter,Segoe UI,Arial,sans-serif;color:${colors.ink};">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${colors.page};padding:32px 14px;">
+  <body class="email-body" style="margin:0;padding:0;background:${colors.page};font-family:Arial,'Helvetica Neue',sans-serif;color:${colors.ink};">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${intro}</div>
+    <table class="email-page" role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${colors.page}" style="width:100%;background:${colors.page};">
       <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;border-collapse:separate;border-spacing:0;">
+        <td align="center" style="padding:32px 14px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:560px;border-collapse:separate;border-spacing:0;">
             <tr>
-              <td style="padding:22px 24px;border-radius:18px 18px 0 0;background:${colors.ink};">
-                <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:${colors.surface};">
-                  Turno<span style="color:${colors.accent};">Si</span>
-                </div>
+              <td style="border-radius:16px 16px 0 0;background:${colors.ink};padding:20px 24px;">
+                <img src="cid:turnoar-logo" width="148" alt="Turnoar" style="display:block;width:148px;height:auto;border:0;color:#ffffff;font-size:18px;font-weight:700;">
               </td>
             </tr>
             <tr>
-              <td style="border:1px solid ${colors.border};border-top:0;border-radius:0 0 18px 18px;background:${colors.surface};padding:28px 24px 24px;box-shadow:0 22px 60px rgba(32,24,54,0.12);">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+              <td class="email-card" bgcolor="${colors.surface}" style="border:1px solid ${colors.border};border-top:0;border-radius:0 0 16px 16px;background:${colors.surface};padding:30px 24px 26px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
-                    <td style="color:${colors.accent};font-size:12px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;">
-                      ${eyebrow}
-                    </td>
+                    <td style="color:${colors.accent};font-size:11px;font-weight:700;line-height:16px;letter-spacing:1.5px;text-transform:uppercase;">${eyebrow}</td>
                   </tr>
                   <tr>
-                    <td style="padding-top:10px;font-size:26px;line-height:1.25;font-weight:800;color:${colors.ink};">
-                      ${title}
-                    </td>
+                    <td class="email-title" style="padding-top:9px;color:${colors.ink};font-size:24px;font-weight:700;line-height:30px;letter-spacing:-0.3px;">${title}</td>
                   </tr>
                   <tr>
-                    <td style="padding-top:12px;font-size:15px;line-height:1.7;color:${colors.muted};">
-                      ${intro}
-                    </td>
+                    <td class="email-copy" style="padding-top:12px;color:${colors.muted};font-size:14px;line-height:22px;">${intro}</td>
                   </tr>
                   ${codeHtml}
                   ${actionHtml}
                   <tr>
-                    <td style="padding-top:18px;">
-                      <div style="border-radius:12px;background:rgba(253,134,6,0.09);border:1px solid rgba(253,134,6,0.22);padding:13px 14px;color:${colors.muted};font-size:13px;line-height:1.6;">
-                        ${note}
-                      </div>
+                    <td style="padding-top:22px;">
+                      <div class="email-note" style="border:1px solid #ffd3a3;border-radius:9px;background:${colors.accentSoft};padding:12px 14px;color:#6b4a29;font-size:12px;line-height:19px;">${note}</div>
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding-top:22px;color:${colors.muted};font-size:12px;line-height:1.6;">
-                      Si no solicitaste este correo, podés ignorarlo.
+                    <td class="email-security" style="padding-top:22px;border-top:1px solid ${colors.border};color:${colors.muted};font-size:11px;line-height:18px;">
+                      Si no solicitaste este correo, podés ignorarlo de forma segura.<br>
+                      Nunca compartas códigos ni contraseñas por email.
                     </td>
                   </tr>
                 </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="email-footer" align="center" style="padding:18px 20px 0;color:#8b8892;font-size:11px;line-height:18px;">
+                © ${new Date().getFullYear()} Turnoar · Gestión simple para tu negocio
               </td>
             </tr>
           </table>

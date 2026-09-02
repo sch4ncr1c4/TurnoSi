@@ -7,6 +7,7 @@ import {
 
 type DashboardCalendarCardProps = {
   appointmentDays?: string[];
+  compact?: boolean;
   disablePreviousMonth?: boolean;
   minDate?: Date;
   onNextMonth?: () => void;
@@ -17,6 +18,7 @@ type DashboardCalendarCardProps = {
 
 export function DashboardCalendarCard({
   appointmentDays = [],
+  compact = false,
   disablePreviousMonth = false,
   minDate,
   onNextMonth,
@@ -28,10 +30,10 @@ export function DashboardCalendarCard({
   const appointmentDaySet = new Set(appointmentDays);
 
   return (
-    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+    <article className={`min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)] ${compact ? "p-2.5" : "p-3"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-semibold">Calendario</h2>
-        <div className="flex items-center gap-2 text-sm font-medium">
+        <h2 className={`${compact ? "text-[0.8125rem]" : "text-base"} font-semibold`}>Calendario</h2>
+        <div className={`flex items-center gap-2 font-medium ${compact ? "text-[0.75rem]" : "text-sm"}`}>
           {onPreviousMonth && (
             <button
               type="button"
@@ -60,7 +62,7 @@ export function DashboardCalendarCard({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-xs">
+      <div className={`${compact ? "mt-2 gap-y-0.5 text-[0.6875rem]" : "mt-3 gap-y-1 text-xs"} grid grid-cols-7 text-center`}>
         {["L", "M", "X", "J", "V", "S", "D"].map((day) => (
           <span key={day} className="font-semibold text-[var(--color-muted)]">
             {day}
@@ -74,7 +76,7 @@ export function DashboardCalendarCard({
             isSameMonth(day, selectedDate) &&
             !isActive &&
             appointmentDaySet.has(format(day, "yyyy-MM-dd"));
-          const className = `relative mx-auto flex h-7 w-7 items-center justify-center rounded-full font-medium ${
+          const className = `relative mx-auto flex items-center justify-center rounded-full font-medium ${compact ? "h-6 w-6" : "h-7 w-7"} ${
             isActive
               ? "bg-[var(--color-ink)] text-white"
               : isMuted

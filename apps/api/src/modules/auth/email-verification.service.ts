@@ -4,7 +4,11 @@ import { MembershipRole } from "@prisma/client";
 import { env } from "../../config/env.js";
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
-import { renderTurnosiEmail } from "../../lib/email-template.js";
+import {
+  getTurnoarEmailFrom,
+  renderTurnoarEmail,
+  turnoarEmailLogoAttachment
+} from "../../lib/email-template.js";
 import { logger } from "../../lib/logger.js";
 import { slugifyOrganizationName } from "./auth.utils.js";
 
@@ -27,12 +31,13 @@ async function sendVerificationEmail(email: string, verificationUrl: string) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM,
+      from: getTurnoarEmailFrom(env.EMAIL_FROM),
       to: [email],
-      subject: "Verificá tu cuenta de TurnoSi",
-      html: renderTurnosiEmail({
+      subject: "Verificá tu cuenta de Turnoar",
+      attachments: [turnoarEmailLogoAttachment],
+      html: renderTurnoarEmail({
         eyebrow: "Verificación de cuenta",
-        title: "Activá tu cuenta en TurnoSi",
+        title: "Activá tu cuenta en Turnoar",
         intro:
           "Confirmá tu correo para terminar el alta y empezar a configurar tu negocio.",
         action: {

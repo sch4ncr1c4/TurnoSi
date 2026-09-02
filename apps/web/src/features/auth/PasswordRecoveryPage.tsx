@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { PageLayout } from "../../components/layout/PageLayout";
 import backChevronIcon from "../../components/assets/icons/actions/back-chevron.svg";
+import keyRoundIcon from "../../components/assets/icons/auth/key-round.svg";
 import loginUserIcon from "../../components/assets/icons/auth/login-user.svg";
 import { PasswordRequirementField } from "../../components/ui";
 import { ApiError } from "../../lib/api";
@@ -190,22 +191,32 @@ export function PasswordRecoveryPage({ brand }: { brand: ReactNode }) {
                 <form onSubmit={changePassword} className="mt-6 space-y-4">
               <label className="block text-sm font-medium">
                 Código de 6 dígitos
-                <input
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  required
-                  value={code}
-                  onChange={(event) =>
-                    setCode(event.target.value.replace(/\D/g, ""))
-                  }
-                  className="mt-2 h-11 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 font-mono text-sm tracking-[0.3em] outline-none transition hover:border-[var(--color-accent)] focus:border-[var(--color-accent)]"
-                />
+                <span className="group/auth-field relative mt-2 block">
+                  <img
+                    src={keyRoundIcon}
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 opacity-62 transition duration-200 ease-out group-focus-within/auth-field:scale-110 group-focus-within/auth-field:opacity-90"
+                  />
+                  <input
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    required
+                    placeholder="Ingresá el código"
+                    value={code}
+                    onChange={(event) =>
+                      setCode(event.target.value.replace(/\D/g, ""))
+                    }
+                    className="h-11 w-full rounded-lg border border-[var(--color-border)] bg-white pl-12 pr-3 text-sm outline-none transition placeholder:text-[#77727f] placeholder:opacity-100 hover:border-[var(--color-accent)] focus:border-[var(--color-accent)]"
+                  />
+                </span>
               </label>
               <PasswordRequirementField
                 label="Contraseña nueva"
                 required
                 autoComplete="new-password"
+                placeholder="Ingresá una contraseña nueva"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
               />

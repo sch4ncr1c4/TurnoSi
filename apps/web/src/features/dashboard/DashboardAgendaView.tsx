@@ -253,15 +253,15 @@ export function DashboardAgendaView({
 
   return (
     <>
-    <section className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <section className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
       <article className="min-w-0 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[#ffffff] shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-3 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-[rgba(32,24,54,0.035)] px-3 py-2 text-left text-xs lg:w-72">
             <span className="min-w-0">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+              <span className="block text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 {scheduleView === "day" ? "Día" : "Semana del"}
               </span>
-              <span className="mt-0.5 block truncate whitespace-nowrap text-sm font-semibold text-[var(--color-ink)]">
+              <span className="mt-0.5 block truncate whitespace-nowrap text-xs font-semibold text-[var(--color-ink)]">
                 {periodLabel}
               </span>
             </span>
@@ -276,7 +276,7 @@ export function DashboardAgendaView({
         </div>
         {sortedMatches.length === 0 && (
           <div className="border-b border-[var(--color-border)] bg-white/42 px-3 py-3">
-            <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[#ffffff] px-4 py-3 text-sm text-[var(--color-muted-strong)]">
+            <div className="rounded-lg border border-dashed border-[var(--color-border)] bg-[#ffffff] px-4 py-3 text-xs text-[var(--color-muted-strong)]">
               {emptyMessage}
             </div>
           </div>
@@ -292,7 +292,7 @@ export function DashboardAgendaView({
               {visibleDays.map((day) => (
                 <div
                   key={day.date.toISOString()}
-                  className="flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium text-[var(--color-muted-strong)]"
+                  className="flex items-center justify-center gap-1.5 px-2 py-2 text-[0.6875rem] font-medium text-[var(--color-muted-strong)]"
                 >
                   <span>{day.label}</span>
                   <span
@@ -311,7 +311,7 @@ export function DashboardAgendaView({
             <div className="grid" style={{ gridTemplateColumns }}>
               {agendaHours.map(({ hour, label }) => (
                 <div key={hour} className="contents">
-                  <div className="border-r border-[rgba(32,24,54,0.12)] px-2 py-3 text-[11px] text-[var(--color-muted)] sm:px-3">
+                  <div className="border-r border-[rgba(32,24,54,0.12)] px-2 py-3 text-[0.625rem] text-[var(--color-muted)] sm:px-3">
                     {label}
                   </div>
                   {visibleDays.map((day) => {
@@ -345,40 +345,40 @@ export function DashboardAgendaView({
                                     ) ?? null
                                   )
                                 }
-                                className={`rounded border px-2 py-1.5 text-left text-[11px] leading-4 shadow-sm ${
+                                className={`rounded border px-2 py-1.5 text-left text-[0.6875rem] leading-4 shadow-sm ${
                                   scheduleView === "day"
                                     ? "w-full sm:max-w-[260px]"
                                     : "w-full"
                                 } ${getAgendaEventClassName(event.tone)}`}
                               >
                                 <span className="flex items-center justify-between gap-2">
-                                  <span className="text-[10px] font-semibold tabular-nums">
+                                  <span className="text-[0.625rem] font-semibold tabular-nums">
                                     {event.time}
                                   </span>
                                   {event.depositPaid && (
                                     <span
                                       title="Seña pagada"
-                                      className="inline-flex h-4 shrink-0 items-center gap-1 rounded-full border border-[rgba(253,134,6,0.22)] bg-[rgba(32,24,54,0.92)] px-1.5 text-[9px] font-semibold text-white shadow-[0_8px_18px_rgba(32,24,54,0.14)]"
+                                      className="inline-flex h-4 shrink-0 items-center gap-1 rounded-full border border-[rgba(253,134,6,0.22)] bg-[rgba(32,24,54,0.92)] px-1.5 text-[0.5625rem] font-semibold text-white shadow-[0_8px_18px_rgba(32,24,54,0.14)]"
                                     >
                                       <span className="h-1.5 w-1.5 rounded-full bg-[#45d47e]" />
                                       Seña
                                     </span>
                                   )}
                                   <span
-                                    className={`inline-flex h-4 shrink-0 items-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ${getStatusBadgeClassName(event.status)}`}
+                                    className={`inline-flex h-4 shrink-0 items-center rounded-full px-1.5 text-[0.5625rem] font-semibold ring-1 ${getStatusBadgeClassName(event.status)}`}
                                   >
                                     {event.status}
                                   </span>
                                 </span>
-                                <span className="mt-0.5 block truncate text-[11px] font-semibold leading-4">
+                                <span className="mt-0.5 block truncate text-[0.6875rem] font-semibold leading-4">
                                   {event.title}
                                 </span>
                                 {event.client && (
-                                  <span className="mt-0.5 block truncate text-[10px] opacity-70">
+                                  <span className="mt-0.5 block truncate text-[0.625rem] opacity-70">
                                     {event.client}
                                   </span>
                                 )}
-                                <span className="mt-1 block truncate text-[10px] opacity-60">
+                                <span className="mt-1 block truncate text-[0.625rem] opacity-60">
                                   {event.assignee || "Sin profesional"}
                                 </span>
                               </button>
@@ -398,6 +398,7 @@ export function DashboardAgendaView({
       <aside className="min-w-0 space-y-2 xl:sticky xl:top-4 xl:self-start">
         <DashboardCalendarCard
           appointmentDays={appointmentDays}
+          compact
           disablePreviousMonth={disablePreviousMonth}
           minDate={minDate}
           onNextMonth={onNextMonth}
@@ -499,14 +500,14 @@ function AgendaMonthView({
     mobileMonthItems.length > visibleMobileMonthItems.length;
 
   return (
-    <section className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <section className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
       <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
         <div className="flex flex-col gap-3 border-b border-[var(--color-border)] pb-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-base font-semibold capitalize">
+            <h2 className="text-[0.8125rem] font-semibold capitalize">
               {format(selectedDate, "MMMM yyyy", { locale: es })}
             </h2>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
+            <p className="mt-1 text-xs text-[var(--color-muted)]">
               Vista mensual de turnos y disponibilidad.
             </p>
           </div>
@@ -533,14 +534,14 @@ function AgendaMonthView({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] opacity-75">
+                  <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] opacity-75">
                     {format(date, "EEE dd", { locale: es })}
                   </p>
-                  <p className="mt-1 truncate text-sm font-semibold">
+                  <p className="mt-1 truncate text-xs font-semibold">
                     {count} {count === 1 ? "turno" : "turnos"} agendados
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full bg-[rgba(253,134,6,0.14)] px-2.5 py-1 font-mono text-xs font-semibold text-[var(--color-ink)]">
+                <span className="shrink-0 rounded-full bg-[rgba(253,134,6,0.14)] px-2.5 py-1 font-mono text-[0.6875rem] font-semibold text-[var(--color-ink)]">
                   {count}
                 </span>
               </div>
@@ -573,7 +574,7 @@ function AgendaMonthView({
           {["L", "M", "X", "J", "V", "S", "D"].map((day) => (
             <span
               key={day}
-              className="px-2 py-1 text-center text-xs font-semibold text-[var(--color-muted)]"
+              className="px-2 py-1 text-center text-[0.6875rem] font-semibold text-[var(--color-muted)]"
             >
               {day}
             </span>
@@ -592,7 +593,7 @@ function AgendaMonthView({
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-[0.6875rem] font-semibold ${
                       isSameDay(day, selectedDate)
                         ? "bg-[var(--color-ink)] text-white"
                         : !isSameMonth(day, selectedDate)
@@ -614,15 +615,15 @@ function AgendaMonthView({
                       }}
                       className="w-full rounded border border-[rgba(253,134,6,0.24)] bg-[rgba(253,134,6,0.1)] px-2 py-1.5 text-center transition-colors hover:border-[var(--color-accent)] hover:bg-[rgba(253,134,6,0.18)]"
                     >
-                      <span className="font-mono text-sm font-semibold text-[var(--color-ink)]">
+                      <span className="font-mono text-xs font-semibold text-[var(--color-ink)]">
                         {dayEventsCount}
                       </span>
-                      <span className="ml-1 text-[10px] font-semibold text-[var(--color-muted-strong)]">
+                      <span className="ml-1 text-[0.625rem] font-semibold text-[var(--color-muted-strong)]">
                         {dayEventsCount === 1 ? "turno" : "turnos"}
                       </span>
                     </button>
                   ) : (
-                    <p className="rounded border border-dashed border-[var(--color-border)] px-2 py-2 text-xs text-[var(--color-muted)]">
+                    <p className="rounded border border-dashed border-[var(--color-border)] px-2 py-2 text-[0.6875rem] text-[var(--color-muted)]">
                       Sin turnos
                     </p>
                   )}
@@ -636,6 +637,7 @@ function AgendaMonthView({
       <aside className="min-w-0 space-y-2 xl:sticky xl:top-4 xl:self-start">
         <DashboardCalendarCard
           appointmentDays={appointmentDays}
+          compact
           disablePreviousMonth={disablePreviousMonth}
           minDate={minDate}
           onNextMonth={onNextMonth}
@@ -667,19 +669,19 @@ function AgendaMatchesCard({
         : "Turnos del mes";
 
   return (
-    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-3 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
+    <article className="min-w-0 rounded-lg border border-[var(--color-border)] bg-[#ffffff] p-2.5 shadow-[0_16px_44px_rgba(32,24,54,0.05)]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{title}</h2>
-          <p className="mt-1 text-xs text-[var(--color-muted)]">
+          <h2 className="text-[0.8125rem] font-semibold">{title}</h2>
+          <p className="mt-1 text-[0.6875rem] text-[var(--color-muted)]">
             {format(selectedDate, "dd 'de' MMMM", { locale: es })}
           </p>
         </div>
-        <span className="rounded-full bg-[rgba(253,134,6,0.14)] px-2.5 py-1 font-mono text-xs font-semibold text-[var(--color-ink)]">
+        <span className="rounded-full bg-[rgba(253,134,6,0.14)] px-2.5 py-1 font-mono text-[0.6875rem] font-semibold text-[var(--color-ink)]">
           {appointments.length}
         </span>
       </div>
-      <div className="mt-3 space-y-2.5">
+      <div className="mt-2 space-y-2">
         {appointments.slice(0, 8).map((item) => {
           const tone = getAgendaTone(item.status);
 
@@ -688,29 +690,29 @@ function AgendaMatchesCard({
               key={item.id}
               type="button"
               onClick={() => onSelectAppointment(item)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors hover:border-[var(--color-accent)] ${
+              className={`w-full rounded-lg border px-2.5 py-2 text-left transition-colors hover:border-[var(--color-accent)] ${
                 tone === "cancelled" || tone === "noShow"
                   ? getAgendaEventClassName(tone)
                   : "border-[var(--color-border)] bg-white/60 hover:bg-white/80"
               }`}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-sm font-semibold text-[var(--color-accent)]">
+                <span className="font-mono text-xs font-semibold text-[var(--color-accent)]">
                   {item.time}
                 </span>
-                <span className="text-xs text-[var(--color-muted)]">
+                <span className="text-[0.6875rem] text-[var(--color-muted)]">
                   {item.day ?? ""}
                 </span>
               </div>
-              <p className="mt-1 text-sm font-semibold text-[var(--color-ink)]">
+              <p className="mt-1 text-xs font-semibold text-[var(--color-ink)]">
                 {item.service}
               </p>
-              <p className="mt-0.5 text-xs text-[var(--color-muted-strong)]">
+              <p className="mt-0.5 text-[0.6875rem] text-[var(--color-muted-strong)]">
                 {item.client} · {item.assignee}
               </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 <span
-                  className={`inline-flex rounded-md px-2 py-1 text-[10px] font-semibold ring-1 ${getStatusBadgeClassName(item.status)}`}
+                  className={`inline-flex rounded-md px-2 py-1 text-[0.625rem] font-semibold ring-1 ${getStatusBadgeClassName(item.status)}`}
                 >
                   {item.status}
                 </span>
@@ -724,7 +726,7 @@ function AgendaMatchesCard({
           );
         })}
         {appointments.length === 0 && (
-          <p className="text-sm text-[var(--color-muted)]">
+          <p className="text-xs text-[var(--color-muted)]">
             No encontramos turnos con esos filtros.
           </p>
         )}
@@ -748,7 +750,7 @@ function AgendaViewControls({
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-      <div className="flex w-full rounded-lg border border-[var(--color-border)] bg-white/45 p-1 text-sm sm:w-auto">
+      <div className="flex w-full rounded-lg border border-[var(--color-border)] bg-white/45 p-1 text-xs sm:w-auto">
         <button
           type="button"
           onClick={onToday}
@@ -772,7 +774,7 @@ function AgendaViewControls({
           </button>
         ))}
       </div>
-      <div className="flex w-fit overflow-hidden rounded-lg border border-[var(--color-border)] bg-white/45 text-sm">
+      <div className="flex w-fit overflow-hidden rounded-lg border border-[var(--color-border)] bg-white/45 text-xs">
         <button
           type="button"
           onClick={onPreviousPeriod}

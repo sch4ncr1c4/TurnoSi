@@ -5,7 +5,11 @@ import { env } from "../../config/env.js";
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../lib/app-error.js";
 import { hashToken } from "../../lib/crypto.js";
-import { renderTurnosiEmail } from "../../lib/email-template.js";
+import {
+  getTurnoarEmailFrom,
+  renderTurnoarEmail,
+  turnoarEmailLogoAttachment
+} from "../../lib/email-template.js";
 import { logger } from "../../lib/logger.js";
 import { hashPassword, verifyPassword } from "../../lib/password.js";
 
@@ -19,14 +23,15 @@ async function sendResetCode(email: string, code: string) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM,
+      from: getTurnoarEmailFrom(env.EMAIL_FROM),
       to: [email],
-      subject: "Código para recuperar tu cuenta de TurnoSi",
-      html: renderTurnosiEmail({
+      subject: "Código para recuperar tu cuenta de Turnoar",
+      attachments: [turnoarEmailLogoAttachment],
+      html: renderTurnoarEmail({
         eyebrow: "Recuperación de acceso",
         title: "Tu código de seguridad",
         intro:
-          "Usá este código para cambiar la contraseña de tu cuenta de TurnoSi.",
+          "Usá este código para cambiar la contraseña de tu cuenta de Turnoar.",
         code,
         note: "El código vence en 3 minutos y solo puede usarse una vez."
       })
