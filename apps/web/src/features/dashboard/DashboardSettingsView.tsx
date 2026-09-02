@@ -75,11 +75,12 @@ function formatImageBytes(bytes?: number) {
 
 function SettingsSectionIcon({ icon }: { icon: string }) {
   return (
-    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[rgba(32,24,54,0.08)]">
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(32,24,54,0.055)]">
       <img
         src={icon}
         alt=""
-        className="h-6 w-6 opacity-85"
+        aria-hidden="true"
+        className="h-4 w-4 opacity-75"
         style={{
           filter:
             "brightness(0) saturate(100%) invert(12%) sepia(35%) saturate(1053%) hue-rotate(221deg) brightness(92%) contrast(97%)"

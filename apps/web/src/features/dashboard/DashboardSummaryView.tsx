@@ -390,18 +390,33 @@ export function DashboardSummaryView({
   ];
 
   return (
-    <div className="min-w-0 space-y-3 text-[13px]">
-      <SummarySectionTabs
-        active={activeSection}
-        onChange={setActiveSection}
-      />
-
-      {activeSection === "daily" ? (
-        <div className="w-full space-y-6 2xl:max-w-[1480px]">
+    <div className="min-w-0 space-y-3 text-[13px] 2xl:max-w-[1480px]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <SummarySectionTabs
+          active={activeSection}
+          onChange={setActiveSection}
+        />
+        {activeSection === "daily" ? (
           <DailyCashLauncher
             netIncomeCents={data.today.netIncomeCents}
             onOpen={() => setIsDailyCashOpen(true)}
           />
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setAnalyticsReportError("");
+              setIsAnalyticsReportOpen(true);
+            }}
+            className="h-8 rounded-md border border-[var(--color-border-strong)] bg-white px-4 text-xs font-semibold text-[var(--color-ink)] hover:bg-[rgba(32,24,54,0.04)]"
+          >
+            Descargar resumen
+          </button>
+        )}
+      </div>
+
+      {activeSection === "daily" ? (
+        <div className="w-full space-y-6">
           <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.62fr)]">
             <article className="rounded-lg border border-[var(--color-border)] bg-white p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
@@ -491,18 +506,6 @@ export function DashboardSummaryView({
         </div>
       ) : (
         <>
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                setAnalyticsReportError("");
-                setIsAnalyticsReportOpen(true);
-              }}
-              className="h-8 rounded-md border border-[var(--color-border-strong)] bg-white px-4 text-xs font-semibold text-[var(--color-ink)] hover:bg-[rgba(32,24,54,0.04)]"
-            >
-              Descargar resumen
-            </button>
-          </div>
           <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             {cards.map((card) => (
               <article
@@ -510,7 +513,7 @@ export function DashboardSummaryView({
                 title={card.helper}
                 className="flex min-h-[5.25rem] items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white px-3 py-3 shadow-[0_8px_22px_rgba(32,24,54,0.03)]"
               >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgba(32,24,54,0.055)]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgba(32,24,54,0.08)]">
                   <img src={card.icon} alt="" aria-hidden="true" className="h-[1.125rem] w-[1.125rem] opacity-70" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -691,23 +694,18 @@ function DailyCashLauncher({
   onOpen: () => void;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-sm font-semibold">Caja diaria</h2>
-        <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Revisá el balance y descargá el cierre del día.</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-1 font-mono text-xs font-semibold text-[var(--color-ink)]">
-          Neto {formatMoney(netIncomeCents)}
-        </span>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="h-8 rounded-md bg-[var(--color-ink)] px-4 text-xs font-semibold text-[var(--color-button-text)]"
-        >
-          Ver caja
-        </button>
-      </div>
+    <section className="flex h-9 w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+      <span className="text-xs font-semibold text-[var(--color-muted-strong)]">Caja diaria</span>
+      <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-1 font-mono text-[0.6875rem] font-semibold text-[var(--color-ink)]">
+        Neto {formatMoney(netIncomeCents)}
+      </span>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="h-8 rounded-md bg-[var(--color-ink)] px-4 text-xs font-semibold text-[var(--color-button-text)]"
+      >
+        Ver caja
+      </button>
     </section>
   );
 }
@@ -778,7 +776,7 @@ function DailyCashModal({
               <span className="text-[11px] text-[var(--color-muted)]">Sin cobros registrados</span>
             ) : (
               paymentMethods.map((item) => (
-                <span key={item.method} className="rounded-md bg-[rgba(32,24,54,0.04)] px-2 py-1 text-[11px] text-[var(--color-muted-strong)]">
+                <span key={item.method} className="rounded-md bg-[rgba(32,24,54,0.08)] px-2 py-1 text-[11px] text-[var(--color-muted-strong)]">
                   {item.method}: <strong className="font-mono text-[var(--color-ink)]">{formatMoney(item.amountCents)}</strong>
                 </span>
               ))
@@ -859,7 +857,7 @@ function StatusPill({
   value: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-md bg-[#f3f4f6] px-2.5 py-1 text-[11px] text-[var(--color-muted-strong)]">
+    <span className="inline-flex items-center gap-2 rounded-md bg-[rgba(32,24,54,0.08)] px-2.5 py-1 text-[11px] text-[var(--color-muted-strong)]">
       <span className={`h-1.5 w-1.5 rounded-full ${tone}`} />
       <strong className="font-mono text-[var(--color-ink)]">{value}</strong>
       {label}
@@ -885,7 +883,7 @@ function UpcomingAppointments({
         </div>
       </div>
       {appointments.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-[rgba(32,24,54,0.03)] p-3 text-center text-xs text-[var(--color-muted)]">
+        <p className="mt-3 rounded-lg bg-[rgba(32,24,54,0.08)] p-3 text-center text-xs text-[var(--color-muted)]">
           No quedan turnos para hoy.
         </p>
       ) : (
@@ -973,7 +971,7 @@ function SummaryBadge({ label, tone }: { label: string; tone: "appointment" | "p
         ? "bg-rose-50 text-[#b04b43] border-rose-200"
         : label === "Pendiente"
           ? "bg-sky-50 text-[#246b8f] border-sky-200"
-          : "bg-[rgba(32,24,54,0.06)] text-[var(--color-ink)] border-[var(--color-border)]";
+          : "bg-[rgba(32,24,54,0.08)] text-[var(--color-ink)] border-[var(--color-border)]";
   return <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${className}`}>{label}</span>;
 }
 
@@ -995,13 +993,13 @@ function DailyMovements({
             <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Ingresos y gastos ordenados por hora.</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-1 font-mono text-xs font-semibold text-[var(--color-ink)]">
+            <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-1 font-mono text-xs font-semibold text-[var(--color-ink)]">
               Gastos {formatMoney(expenseCents)}
             </span>
           </div>
         </div>
         {movements.length === 0 ? (
-          <p className="mt-3 rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-xs text-[var(--color-muted)]">
+          <p className="mt-3 rounded-lg bg-[rgba(32,24,54,0.08)] p-4 text-center text-xs text-[var(--color-muted)]">
             Sin movimientos registrados.
           </p>
         ) : (
@@ -1252,16 +1250,16 @@ function ExpenseDistribution({
           <h2 className="text-sm font-semibold">Distribución de gastos</h2>
           <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Participación por categoría</p>
         </div>
-        <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-0.5 font-mono text-xs font-semibold">
+        <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 font-mono text-xs font-semibold">
           {formatMoney(total)}
         </span>
       </div>
       {isLoading ? (
-        <p className="mt-3 rounded-md bg-[rgba(32,24,54,0.04)] p-4 text-center text-xs text-[var(--color-muted)]">
+        <p className="mt-3 rounded-md bg-[rgba(32,24,54,0.08)] p-4 text-center text-xs text-[var(--color-muted)]">
           Cargando gastos...
         </p>
       ) : categories.length === 0 ? (
-        <p className="mt-3 rounded-md bg-[rgba(32,24,54,0.04)] p-4 text-center text-xs text-[var(--color-muted)]">
+        <p className="mt-3 rounded-md bg-[rgba(32,24,54,0.08)] p-4 text-center text-xs text-[var(--color-muted)]">
           No hay gastos en este período.
         </p>
       ) : (
@@ -1320,13 +1318,13 @@ function ExpensesList({
             <h2 className="text-sm font-semibold">Gastos registrados</h2>
             <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">Gestionados por día</p>
           </div>
-          <span className="rounded-full bg-[rgba(125,116,139,0.12)] px-2 py-0.5 font-mono text-xs font-semibold">
+          <span className="rounded-full bg-[rgba(32,24,54,0.08)] px-2 py-0.5 font-mono text-xs font-semibold">
             {formatMoney(selectedTotal)}
           </span>
         </div>
         <div className="mt-2.5 pr-1">
           {isLoading ? (
-            <p className="rounded-lg bg-[rgba(32,24,54,0.03)] p-4 text-center text-xs text-[var(--color-muted)]">
+            <p className="rounded-lg bg-[rgba(32,24,54,0.08)] p-4 text-center text-xs text-[var(--color-muted)]">
               Cargando gastos...
             </p>
           ) : (
@@ -1361,7 +1359,7 @@ function ExpensesList({
                 </button>
               </div>
               {selectedExpenses.length === 0 ? (
-                <p className="rounded-md bg-[rgba(32,24,54,0.04)] p-4 text-center text-xs text-[var(--color-muted)]">
+                <p className="rounded-md bg-[rgba(32,24,54,0.08)] p-4 text-center text-xs text-[var(--color-muted)]">
                   No hay gastos registrados este día.
                 </p>
               ) : (
@@ -1613,7 +1611,7 @@ function PerformanceList({
                 <p className="truncate text-xs font-semibold">{row.title}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   {row.details.map((detail) => (
-                    <span key={detail} className="inline-flex items-center rounded-md bg-[rgba(32,24,54,0.04)] px-1.5 py-0.5 text-[10px] leading-4 text-[var(--color-muted-strong)]">
+                    <span key={detail} className="inline-flex items-center rounded-md bg-[rgba(32,24,54,0.08)] px-1.5 py-0.5 text-[10px] leading-4 text-[var(--color-muted-strong)]">
                       {detail}
                     </span>
                   ))}
