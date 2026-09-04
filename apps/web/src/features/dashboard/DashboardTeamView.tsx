@@ -15,6 +15,7 @@ import { ApiError } from "../../lib/api";
 import { queryKeys } from "../../lib/query-keys";
 import {
   createTeamMember,
+  deleteTeamMember,
   getTeamMembers,
   resetTeamMemberPassword,
   updateTeamMember,
@@ -211,6 +212,19 @@ export function DashboardTeamView() {
     }
   }
 
+  async function handleDelete(member: TeamMember) {
+    if (!window.confirm(`¿Eliminar a ${member.name} del equipo? Esta acción no se puede deshacer.`)) return;
+    try {
+      await deleteTeamMember(member.id);
+      queryClient.setQueryData<TeamMember[]>(queryKeys.teamMembers, (current = []) =>
+        current.filter((item) => item.id !== member.id)
+      );
+      setToast("Miembro eliminado del equipo.");
+    } catch {
+      setToast("No pudimos eliminar este miembro.");
+    }
+  }
+
   const teamMembers = teamQuery.data ?? [];
   const currentRole = sessionQuery.data?.data.organizations?.[0]?.role;
 
@@ -250,6 +264,7 @@ export function DashboardTeamView() {
           <div className="grid gap-2">
             {teamMembers.map((member) => {
               const canEditMember = currentRole === "owner" || member.role !== "owner";
+              const canDeleteMember = currentRole === "owner" && member.role !== "owner" && member.userId !== sessionQuery.data?.data.user?.id;
               const branchesLabel = member.branches.length
                 ? member.branches.map((branch) => branch.name).join(", ")
                 : "Sede principal";
@@ -336,6 +351,18 @@ export function DashboardTeamView() {
                               }}
                             >
                               Cambiar clave
+                            </button>
+                          )}
+                          {canDeleteMember && (
+                            <button
+                              type="button"
+                              className="block w-full px-3 py-2 text-left text-xs font-semibold text-[#b42318] hover:bg-[#fff4f2]"
+                              onClick={() => {
+                                setOpenMemberMenuId("");
+                                void handleDelete(member);
+                              }}
+                            >
+                              Eliminar del equipo
                             </button>
                           )}
                         </div>

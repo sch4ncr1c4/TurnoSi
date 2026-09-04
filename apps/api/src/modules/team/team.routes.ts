@@ -402,6 +402,42 @@ teamRouter.patch("/:membershipId", authRateLimit, async (request, response) => {
   response.json(ok(serializeTeamMember(updated)));
 });
 
+teamRouter.delete("/:membershipId", authRateLimit, async (request, response) => {
+  const tenant = request.tenant!;
+  const { membershipId } = teamMemberParamsSchema.parse(request.params);
+
+  if (tenant.role !== "owner") {
+    throw new AppError(403, "FORBIDDEN", "Only the owner can remove team members");
+  }
+
+  const membership = await prisma.membership.findFirst({
+    where: {
+      id: membershipId,
+      organizationId: tenant.organizationId
+    },
+    select: { userId: true, role: true }
+  });
+  if (!membership) {
+    throw new AppError(404, "NOT_FOUND", "Team member not found");
+  }
+  if (membership.role === "owner" || membership.userId === tenant.userId) {
+    throw new AppError(403, "FORBIDDEN", "The owner cannot be removed");
+  }
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.membership.delete({ where: { id: membershipId } });
+    const remainingMembership = await transaction.membership.findFirst({
+      where: { userId: membership.userId },
+      select: { id: true }
+    });
+    if (!remainingMembership) {
+      await transaction.user.delete({ where: { id: membership.userId } });
+    }
+  });
+
+  response.json(ok({ deleted: true }));
+});
+
 teamRouter.patch("/:membershipId/password", authRateLimit, async (request, response) => {
   const tenant = request.tenant!;
   requireEditor(tenant.role);

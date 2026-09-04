@@ -86,3 +86,10 @@ export async function resetTeamMemberPassword(
     }
   );
 }
+
+export function deleteTeamMember(membershipId: string) {
+  return apiRequest<{ success: true; data: { deleted: true } }>(
+    `/api/v1/team/${membershipId}`,
+    { method: "DELETE" }
+  );
+}
